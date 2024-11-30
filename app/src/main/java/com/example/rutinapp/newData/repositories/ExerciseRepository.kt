@@ -58,9 +58,8 @@ class ExerciseRepository @Inject constructor(
         )
     }
 
-    suspend fun relateExercises(exerciseId: String, relatedExerciseId: String){
-        exerciseToExerciseDao.insert(ExerciseToExerciseEntity(exercise1Id = exerciseId.toInt(), exercise2Id = relatedExerciseId.toInt()))
-        allExercises
+    suspend fun relateExercises(exercise1 : ExerciseEntity, exercise2 : ExerciseEntity){
+        exerciseToExerciseDao.insert(ExerciseToExerciseEntity(exercise1Id = exercise1.exerciseId, exercise2Id = exercise2.exerciseId))
     }
 
 }

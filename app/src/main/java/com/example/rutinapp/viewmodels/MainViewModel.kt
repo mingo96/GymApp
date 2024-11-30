@@ -1,6 +1,7 @@
 package com.example.rutinapp.viewmodels
 
-import android.util.Log
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.rutinapp.domain.addUseCases.AddExerciseUseCase
@@ -11,12 +12,12 @@ import com.example.rutinapp.domain.getUseCases.GetExerciseUseCase
 import com.example.rutinapp.domain.getUseCases.GetRoutinesUseCase
 import com.example.rutinapp.newData.models.ExerciseModel
 import com.example.rutinapp.newData.models.RoutineModel
+import com.example.rutinapp.ui.screenStates.ExercisesState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Random
@@ -32,36 +33,44 @@ class MainViewModel @Inject constructor(
     private val getRoutineUseCase: GetRoutinesUseCase
 ) : ViewModel() {
 
-    val exercises : StateFlow<List<ExerciseModel>> =getExercisesUseCase().catch { Error(it) }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val exercisesState : StateFlow<List<ExerciseModel>> =getExercisesUseCase().catch { Error(it) }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val routines : StateFlow<List<RoutineModel>> = getRoutineUseCase().catch { Error(it) }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    private val _uiState : MutableLiveData<ExercisesState> = MutableLiveData(ExercisesState.Observe)
 
-    fun addExercise(name: String) {
+    val uiState : LiveData<ExercisesState> = _uiState
+
+    fun addExercise(name: String, description : String, targetedBodyPart : String) {
         viewModelScope.launch(context = Dispatchers.IO){
-            addExerciseUseCase(ExerciseModel(id = "3",name = name, description = "test", targetedBodyPart = "test"))
+            addExerciseUseCase(ExerciseModel(name = name, description = description, targetedBodyPart = targetedBodyPart))
         }
     }
 
     fun relateExercises(){
         viewModelScope.launch(context = Dispatchers.IO){
-            val value1 = exercises.value[Random().nextInt(exercises.value.size)]
-            val value2 = exercises.value[Random().nextInt(exercises.value.size)]
+            val value1 = exercisesState.value[Random().nextInt(exercisesState.value.size)]
+            val value2 = exercisesState.value[Random().nextInt(exercisesState.value.size)]
             if (value1.id != value2.id && value1.equivalentExercises.none { it.id == value2.id }) {
-                addExerciseRelationUseCase(value1.id.toLong(), value2.id.toLong())
+                addExerciseRelationUseCase(value1, value2)
             }
         }
     }
 
-    fun addRoutine(name : String, targetedBodyPart : String) {
-        viewModelScope.launch(context = Dispatchers.IO){
-            addRoutineUseCase(RoutineModel(name = name, targetedBodyPart = targetedBodyPart))
+    fun clickToEdit(selected : ExerciseModel){
+        _uiState.value = ExercisesState.Modifying(selected)
+    }
 
+    fun backToObserve() {
+        _uiState.value = ExercisesState.Observe
+    }
+
+    fun updateExercise(name: String, description: String, targetedBodyPart: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            //persistir cambios
         }
     }
 
-    fun relateRoutine(routineModel: RoutineModel, exerciseModel: ExerciseModel) {
-        viewModelScope.launch(context = Dispatchers.IO) {
-            addRoutineExerciseRelation(routineModel, exerciseModel)
-        }
+    fun clickToCreate() {
+        _uiState.value = ExercisesState.Creating
     }
+
 }
