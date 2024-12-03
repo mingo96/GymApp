@@ -48,7 +48,6 @@ class MainActivity : ComponentActivity() {
             it
         } + scaleOut()
 
-        enableEdgeToEdge()
         setContent {
             RutinAppTheme {
                 Surface(

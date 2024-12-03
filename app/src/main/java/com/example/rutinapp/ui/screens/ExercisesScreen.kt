@@ -122,6 +122,20 @@ fun ExercisesScreen(viewModel: MainViewModel, navController: NavController) {
                             onWrite = { targetedBodyPart = it },
                             text = targetedBodyPart
                         )
+                        Button(
+                            onClick = {
+                                viewModel.addExercise(
+                                    name, description, targetedBodyPart
+                                )
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .wrapContentWidth(align = Alignment.CenterHorizontally),
+                            colors = rutinAppButtonsColours()
+                        ) {
+                            Text(text = "Añadir ejercicio")
+                        }
+
                     }
                 }
             }
@@ -144,8 +158,11 @@ fun ExercisesScreen(viewModel: MainViewModel, navController: NavController) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text(text = it.name)
-                        Text(text = it.description)
+                        Text(text = it.name, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = if(it.description.length>50) it.description.substring(0,40)+"..." else it.description,
+                            modifier = Modifier.fillMaxWidth(0.8f)
+                        )
                     }
                     Icon(imageVector = Icons.TwoTone.Edit,
                         contentDescription = "editar",
@@ -178,9 +195,9 @@ fun ExercisesContainer(
                 contentDescription = "Exit",
                 Modifier
                     .clickable { navController.navigateUp() }
-                    .size(48.dp))
+                    .size(40.dp))
             Text(
-                text = "Exercises",
+                text = "Ejercicios",
                 modifier = Modifier
                     .fillMaxWidth()
                     .wrapContentWidth(Alignment.CenterHorizontally),
@@ -216,7 +233,10 @@ fun TextFieldWithTitle(title: String, onWrite: (String) -> Unit, text: String) {
         onValueChange = onWrite,
         colors = rutinAppTextFieldColors(),
         textStyle = TextStyle(fontWeight = FontWeight.Bold),
-        shape = RoundedCornerShape(15.dp)
+        shape = RoundedCornerShape(15.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .wrapContentWidth(align = Alignment.CenterHorizontally)
     )
 }
 

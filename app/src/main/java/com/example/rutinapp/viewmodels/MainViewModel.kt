@@ -42,6 +42,7 @@ class MainViewModel @Inject constructor(
     fun addExercise(name: String, description : String, targetedBodyPart : String) {
         viewModelScope.launch(context = Dispatchers.IO){
             addExerciseUseCase(ExerciseModel(name = name, description = description, targetedBodyPart = targetedBodyPart))
+            _uiState.postValue(ExercisesState.Observe)
         }
     }
 
