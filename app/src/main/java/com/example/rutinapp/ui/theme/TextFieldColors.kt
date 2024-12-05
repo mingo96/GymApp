@@ -8,17 +8,17 @@ import androidx.compose.ui.graphics.Color
 @Composable
 fun rutinAppTextFieldColors(): TextFieldColors {
     return TextFieldDefaults.colors(
-        unfocusedContainerColor = TextFieldColor.copy(0.5f),
-        focusedContainerColor = TextFieldColor.copy(0.5f),
-        focusedIndicatorColor = TextFieldColor.copy(0.5f),
-        unfocusedIndicatorColor = TextFieldColor.copy(0.5f),
+        unfocusedContainerColor = TextFieldColor,
+        focusedContainerColor = TextFieldColor,
+        focusedIndicatorColor = TextFieldColor,
+        unfocusedIndicatorColor = TextFieldColor,
         focusedTextColor = Color.LightGray.copy(0.85f),
         unfocusedTextColor = Color.LightGray.copy(0.85f),
         focusedLabelColor = Color.White.copy(0.5f),
         unfocusedLabelColor = Color.White.copy(0.5f),
         cursorColor = SecondaryColor,
         disabledTextColor = Color.LightGray.copy(0.85f),
-        disabledContainerColor = TextFieldColor.copy(0.5f)
+        disabledContainerColor = TextFieldColor
 
     )
 }

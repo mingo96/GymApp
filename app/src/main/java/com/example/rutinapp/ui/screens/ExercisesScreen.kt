@@ -9,18 +9,25 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Clear
+import androidx.compose.material.icons.twotone.Add
+import androidx.compose.material.icons.twotone.Delete
 import androidx.compose.material.icons.twotone.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -32,6 +39,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -75,6 +83,10 @@ fun ExercisesScreen(viewModel: MainViewModel, navController: NavController) {
                 }
             }
 
+            is ExercisesState.AddingRelations -> {
+                AddRelationsDialog(viewModel, uiState as ExercisesState.AddingRelations)
+            }
+
             null -> {}
         }
         LazyColumn(
@@ -85,7 +97,9 @@ fun ExercisesScreen(viewModel: MainViewModel, navController: NavController) {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             items(exercises) { exercise ->
-                ExerciseItem(item = exercise,onEditClick = { viewModel.clickToEdit(exercise) }, onClick = { viewModel.clickToObserve(exercise) })
+                ExerciseItem(item = exercise,
+                    onEditClick = { viewModel.clickToEdit(exercise) },
+                    onClick = { viewModel.clickToObserve(exercise) })
             }
         }
     }
@@ -93,7 +107,40 @@ fun ExercisesScreen(viewModel: MainViewModel, navController: NavController) {
 }
 
 @Composable
-fun ExerciseItem( item: ExerciseModel, onEditClick: () -> Unit, onClick: () -> Unit = {}) {
+fun AddRelationsDialog(viewModel: MainViewModel, addingRelations: ExercisesState.AddingRelations) {
+
+    Dialog(onDismissRequest = { viewModel.backToObserve() }) {
+
+        DialogContainer {
+            Text(text = "Añadir ejercicios relacionados")
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(100.dp),
+                modifier = Modifier
+                    .heightIn(max = 200.dp)
+                    .fillMaxWidth()
+                    .background(TextFieldColor, RoundedCornerShape(15.dp))
+                    .padding(16.dp)
+            ) {
+                if (addingRelations.possibleValues.isNotEmpty()) {
+                    items(addingRelations.possibleValues) {
+                        Text(text = it.name + it.id, maxLines = 1, modifier = Modifier.clickable {
+                            viewModel.toggleExercisesRelation(it)
+                        })
+                    }
+                } else {
+                    item {
+                        Text(text = "No hay ejercicios disponibles")
+                    }
+                }
+            }
+        }
+
+    }
+
+}
+
+@Composable
+fun ExerciseItem(item: ExerciseModel, onEditClick: () -> Unit, onClick: () -> Unit = {}) {
 
     Row(
         Modifier.fillMaxWidth(),
@@ -203,6 +250,7 @@ fun DialogContainer(content: @Composable ColumnScope.() -> Unit) {
 @Composable
 fun ModifyExerciseDialog(viewModel: MainViewModel, uiState: ExercisesState.Modifying) {
 
+    val context = LocalContext.current
     var name by rememberSaveable { mutableStateOf(uiState.exerciseModel.name) }
     var description by rememberSaveable { mutableStateOf(uiState.exerciseModel.description) }
     var targetedBodyPart by rememberSaveable { mutableStateOf(uiState.exerciseModel.targetedBodyPart) }
@@ -219,6 +267,40 @@ fun ModifyExerciseDialog(viewModel: MainViewModel, uiState: ExercisesState.Modif
                 onWrite = { targetedBodyPart = it },
                 text = targetedBodyPart
             )
+
+
+            Text(text = "Ejercicios relacionados")
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(100.dp),
+                modifier = Modifier
+                    .heightIn(max = 200.dp)
+                    .fillMaxWidth()
+                    .background(TextFieldColor, RoundedCornerShape(15.dp))
+                    .padding(16.dp)
+            ) {
+                item {
+                    IconButton(onClick = { viewModel.clickToAddRelatedExercises(context) }) {
+                        Icon(
+                            imageVector = Icons.TwoTone.Add,
+                            contentDescription = "Add related exercises"
+                        )
+                    }
+                }
+                items(uiState.relatedExercises) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    ) {
+                        Text(text = it.name, Modifier.fillMaxWidth(0.8f), maxLines = 2)
+                        IconButton(onClick = { viewModel.toggleExercisesRelation(it) }) {
+                            Icon(
+                                imageVector = Icons.TwoTone.Delete, contentDescription = "Unrelate"
+                            )
+                        }
+                    }
+                }
+            }
 
             Row(
                 horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxWidth()
@@ -293,6 +375,25 @@ fun ObserveExerciseDialog(viewModel: MainViewModel, uiState: ExercisesState.Obse
                 text = uiState.exercise.targetedBodyPart,
                 editing = false
             )
+            if (uiState.exercise.equivalentExercises.isNotEmpty()) {
+                Text(text = "Ejercicios relacionados")
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(100.dp),
+                    modifier = Modifier
+                        .heightIn(max = 200.dp)
+                        .background(TextFieldColor, RoundedCornerShape(15.dp))
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    items(uiState.exercise.equivalentExercises) {
+                        Text(
+                            text = it.name,
+                            maxLines = 2
+                        )
+                    }
+                }
+            }
 
             Row(
                 horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxWidth()
@@ -301,6 +402,12 @@ fun ObserveExerciseDialog(viewModel: MainViewModel, uiState: ExercisesState.Obse
                     onClick = { viewModel.backToObserve() }, colors = rutinAppButtonsColours()
                 ) {
                     Text(text = "Salir")
+                }
+                Button(
+                    onClick = { viewModel.clickToEdit(uiState.exercise) },
+                    colors = rutinAppButtonsColours()
+                ) {
+                    Text(text = "Editar")
                 }
             }
 

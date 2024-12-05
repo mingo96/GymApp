@@ -62,5 +62,13 @@ class ExerciseRepository @Inject constructor(
         exerciseToExerciseDao.insert(ExerciseToExerciseEntity(exercise1Id = exercise1.exerciseId, exercise2Id = exercise2.exerciseId))
     }
 
+    suspend fun unRelateExercises(exercise1: ExerciseEntity, exercise2: ExerciseEntity) {
+        exerciseToExerciseDao.delete(ExerciseToExerciseEntity(exercise1Id = exercise1.exerciseId, exercise2Id = exercise2.exerciseId))
+    }
+
+    suspend fun updateExercise(exerciseToUpdate: ExerciseEntity) {
+        exerciseDao.update(exerciseToUpdate)
+    }
+
 }
 

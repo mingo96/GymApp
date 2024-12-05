@@ -12,5 +12,5 @@ val Pink40 = Color(0xFF7D5260)
 
 val PrimaryColor = Color(0xFF121217)
 val SecondaryColor = Color(0xFF1212ED)
-val TextFieldColor = Color(40,40,58)
+val TextFieldColor = Color(40,40,58).copy(0.5f)
 val TextColor = Color(122,121,142)
