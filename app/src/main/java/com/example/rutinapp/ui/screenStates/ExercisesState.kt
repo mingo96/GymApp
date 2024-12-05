@@ -1,6 +1,6 @@
 package com.example.rutinapp.ui.screenStates
 
-import com.example.rutinapp.newData.models.ExerciseModel
+import com.example.rutinapp.data.models.ExerciseModel
 
 sealed interface ExercisesState{
 

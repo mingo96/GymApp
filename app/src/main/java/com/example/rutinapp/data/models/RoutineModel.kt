@@ -1,4 +1,4 @@
-package com.example.rutinapp.newData.models
+package com.example.rutinapp.data.models
 
 data class RoutineModel (
     val id: Int = 0,

@@ -1,15 +1,12 @@
-package com.example.rutinapp.newData.repositories
+package com.example.rutinapp.data.repositories
 
-import android.util.Log
-import com.example.rutinapp.newData.daos.ExerciseDao
-import com.example.rutinapp.newData.daos.ExerciseEntity
-import com.example.rutinapp.newData.daos.ExerciseToExerciseDao
-import com.example.rutinapp.newData.daos.ExerciseToExerciseEntity
-import com.example.rutinapp.newData.models.ExerciseModel
+import com.example.rutinapp.data.daos.ExerciseDao
+import com.example.rutinapp.data.daos.ExerciseEntity
+import com.example.rutinapp.data.daos.ExerciseToExerciseDao
+import com.example.rutinapp.data.daos.ExerciseToExerciseEntity
+import com.example.rutinapp.data.models.ExerciseModel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 

@@ -1,8 +1,8 @@
 package com.example.rutinapp.domain.addUseCases
 
-import com.example.rutinapp.newData.models.ExerciseModel
-import com.example.rutinapp.newData.models.RoutineModel
-import com.example.rutinapp.newData.repositories.RoutineRepository
+import com.example.rutinapp.data.models.ExerciseModel
+import com.example.rutinapp.data.models.RoutineModel
+import com.example.rutinapp.data.repositories.RoutineRepository
 import javax.inject.Inject
 
 class AddRoutineExerciseRelation @Inject constructor(private val routineRepository: RoutineRepository) {

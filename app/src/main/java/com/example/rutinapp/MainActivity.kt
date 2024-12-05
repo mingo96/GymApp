@@ -1,16 +1,17 @@
 package com.example.rutinapp
 
+import android.annotation.SuppressLint
 import android.app.Application
 import android.content.pm.ActivityInfo
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Button
 import androidx.compose.material3.Surface
@@ -23,9 +24,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.rutinapp.ui.screens.ExercisesScreen
+import com.example.rutinapp.ui.screens.RoutinesScreen
 import com.example.rutinapp.ui.theme.PrimaryColor
 import com.example.rutinapp.ui.theme.RutinAppTheme
-import com.example.rutinapp.viewmodels.MainViewModel
+import com.example.rutinapp.viewmodels.ExercisesViewModel
+import com.example.rutinapp.viewmodels.RoutinesViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.HiltAndroidApp
 
@@ -35,8 +38,10 @@ class RutinAppApplication : Application()
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    private val viewModel: MainViewModel by viewModels()
+    private val exercisesViewModel: ExercisesViewModel by viewModels()
+    private val routinesViewModel: RoutinesViewModel by viewModels()
 
+    @SuppressLint("SourceLockedOrientationActivity")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -61,17 +66,23 @@ class MainActivity : ComponentActivity() {
                     NavHost(navController = navController, startDestination = "start") {
 
                         composable("start", enterTransition = { onEnter }, exitTransition = { onExit }) {
-                            Button(onClick = { navController.navigate("exercises") }) {
-                                Text(text = "ejercicios")
+                            Column {
+
+                                Button(onClick = { navController.navigate("exercises") }) {
+                                    Text(text = "ejercicios")
+                                }
+                                Button(onClick = { navController.navigate("routines") }) {
+                                    Text(text = "Rutinas")
+                                }
                             }
                         }
 
                         composable("exercises", enterTransition = { onEnter }, exitTransition = { onExit }) {
-                            ExercisesScreen(viewModel = viewModel, navController = navController)
+                            ExercisesScreen(viewModel = exercisesViewModel, navController = navController)
                         }
 
                         composable("routines", enterTransition = { onEnter }, exitTransition = { onExit }) {
-
+                            RoutinesScreen(viewModel = routinesViewModel, navController = navController)
                         }
 
                         composable("enter", enterTransition = { onEnter }, exitTransition = { onExit }) {

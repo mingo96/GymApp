@@ -48,16 +48,16 @@ import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import com.example.rutinapp.newData.models.ExerciseModel
+import com.example.rutinapp.data.models.ExerciseModel
 import com.example.rutinapp.ui.screenStates.ExercisesState
 import com.example.rutinapp.ui.theme.PrimaryColor
 import com.example.rutinapp.ui.theme.TextFieldColor
 import com.example.rutinapp.ui.theme.rutinAppButtonsColours
 import com.example.rutinapp.ui.theme.rutinAppTextFieldColors
-import com.example.rutinapp.viewmodels.MainViewModel
+import com.example.rutinapp.viewmodels.ExercisesViewModel
 
 @Composable
-fun ExercisesScreen(viewModel: MainViewModel, navController: NavController) {
+fun ExercisesScreen(viewModel: ExercisesViewModel, navController: NavController) {
 
     val lifecycle = LocalLifecycleOwner.current.lifecycle
 
@@ -67,28 +67,29 @@ fun ExercisesScreen(viewModel: MainViewModel, navController: NavController) {
 
     val uiState by viewModel.uiState.observeAsState()
 
-    ExercisesContainer(navController = navController, viewModel) { it ->
-        when (uiState) {
-            is ExercisesState.Modifying -> {
-                ModifyExerciseDialog(viewModel, uiState as ExercisesState.Modifying)
-            }
-
-            is ExercisesState.Creating -> {
-                CreateExerciseDialog(viewModel = viewModel)
-            }
-
-            is ExercisesState.Observe -> {
-                if ((uiState as ExercisesState.Observe).exercise != null) {
-                    ObserveExerciseDialog(viewModel, uiState as ExercisesState.Observe)
-                }
-            }
-
-            is ExercisesState.AddingRelations -> {
-                AddRelationsDialog(viewModel, uiState as ExercisesState.AddingRelations)
-            }
-
-            null -> {}
+    when (uiState) {
+        is ExercisesState.Modifying -> {
+            ModifyExerciseDialog(viewModel, uiState as ExercisesState.Modifying)
         }
+
+        is ExercisesState.Creating -> {
+            CreateExerciseDialog(viewModel = viewModel)
+        }
+
+        is ExercisesState.Observe -> {
+            if ((uiState as ExercisesState.Observe).exercise != null) {
+                ObserveExerciseDialog(viewModel, uiState as ExercisesState.Observe)
+            }
+        }
+
+        is ExercisesState.AddingRelations -> {
+            AddRelationsDialog(viewModel, uiState as ExercisesState.AddingRelations)
+        }
+
+        null -> {}
+    }
+
+    ExercisesContainer(navController = navController, viewModel) { it ->
         LazyColumn(
             Modifier
                 .fillMaxHeight()
@@ -107,7 +108,9 @@ fun ExercisesScreen(viewModel: MainViewModel, navController: NavController) {
 }
 
 @Composable
-fun AddRelationsDialog(viewModel: MainViewModel, addingRelations: ExercisesState.AddingRelations) {
+fun AddRelationsDialog(
+    viewModel: ExercisesViewModel, addingRelations: ExercisesState.AddingRelations
+) {
 
     Dialog(onDismissRequest = { viewModel.backToObserve() }) {
 
@@ -170,49 +173,48 @@ fun ExerciseItem(item: ExerciseModel, onEditClick: () -> Unit, onClick: () -> Un
 @Composable
 fun ExercisesContainer(
     navController: NavController,
-    viewModel: MainViewModel,
+    viewModel: ExercisesViewModel,
     content: @Composable (PaddingValues) -> Unit
 ) {
     Scaffold(modifier = Modifier.padding(16.dp), containerColor = PrimaryColor, topBar = {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterHorizontally),
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight()
-                .background(PrimaryColor)
+        TopBar(navController = navController, "Ejercicios")
+    }, bottomBar = {
+        Button(
+            onClick = { viewModel.clickToCreate() },
+            colors = rutinAppButtonsColours(),
         ) {
-            Icon(imageVector = Icons.Outlined.Clear,
-                contentDescription = "Exit",
-                Modifier
-                    .clickable { navController.navigateUp() }
-                    .size(40.dp))
             Text(
-                text = "Ejercicios",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentWidth(Alignment.CenterHorizontally),
-                style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 24.sp)
+                text = "Añadir ejercicio", fontWeight = FontWeight.Bold, fontSize = 16.sp
             )
         }
-    }, bottomBar = {
-        Row(
+
+    }, content = content
+    )
+}
+
+@Composable
+fun TopBar(navController: NavController, text: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterHorizontally),
+        modifier = Modifier
+            .fillMaxWidth()
+            .wrapContentHeight()
+            .background(PrimaryColor)
+    ) {
+        Icon(imageVector = Icons.Outlined.Clear,
+            contentDescription = "Exit",
             Modifier
+                .clickable { navController.navigateUp() }
+                .size(40.dp))
+        Text(
+            text = text,
+            modifier = Modifier
                 .fillMaxWidth()
-                .background(PrimaryColor),
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Button(
-                onClick = { viewModel.clickToCreate() },
-                colors = rutinAppButtonsColours(),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = "Añadir ejercicio", fontWeight = FontWeight.Bold, fontSize = 16.sp
-                )
-            }
-        }
-    }, content = content)
+                .wrapContentWidth(Alignment.CenterHorizontally),
+            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 24.sp)
+        )
+    }
 }
 
 @Composable
@@ -248,7 +250,7 @@ fun DialogContainer(content: @Composable ColumnScope.() -> Unit) {
 }
 
 @Composable
-fun ModifyExerciseDialog(viewModel: MainViewModel, uiState: ExercisesState.Modifying) {
+fun ModifyExerciseDialog(viewModel: ExercisesViewModel, uiState: ExercisesState.Modifying) {
 
     val context = LocalContext.current
     var name by rememberSaveable { mutableStateOf(uiState.exerciseModel.name) }
@@ -325,7 +327,7 @@ fun ModifyExerciseDialog(viewModel: MainViewModel, uiState: ExercisesState.Modif
 }
 
 @Composable
-fun CreateExerciseDialog(viewModel: MainViewModel) {
+fun CreateExerciseDialog(viewModel: ExercisesViewModel) {
 
     var name by rememberSaveable { mutableStateOf("") }
     var description by rememberSaveable { mutableStateOf("") }
@@ -361,7 +363,7 @@ fun CreateExerciseDialog(viewModel: MainViewModel) {
 }
 
 @Composable
-fun ObserveExerciseDialog(viewModel: MainViewModel, uiState: ExercisesState.Observe) {
+fun ObserveExerciseDialog(viewModel: ExercisesViewModel, uiState: ExercisesState.Observe) {
     Dialog(onDismissRequest = { viewModel.backToObserve() }) {
 
         DialogContainer {
@@ -388,8 +390,7 @@ fun ObserveExerciseDialog(viewModel: MainViewModel, uiState: ExercisesState.Obse
                 ) {
                     items(uiState.exercise.equivalentExercises) {
                         Text(
-                            text = it.name,
-                            maxLines = 2
+                            text = it.name, maxLines = 2
                         )
                     }
                 }

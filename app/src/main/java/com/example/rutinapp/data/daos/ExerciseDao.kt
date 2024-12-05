@@ -1,4 +1,4 @@
-package com.example.rutinapp.newData.daos
+package com.example.rutinapp.data.daos
 
 import androidx.room.Dao
 import androidx.room.Delete

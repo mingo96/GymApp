@@ -9,9 +9,9 @@ import androidx.lifecycle.viewModelScope
 import com.example.rutinapp.domain.addUseCases.AddExerciseUseCase
 import com.example.rutinapp.domain.addUseCases.AddExercisesRelationUseCase
 import com.example.rutinapp.domain.deleteUseCases.DeleteExerciseRelationUseCase
-import com.example.rutinapp.domain.getUseCases.GetExerciseUseCase
+import com.example.rutinapp.domain.getUseCases.GetExercisesUseCase
 import com.example.rutinapp.domain.updateUseCases.UpdateExerciseUseCase
-import com.example.rutinapp.newData.models.ExerciseModel
+import com.example.rutinapp.data.models.ExerciseModel
 import com.example.rutinapp.ui.screenStates.ExercisesState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -23,9 +23,9 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class MainViewModel @Inject constructor(
+class ExercisesViewModel @Inject constructor(
     private val addExerciseUseCase: AddExerciseUseCase,
-    private val getExercisesUseCase: GetExerciseUseCase,
+    private val getExercisesUseCase: GetExercisesUseCase,
     private val addExerciseRelationUseCase: AddExercisesRelationUseCase,
     private val deleteExerciseRelationUseCase: DeleteExerciseRelationUseCase,
     private val updateExerciseUseCase: UpdateExerciseUseCase

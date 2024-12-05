@@ -1,8 +1,8 @@
 package com.example.rutinapp.domain.addUseCases
 
-import com.example.rutinapp.newData.models.RoutineModel
-import com.example.rutinapp.newData.repositories.RoutineRepository
-import com.example.rutinapp.newData.repositories.toEntity
+import com.example.rutinapp.data.models.RoutineModel
+import com.example.rutinapp.data.repositories.RoutineRepository
+import com.example.rutinapp.data.repositories.toEntity
 import javax.inject.Inject
 
 class AddRoutineUseCase @Inject constructor(private val routineRepository: RoutineRepository){

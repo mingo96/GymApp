@@ -1,4 +1,4 @@
-package com.example.rutinapp.newData.models
+package com.example.rutinapp.data.models
 
 data class ExerciseModel(
     var id: String = "",

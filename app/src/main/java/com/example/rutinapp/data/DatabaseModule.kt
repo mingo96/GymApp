@@ -1,14 +1,14 @@
-package com.example.rutinapp.newData
+package com.example.rutinapp.data
 
 import android.content.Context
 import androidx.room.Room
-import com.example.rutinapp.newData.daos.ExerciseDao
-import com.example.rutinapp.newData.daos.ExerciseToExerciseDao
-import com.example.rutinapp.newData.daos.RoutineDao
-import com.example.rutinapp.newData.daos.RoutineExerciseDao
-import com.example.rutinapp.newData.daos.SetDao
-import com.example.rutinapp.newData.daos.SetsWorkOutDao
-import com.example.rutinapp.newData.daos.WorkOutDao
+import com.example.rutinapp.data.daos.ExerciseDao
+import com.example.rutinapp.data.daos.ExerciseToExerciseDao
+import com.example.rutinapp.data.daos.RoutineDao
+import com.example.rutinapp.data.daos.RoutineExerciseDao
+import com.example.rutinapp.data.daos.SetDao
+import com.example.rutinapp.data.daos.SetsWorkOutDao
+import com.example.rutinapp.data.daos.WorkOutDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

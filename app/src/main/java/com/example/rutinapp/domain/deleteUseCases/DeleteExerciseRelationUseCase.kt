@@ -1,8 +1,8 @@
 package com.example.rutinapp.domain.deleteUseCases
 
-import com.example.rutinapp.newData.models.ExerciseModel
-import com.example.rutinapp.newData.repositories.ExerciseRepository
-import com.example.rutinapp.newData.repositories.toEntity
+import com.example.rutinapp.data.models.ExerciseModel
+import com.example.rutinapp.data.repositories.ExerciseRepository
+import com.example.rutinapp.data.repositories.toEntity
 import javax.inject.Inject
 
 class DeleteExerciseRelationUseCase @Inject constructor(private val exerciseRepository: ExerciseRepository){

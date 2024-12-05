@@ -1,4 +1,4 @@
-package com.example.rutinapp.newData.models
+package com.example.rutinapp.data.models
 
 import java.util.Date
 

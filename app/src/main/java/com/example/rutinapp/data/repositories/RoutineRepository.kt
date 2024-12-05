@@ -1,11 +1,11 @@
-package com.example.rutinapp.newData.repositories
+package com.example.rutinapp.data.repositories
 
-import com.example.rutinapp.newData.daos.ExerciseEntity
-import com.example.rutinapp.newData.daos.RoutineDao
-import com.example.rutinapp.newData.daos.RoutineEntity
-import com.example.rutinapp.newData.daos.RoutineExerciseDao
-import com.example.rutinapp.newData.daos.RoutineExerciseEntity
-import com.example.rutinapp.newData.models.RoutineModel
+import com.example.rutinapp.data.daos.ExerciseEntity
+import com.example.rutinapp.data.daos.RoutineDao
+import com.example.rutinapp.data.daos.RoutineEntity
+import com.example.rutinapp.data.daos.RoutineExerciseDao
+import com.example.rutinapp.data.daos.RoutineExerciseEntity
+import com.example.rutinapp.data.models.RoutineModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject

@@ -1,9 +1,9 @@
 package com.example.rutinapp.domain.getUseCases
 
-import com.example.rutinapp.newData.models.RoutineModel
-import com.example.rutinapp.newData.repositories.ExerciseRepository
-import com.example.rutinapp.newData.repositories.RoutineRepository
-import com.example.rutinapp.newData.repositories.toModel
+import com.example.rutinapp.data.models.RoutineModel
+import com.example.rutinapp.data.repositories.ExerciseRepository
+import com.example.rutinapp.data.repositories.RoutineRepository
+import com.example.rutinapp.data.repositories.toModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
