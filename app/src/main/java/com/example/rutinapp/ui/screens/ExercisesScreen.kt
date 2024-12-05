@@ -40,8 +40,10 @@ import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import com.example.rutinapp.newData.models.ExerciseModel
 import com.example.rutinapp.ui.screenStates.ExercisesState
 import com.example.rutinapp.ui.theme.PrimaryColor
+import com.example.rutinapp.ui.theme.TextFieldColor
 import com.example.rutinapp.ui.theme.rutinAppButtonsColours
 import com.example.rutinapp.ui.theme.rutinAppTextFieldColors
 import com.example.rutinapp.viewmodels.MainViewModel
@@ -60,89 +62,20 @@ fun ExercisesScreen(viewModel: MainViewModel, navController: NavController) {
     ExercisesContainer(navController = navController, viewModel) { it ->
         when (uiState) {
             is ExercisesState.Modifying -> {
-                var name by rememberSaveable { mutableStateOf((uiState as ExercisesState.Modifying).exerciseModel.name) }
-                var description by rememberSaveable { mutableStateOf((uiState as ExercisesState.Modifying).exerciseModel.description) }
-                var targetedBodyPart by rememberSaveable { mutableStateOf((uiState as ExercisesState.Modifying).exerciseModel.targetedBodyPart) }
-                Dialog(onDismissRequest = { viewModel.backToObserve() }) {
-
-                    DialogContainer {
-
-                        TextFieldWithTitle(title = "Nombre", onWrite = { name = it }, text = name)
-                        TextFieldWithTitle(
-                            title = "Descripción",
-                            onWrite = { description = it },
-                            text = description
-                        )
-                        TextFieldWithTitle(
-                            title = "Parte del cuerpo",
-                            onWrite = { targetedBodyPart = it },
-                            text = targetedBodyPart
-                        )
-
-                        Row(
-                            horizontalArrangement = Arrangement.SpaceEvenly,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Button(onClick = {
-                                viewModel.updateExercise(
-                                    name, description, targetedBodyPart
-                                )
-                            }, colors = rutinAppButtonsColours()) {
-                                Text(text = "Guardar")
-                            }
-                            Button(
-                                onClick = { viewModel.backToObserve() },
-                                colors = rutinAppButtonsColours()
-                            ) {
-                                Text(text = "Salir")
-                            }
-                        }
-
-                    }
-
-                }
+                ModifyExerciseDialog(viewModel, uiState as ExercisesState.Modifying)
             }
 
             is ExercisesState.Creating -> {
+                CreateExerciseDialog(viewModel = viewModel)
+            }
 
-                var name by rememberSaveable { mutableStateOf("") }
-                var description by rememberSaveable { mutableStateOf("") }
-                var targetedBodyPart by rememberSaveable { mutableStateOf("") }
-                Dialog(onDismissRequest = { viewModel.backToObserve() }) {
-                    DialogContainer {
-
-                        TextFieldWithTitle(title = "Nombre", onWrite = { name = it }, text = name)
-                        TextFieldWithTitle(
-                            title = "Descripción",
-                            onWrite = { description = it },
-                            text = description
-                        )
-                        TextFieldWithTitle(
-                            title = "Parte del cuerpo",
-                            onWrite = { targetedBodyPart = it },
-                            text = targetedBodyPart
-                        )
-                        Button(
-                            onClick = {
-                                viewModel.addExercise(
-                                    name, description, targetedBodyPart
-                                )
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .wrapContentWidth(align = Alignment.CenterHorizontally),
-                            colors = rutinAppButtonsColours()
-                        ) {
-                            Text(text = "Añadir ejercicio")
-                        }
-
-                    }
+            is ExercisesState.Observe -> {
+                if ((uiState as ExercisesState.Observe).exercise != null) {
+                    ObserveExerciseDialog(viewModel, uiState as ExercisesState.Observe)
                 }
             }
 
-            else -> {
-
-            }
+            null -> {}
         }
         LazyColumn(
             Modifier
@@ -151,29 +84,40 @@ fun ExercisesScreen(viewModel: MainViewModel, navController: NavController) {
             contentPadding = it,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            items(exercises) {
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(text = it.name, fontWeight = FontWeight.Bold)
-                        Text(
-                            text = if(it.description.length>50) it.description.substring(0,40)+"..." else it.description,
-                            modifier = Modifier.fillMaxWidth(0.8f)
-                        )
-                    }
-                    Icon(imageVector = Icons.TwoTone.Edit,
-                        contentDescription = "editar",
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clickable { viewModel.clickToEdit(it) })
-                }
+            items(exercises) { exercise ->
+                ExerciseItem(item = exercise,onEditClick = { viewModel.clickToEdit(exercise) }, onClick = { viewModel.clickToObserve(exercise) })
             }
         }
     }
 
+}
+
+@Composable
+fun ExerciseItem( item: ExerciseModel, onEditClick: () -> Unit, onClick: () -> Unit = {}) {
+
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.clickable { onClick() }) {
+            Text(
+                text = item.name,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                modifier = Modifier.fillMaxWidth(0.8f)
+            )
+            Text(
+                text = if (item.description.length > 50) item.description.substring(0, 40) + "..."
+                else item.description, modifier = Modifier.fillMaxWidth(0.8f)
+            )
+        }
+        Icon(imageVector = Icons.TwoTone.Edit,
+            contentDescription = "editar",
+            modifier = Modifier
+                .size(40.dp)
+                .clickable { onEditClick() })
+    }
 }
 
 @Composable
@@ -182,7 +126,7 @@ fun ExercisesContainer(
     viewModel: MainViewModel,
     content: @Composable (PaddingValues) -> Unit
 ) {
-    Scaffold(modifier = Modifier.padding(32.dp), containerColor = PrimaryColor, topBar = {
+    Scaffold(modifier = Modifier.padding(16.dp), containerColor = PrimaryColor, topBar = {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterHorizontally),
@@ -225,11 +169,14 @@ fun ExercisesContainer(
 }
 
 @Composable
-fun TextFieldWithTitle(title: String, onWrite: (String) -> Unit, text: String) {
+fun TextFieldWithTitle(
+    title: String, onWrite: (String) -> Unit = {}, text: String, editing: Boolean = true
+) {
 
     Text(text = title)
     TextField(
         value = text,
+        enabled = editing,
         onValueChange = onWrite,
         colors = rutinAppTextFieldColors(),
         textStyle = TextStyle(fontWeight = FontWeight.Bold),
@@ -251,4 +198,113 @@ fun DialogContainer(content: @Composable ColumnScope.() -> Unit) {
             16.dp, Alignment.CenterVertically
         ), horizontalAlignment = Alignment.Start, content = content
     )
+}
+
+@Composable
+fun ModifyExerciseDialog(viewModel: MainViewModel, uiState: ExercisesState.Modifying) {
+
+    var name by rememberSaveable { mutableStateOf(uiState.exerciseModel.name) }
+    var description by rememberSaveable { mutableStateOf(uiState.exerciseModel.description) }
+    var targetedBodyPart by rememberSaveable { mutableStateOf(uiState.exerciseModel.targetedBodyPart) }
+    Dialog(onDismissRequest = { viewModel.backToObserve() }) {
+
+        DialogContainer {
+
+            TextFieldWithTitle(title = "Nombre", onWrite = { name = it }, text = name)
+            TextFieldWithTitle(
+                title = "Descripción", onWrite = { description = it }, text = description
+            )
+            TextFieldWithTitle(
+                title = "Parte del cuerpo",
+                onWrite = { targetedBodyPart = it },
+                text = targetedBodyPart
+            )
+
+            Row(
+                horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxWidth()
+            ) {
+                Button(onClick = {
+                    viewModel.updateExercise(
+                        name, description, targetedBodyPart
+                    )
+                }, colors = rutinAppButtonsColours()) {
+                    Text(text = "Guardar")
+                }
+                Button(
+                    onClick = { viewModel.backToObserve() }, colors = rutinAppButtonsColours()
+                ) {
+                    Text(text = "Salir")
+                }
+            }
+
+        }
+
+    }
+}
+
+@Composable
+fun CreateExerciseDialog(viewModel: MainViewModel) {
+
+    var name by rememberSaveable { mutableStateOf("") }
+    var description by rememberSaveable { mutableStateOf("") }
+    var targetedBodyPart by rememberSaveable { mutableStateOf("") }
+    Dialog(onDismissRequest = { viewModel.backToObserve() }) {
+        DialogContainer {
+
+            TextFieldWithTitle(title = "Nombre", onWrite = { name = it }, text = name)
+            TextFieldWithTitle(
+                title = "Descripción", onWrite = { description = it }, text = description
+            )
+            TextFieldWithTitle(
+                title = "Parte del cuerpo",
+                onWrite = { targetedBodyPart = it },
+                text = targetedBodyPart
+            )
+            Button(
+                onClick = {
+                    viewModel.addExercise(
+                        name, description, targetedBodyPart
+                    )
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentWidth(align = Alignment.CenterHorizontally),
+                colors = rutinAppButtonsColours()
+            ) {
+                Text(text = "Añadir ejercicio")
+            }
+
+        }
+    }
+}
+
+@Composable
+fun ObserveExerciseDialog(viewModel: MainViewModel, uiState: ExercisesState.Observe) {
+    Dialog(onDismissRequest = { viewModel.backToObserve() }) {
+
+        DialogContainer {
+
+            TextFieldWithTitle(title = "Nombre", text = uiState.exercise!!.name, editing = false)
+            TextFieldWithTitle(
+                title = "Descripción", text = uiState.exercise.description, editing = false
+            )
+            TextFieldWithTitle(
+                title = "Parte del cuerpo",
+                text = uiState.exercise.targetedBodyPart,
+                editing = false
+            )
+
+            Row(
+                horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxWidth()
+            ) {
+                Button(
+                    onClick = { viewModel.backToObserve() }, colors = rutinAppButtonsColours()
+                ) {
+                    Text(text = "Salir")
+                }
+            }
+
+        }
+
+    }
 }

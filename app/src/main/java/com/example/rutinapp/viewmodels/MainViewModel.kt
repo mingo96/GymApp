@@ -35,14 +35,14 @@ class MainViewModel @Inject constructor(
 
     val exercisesState : StateFlow<List<ExerciseModel>> =getExercisesUseCase().catch { Error(it) }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    private val _uiState : MutableLiveData<ExercisesState> = MutableLiveData(ExercisesState.Observe)
+    private val _uiState : MutableLiveData<ExercisesState> = MutableLiveData(ExercisesState.Observe())
 
     val uiState : LiveData<ExercisesState> = _uiState
 
     fun addExercise(name: String, description : String, targetedBodyPart : String) {
         viewModelScope.launch(context = Dispatchers.IO){
             addExerciseUseCase(ExerciseModel(name = name, description = description, targetedBodyPart = targetedBodyPart))
-            _uiState.postValue(ExercisesState.Observe)
+            _uiState.postValue(ExercisesState.Observe())
         }
     }
 
@@ -61,7 +61,7 @@ class MainViewModel @Inject constructor(
     }
 
     fun backToObserve() {
-        _uiState.value = ExercisesState.Observe
+        _uiState.value = ExercisesState.Observe()
     }
 
     fun updateExercise(name: String, description: String, targetedBodyPart: String) {
@@ -72,6 +72,10 @@ class MainViewModel @Inject constructor(
 
     fun clickToCreate() {
         _uiState.value = ExercisesState.Creating
+    }
+
+    fun clickToObserve( exercise: ExerciseModel) {
+        _uiState.value = ExercisesState.Observe(exercise)
     }
 
 }
