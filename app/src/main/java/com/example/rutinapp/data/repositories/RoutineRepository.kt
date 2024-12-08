@@ -1,5 +1,6 @@
 package com.example.rutinapp.data.repositories
 
+import android.util.Log
 import com.example.rutinapp.data.daos.ExerciseEntity
 import com.example.rutinapp.data.daos.RoutineDao
 import com.example.rutinapp.data.daos.RoutineEntity
@@ -21,9 +22,7 @@ fun RoutineEntity.toModel(): RoutineModel {
 
 fun RoutineModel.toEntity(): RoutineEntity {
     return RoutineEntity(
-        routineId = this.id,
-        name = this.name,
-        targetedBodyPart = this.targetedBodyPart
+        routineId = this.id, name = this.name, targetedBodyPart = this.targetedBodyPart
     )
 }
 
@@ -45,8 +44,23 @@ class RoutineRepository @Inject constructor(
         routineDao.addRoutine(routine)
     }
 
-    suspend fun relateExerciseToRoutine(routineId: Long, exerciseId: Long) {
-        routineExerciseDao.addRoutineExercise(RoutineExerciseEntity(routineId, exerciseId))
+    suspend fun relateExerciseToRoutine(routineid : Int, exerciseId: Int, position: Int) {
+        Log.i("relateExerciseToRoutine", "relateExerciseToRoutine: $routineid $exerciseId $position")
+        routineExerciseDao.addRoutineExercise(
+            RoutineExerciseEntity(
+                routineid, exerciseId, position
+            )
+        )
+    }
+
+    suspend fun deleteRoutineExerciseRelation(routine : Int, exerciseId: Int, position: Int) {
+
+        routineExerciseDao.deleteRoutineExercise(
+            RoutineExerciseEntity(
+                routine, exerciseId, position
+            )
+        )
+
     }
 
 }

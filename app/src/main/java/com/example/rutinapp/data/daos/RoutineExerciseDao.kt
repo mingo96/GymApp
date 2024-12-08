@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.Insert
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
@@ -20,11 +21,11 @@ import kotlinx.coroutines.flow.Flow
         parentColumns = ["routineId"],
         childColumns = ["routineId"],
         onDelete = ForeignKey.CASCADE
-    )]
+    )],
+    indices = [Index("routineId"), Index("exerciseId"), Index("position")]
 )
-
 data class RoutineExerciseEntity(
-    val routineId: Long, val exerciseId: Long
+    val routineId: Int, val exerciseId: Int, var position: Int
 )
 
 @Dao
@@ -39,7 +40,7 @@ interface RoutineExerciseDao {
     @Query("SELECT * FROM RoutineExerciseEntity WHERE routineId = :exerciseId")
     fun getRoutineExercisesByExerciseId(exerciseId: Long): Flow<List<RoutineExerciseEntity>>
 
-    @Insert
+    @Insert(entity = RoutineExerciseEntity::class)
     suspend fun addRoutineExercise(routineExercise: RoutineExerciseEntity)
 
     @Delete

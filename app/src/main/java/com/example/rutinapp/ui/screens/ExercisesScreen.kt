@@ -182,6 +182,7 @@ fun ExercisesContainer(
         Button(
             onClick = { viewModel.clickToCreate() },
             colors = rutinAppButtonsColours(),
+            modifier = Modifier.fillMaxWidth()
         ) {
             Text(
                 text = "Añadir ejercicio", fontWeight = FontWeight.Bold, fontSize = 16.sp

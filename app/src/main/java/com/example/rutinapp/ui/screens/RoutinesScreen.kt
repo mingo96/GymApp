@@ -1,6 +1,8 @@
 package com.example.rutinapp.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -15,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,7 +29,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.capitalize
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -35,10 +37,11 @@ import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.example.rutinapp.data.models.ExerciseModel
 import com.example.rutinapp.data.models.RoutineModel
 import com.example.rutinapp.ui.screenStates.RoutinesScreenState
 import com.example.rutinapp.ui.theme.PrimaryColor
-import com.example.rutinapp.ui.theme.SecondaryColor
+import com.example.rutinapp.ui.theme.TextFieldColor
 import com.example.rutinapp.ui.theme.rutinAppButtonsColours
 import com.example.rutinapp.ui.theme.rutinappCardColors
 import com.example.rutinapp.viewmodels.RoutinesViewModel
@@ -75,7 +78,12 @@ fun RoutinesScreen(viewModel: RoutinesViewModel, navController: NavHostControlle
             items(routines.map { it.targetedBodyPart.capitalize() }.distinct()) { thisBodyPart ->
 
                 Column() {
-                    Text(text = thisBodyPart, fontWeight = FontWeight.Bold, fontSize = 20.sp, textDecoration = TextDecoration.Underline)
+                    Text(
+                        text = thisBodyPart,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        textDecoration = TextDecoration.Underline
+                    )
                     LazyRow {
                         items(routines.filter { it.targetedBodyPart.capitalize() == thisBodyPart }) {
                             RoutineCard(routine = it)
@@ -130,7 +138,12 @@ fun CreateRoutineDialog(uiState: RoutinesScreenState.Creating, viewModel: Routin
                     onNextPhase = { name, targetedBodyPart ->
                         viewModel.createRoutine(name, targetedBodyPart)
                     })
-            }else{
+            } else {
+
+                CreateRoutineContentPhase2(onDismissRequest = { viewModel.backToObserve() },
+                    toggleExercise = { viewModel.toggleExerciseRelation(it) },
+                    uiState = uiState
+                )
 
             }
         }
@@ -171,6 +184,45 @@ fun CreateRoutineContentPhase1(
 }
 
 @Composable
+fun CreateRoutineContentPhase2(
+    onDismissRequest: () -> Unit,
+    toggleExercise: (ExerciseModel) -> Unit,
+    uiState: RoutinesScreenState.Creating
+) {
+
+    LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        item {
+            Text(
+                text = "Ejercicios para la rutina",
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp
+            )
+        }
+        if (uiState.availableExercises!!.isEmpty()) item {
+            Text(
+                text = "No hay ejercicios disponibles",
+                color = Color.Red,
+                modifier = Modifier.padding(16.dp)
+            )
+        }
+        else items(items = uiState.availableExercises, key = { it.first.id }) {
+            ExerciseItem(
+                item = it.first,
+                onEditClick = { toggleExercise(it.first) },
+                selected = it.second,
+                modifier = Modifier
+                    .animateItem()
+                    .background(TextFieldColor, RoundedCornerShape(15.dp))
+                    .padding(8.dp)
+            )
+
+        }
+
+    }
+
+}
+
+@Composable
 fun RoutineCard(routine: RoutineModel) {
     Card(
         shape = RoundedCornerShape(15.dp),
@@ -181,4 +233,27 @@ fun RoutineCard(routine: RoutineModel) {
     ) {
         Text(text = routine.name, modifier = Modifier.padding(16.dp))
     }
+}
+
+@Composable
+fun ExerciseItem(
+    item: ExerciseModel, onEditClick: () -> Unit, selected: Boolean, modifier: Modifier
+) {
+
+    Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Column() {
+            Text(
+                text = item.name,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                modifier = Modifier.fillMaxWidth(0.8f)
+            )
+            Text(
+                text = if (item.description.length > 50) item.description.substring(0, 40) + "..."
+                else item.description, modifier = Modifier.fillMaxWidth(0.8f)
+            )
+        }
+        Checkbox(checked = selected, onCheckedChange = { onEditClick() })
+    }
+
 }

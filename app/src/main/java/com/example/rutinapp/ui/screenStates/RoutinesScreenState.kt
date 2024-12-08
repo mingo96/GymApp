@@ -7,7 +7,7 @@ sealed interface RoutinesScreenState {
 
     data object Observe : RoutinesScreenState
 
-    data class Creating(val routine: RoutineModel? = null, val availableExercises : List<ExerciseModel>? = null) : RoutinesScreenState
+    data class Creating(val routine: RoutineModel? = null, val availableExercises : List<Pair<ExerciseModel, Boolean>>? = null) : RoutinesScreenState
 
     data class Editing(val routine: RoutineModel) : RoutinesScreenState
 

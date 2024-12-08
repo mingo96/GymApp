@@ -20,7 +20,7 @@ import com.example.rutinapp.data.daos.WorkOutEntity
 @Database(
     entities = [ExerciseEntity::class, ExerciseToExerciseEntity::class, RoutineEntity::class, RoutineExerciseEntity::class, SetEntity::class, SetsWorkoutEntity::class, WorkOutEntity::class],
     version = 1,
-    exportSchema = false
+    exportSchema = false,
 )
 abstract class RutinAppDatabase : RoomDatabase() {
 
