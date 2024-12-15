@@ -20,6 +20,8 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.twotone.Add
@@ -39,9 +41,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -115,7 +122,7 @@ fun AddRelationsDialog(
     Dialog(onDismissRequest = { viewModel.backToObserve() }) {
 
         DialogContainer {
-            Text(text = "Añadir ejercicios relacionados")
+            Text(text = "Añadir ejercicios relacionados", fontWeight = FontWeight.Bold, fontSize = 20.sp)
             LazyVerticalGrid(
                 columns = GridCells.Adaptive(100.dp),
                 modifier = Modifier
@@ -126,7 +133,7 @@ fun AddRelationsDialog(
             ) {
                 if (addingRelations.possibleValues.isNotEmpty()) {
                     items(addingRelations.possibleValues) {
-                        Text(text = it.name + it.id, maxLines = 1, modifier = Modifier.clickable {
+                        Text(text = it.name, maxLines = 1, modifier = Modifier.clickable {
                             viewModel.toggleExercisesRelation(it)
                         })
                     }
@@ -135,6 +142,10 @@ fun AddRelationsDialog(
                         Text(text = "No hay ejercicios disponibles")
                     }
                 }
+            }
+
+            Button(onClick = { viewModel.clickToEdit(addingRelations.exerciseModel) }, colors = rutinAppButtonsColours(), modifier = Modifier.fillMaxWidth()) {
+                Text(text = "Volver")
             }
         }
 
@@ -220,8 +231,14 @@ fun TopBar(navController: NavController, text: String) {
 
 @Composable
 fun TextFieldWithTitle(
-    title: String, onWrite: (String) -> Unit = {}, text: String, editing: Boolean = true
+    title: String,
+    onWrite: (String) -> Unit = {},
+    text: String,
+    editing: Boolean = true,
+    sendFunction: (() -> Unit)? = null
 ) {
+
+    val focusManager = LocalFocusManager.current
 
     Text(text = title)
     TextField(
@@ -233,7 +250,18 @@ fun TextFieldWithTitle(
         shape = RoundedCornerShape(15.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .wrapContentWidth(align = Alignment.CenterHorizontally)
+            .wrapContentWidth(align = Alignment.CenterHorizontally),
+        keyboardOptions = KeyboardOptions(
+            imeAction = if (sendFunction == null) ImeAction.Next else ImeAction.Done,
+            keyboardType = KeyboardType.Text,
+            capitalization = KeyboardCapitalization.Sentences,
+            autoCorrectEnabled = true
+        ),
+        keyboardActions = KeyboardActions(onDone = {
+            if (sendFunction != null) sendFunction() else focusManager.moveFocus(
+                FocusDirection.Down
+            )
+        }),
     )
 }
 
@@ -261,15 +289,30 @@ fun ModifyExerciseDialog(viewModel: ExercisesViewModel, uiState: ExercisesState.
 
         DialogContainer {
 
-            TextFieldWithTitle(title = "Nombre", onWrite = { name = it }, text = name)
-            TextFieldWithTitle(
-                title = "Descripción", onWrite = { description = it }, text = description
-            )
-            TextFieldWithTitle(
-                title = "Parte del cuerpo",
+            TextFieldWithTitle(title = "Nombre",
+                onWrite = { name = it },
+                text = name,
+                sendFunction = {
+                    viewModel.updateExercise(
+                        name, description, targetedBodyPart
+                    )
+                })
+            TextFieldWithTitle(title = "Descripción",
+                onWrite = { description = it },
+                text = description,
+                sendFunction = {
+                    viewModel.updateExercise(
+                        name, description, targetedBodyPart
+                    )
+                })
+            TextFieldWithTitle(title = "Parte del cuerpo",
                 onWrite = { targetedBodyPart = it },
-                text = targetedBodyPart
-            )
+                text = targetedBodyPart,
+                sendFunction = {
+                    viewModel.updateExercise(
+                        name, description, targetedBodyPart
+                    )
+                })
 
 
             Text(text = "Ejercicios relacionados")
@@ -295,7 +338,7 @@ fun ModifyExerciseDialog(viewModel: ExercisesViewModel, uiState: ExercisesState.
                         horizontalArrangement = Arrangement.SpaceBetween,
                         modifier = Modifier.padding(horizontal = 8.dp)
                     ) {
-                        Text(text = it.name, Modifier.fillMaxWidth(0.8f), maxLines = 2)
+                        Text(text = it.name, Modifier.fillMaxWidth(0.8f).clickable { viewModel.clickToObserve(it) }, maxLines = 2)
                         IconButton(onClick = { viewModel.toggleExercisesRelation(it) }) {
                             Icon(
                                 imageVector = Icons.TwoTone.Delete, contentDescription = "Unrelate"
@@ -340,11 +383,10 @@ fun CreateExerciseDialog(viewModel: ExercisesViewModel) {
             TextFieldWithTitle(
                 title = "Descripción", onWrite = { description = it }, text = description
             )
-            TextFieldWithTitle(
-                title = "Parte del cuerpo",
+            TextFieldWithTitle(title = "Parte del cuerpo",
                 onWrite = { targetedBodyPart = it },
-                text = targetedBodyPart
-            )
+                text = targetedBodyPart,
+                sendFunction = { viewModel.addExercise(name, description, targetedBodyPart) })
             Button(
                 onClick = {
                     viewModel.addExercise(
@@ -391,7 +433,7 @@ fun ObserveExerciseDialog(viewModel: ExercisesViewModel, uiState: ExercisesState
                 ) {
                     items(uiState.exercise.equivalentExercises) {
                         Text(
-                            text = it.name, maxLines = 2
+                            text = it.name, maxLines = 2, modifier = Modifier.clickable {viewModel.clickToObserve(it)}
                         )
                     }
                 }

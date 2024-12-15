@@ -40,27 +40,33 @@ class RoutineRepository @Inject constructor(
         return relatedExercises.map { exerciseRepository.getExercise(it.toString()) }
     }
 
+    suspend fun getExercisesOrder(routineId: Long): List<Triple<Int, String, String>> {
+        val relatedExercises = routineExerciseDao.getRoutineExercisesByRoutineId(routineId).first()
+            .map { Triple(it.exerciseId, it.statedSetsAndReps, it.observations) }
+        return relatedExercises
+    }
+
     suspend fun addRoutine(routine: RoutineEntity) {
         routineDao.addRoutine(routine)
     }
 
-    suspend fun relateExerciseToRoutine(routineid : Int, exerciseId: Int, position: Int) {
-        Log.i("relateExerciseToRoutine", "relateExerciseToRoutine: $routineid $exerciseId $position")
+    suspend fun relateExerciseToRoutine(routineid : Int, exerciseId: Int) {
+
         routineExerciseDao.addRoutineExercise(
             RoutineExerciseEntity(
-                routineid, exerciseId, position
+                routineid, exerciseId
             )
         )
     }
 
-    suspend fun deleteRoutineExerciseRelation(routine : Int, exerciseId: Int, position: Int) {
+    suspend fun deleteRoutineExerciseRelation(routine : Int, exerciseId: Int) {
 
-        routineExerciseDao.deleteRoutineExercise(
-            RoutineExerciseEntity(
-                routine, exerciseId, position
-            )
-        )
+        routineExerciseDao.deleteRoutineExercise(routine, exerciseId)
 
+    }
+
+    suspend fun updateRoutineExerciseRelation(relation: RoutineExerciseEntity) {
+        routineExerciseDao.updateRoutineExercise(relation)
     }
 
 }

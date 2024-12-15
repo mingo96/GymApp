@@ -16,14 +16,22 @@ class GetRoutinesUseCase @Inject constructor(
         return routinesRepository.routines.map { items ->
             items.map { routineEntity ->
                 routineEntity.toModel().apply {
-                    exercises = routinesRepository.getExercisesForRoutine(routineEntity.routineId.toLong())
-                        .map { it.toModel() }.toMutableList()
+                    exercises =
+                        routinesRepository.getExercisesForRoutine(routineEntity.routineId.toLong())
+                            .map { it.toModel() }.toMutableList()
 
                     exercises.forEach {
                         it.equivalentExercises =
                             exerciseRepository.getRelatedExercises(it.id).map { it.toModel() }
                     }
 
+                    val orderOfIds = routinesRepository.getExercisesOrder(routineEntity.routineId.toLong())
+
+                    exercises.forEach {exercise ->
+                        val relation = orderOfIds.find { it.first == exercise.id.toInt() }!!
+                        exercise.setsAndReps =relation.second
+                        exercise.observations = relation.third
+                    }
                 }
             }
         }

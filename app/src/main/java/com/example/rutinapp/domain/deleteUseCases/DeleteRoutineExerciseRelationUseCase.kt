@@ -9,7 +9,7 @@ import javax.inject.Inject
 class DeleteRoutineExerciseRelationUseCase @Inject constructor(private val routineRepository: RoutineRepository) {
 
     suspend operator fun invoke(routineModel: RoutineModel, exerciseModel: ExerciseModel) {
-        routineRepository.deleteRoutineExerciseRelation(routineModel.id, exerciseModel.id.toInt(), routineModel.exercises.indexOf(exerciseModel))
+        routineRepository.deleteRoutineExerciseRelation(routineModel.id, exerciseModel.id.toInt())
     }
 
 }

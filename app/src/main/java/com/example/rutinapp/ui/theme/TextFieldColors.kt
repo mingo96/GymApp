@@ -18,7 +18,9 @@ fun rutinAppTextFieldColors(): TextFieldColors {
         unfocusedLabelColor = Color.White.copy(0.5f),
         cursorColor = SecondaryColor,
         disabledTextColor = Color.LightGray.copy(0.85f),
-        disabledContainerColor = TextFieldColor
+        disabledContainerColor = TextFieldColor,
+        disabledIndicatorColor = Color.Transparent,
+
 
     )
 }

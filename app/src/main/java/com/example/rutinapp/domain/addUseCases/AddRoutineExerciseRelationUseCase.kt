@@ -8,6 +8,6 @@ import javax.inject.Inject
 class AddRoutineExerciseRelationUseCase @Inject constructor(private val routineRepository: RoutineRepository) {
 
     suspend operator fun invoke(routine : RoutineModel, exercise : ExerciseModel){
-        routineRepository.relateExerciseToRoutine(routine.id, exercise.id.toInt(), routine.exercises.size)
+        routineRepository.relateExerciseToRoutine(routine.id, exercise.id.toInt())
     }
 }
