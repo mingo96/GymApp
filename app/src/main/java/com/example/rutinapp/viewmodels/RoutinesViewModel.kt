@@ -1,6 +1,5 @@
 package com.example.rutinapp.viewmodels
 
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -16,7 +15,6 @@ import com.example.rutinapp.domain.updateUseCases.UpdateRoutineExerciseRelationU
 import com.example.rutinapp.ui.screenStates.RoutinesScreenState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -149,13 +147,15 @@ class RoutinesViewModel @Inject constructor(
 
     }
 
-    fun toggleEditingState() {
+    fun toggleEditingState(comesFromExercises : Boolean = false) {
         val actualState = _uiState.value as RoutinesScreenState.Editing
         _uiState.postValue(
-            RoutinesScreenState.Editing(actualState.routine,
+            RoutinesScreenState.Editing(
+                actualState.routine,
                 positionOfScreen = !actualState.positionOfScreen,
                 availableExercises = relatedExercisesByBodyPart(actualState.routine).filter { it.id !in actualState.routine.exercises.map { it.id } },
-                selectedExercise = actualState.selectedExercise)
+                selectedExercise = if(comesFromExercises) actualState.selectedExercise else null
+            )
         )
     }
 
@@ -198,12 +198,31 @@ class RoutinesViewModel @Inject constructor(
         )
     }
 
-    fun updateRoutineExerciseRelation(setsAndReps : String, observations : String){
+    fun updateRoutineExerciseRelation(setsAndReps: String, observations: String) {
         val actualState = _uiState.value as RoutinesScreenState.Editing
-        viewModelScope.launch(Dispatchers.IO){
-            updateRoutineExerciseRelationUseCase(actualState.routine, actualState.selectedExercise!!, setsAndReps, observations)
 
+        if (actualState.selectedExercise != null && (actualState.selectedExercise.setsAndReps != setsAndReps || actualState.selectedExercise.observations != observations)) {
+            viewModelScope.launch(
+                Dispatchers.IO
+            ) {
+                updateRoutineExerciseRelationUseCase(
+                    actualState.routine,
+                    actualState.selectedExercise.apply {
+                        this.setsAndReps = setsAndReps
+                        this.observations = observations
+                    })
+
+            }
         }
+        _uiState.postValue(
+            RoutinesScreenState.Editing(
+                actualState.routine,
+                actualState.availableExercises,
+                actualState.positionOfScreen,
+                null
+            )
+        )
+        toggleEditingState(true)
     }
 
 }

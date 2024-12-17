@@ -9,9 +9,9 @@ import javax.inject.Inject
 class UpdateRoutineExerciseRelationUseCase @Inject constructor(private val routineRepository: RoutineRepository) {
 
     suspend operator fun invoke(
-        routine: RoutineModel, exercise: ExerciseModel, setsAndReps: String, observations: String
+        routine: RoutineModel, exercise: ExerciseModel
     ) {
-        val relation = RoutineExerciseEntity(routine.id, exercise.id.toInt(), setsAndReps, observations)
+        val relation = RoutineExerciseEntity(routine.id, exercise.id.toInt(), exercise.setsAndReps, exercise.observations)
         routineRepository.updateRoutineExerciseRelation(relation)
     }
 

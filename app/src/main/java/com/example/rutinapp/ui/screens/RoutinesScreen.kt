@@ -28,6 +28,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.twotone.Add
+import androidx.compose.material.icons.twotone.ArrowBack
+import androidx.compose.material.icons.twotone.Check
 import androidx.compose.material.icons.twotone.Delete
 import androidx.compose.material.icons.twotone.Edit
 import androidx.compose.material.icons.twotone.KeyboardArrowDown
@@ -65,6 +67,7 @@ import com.example.rutinapp.ui.theme.TextFieldColor
 import com.example.rutinapp.ui.theme.rutinAppButtonsColours
 import com.example.rutinapp.ui.theme.rutinappCardColors
 import com.example.rutinapp.viewmodels.RoutinesViewModel
+import java.util.Locale
 import kotlin.math.max
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -98,7 +101,8 @@ fun RoutinesScreen(viewModel: RoutinesViewModel, navController: NavHostControlle
 
     RoutinesContainer(navController = navController, viewModel = viewModel) {
         LazyColumn(modifier = Modifier.padding(it)) {
-            items(routines.map { it.targetedBodyPart.capitalize() }.distinct()) { thisBodyPart ->
+            items(routines.map { it.targetedBodyPart.capitalize(Locale.ROOT) }
+                .distinct()) { thisBodyPart ->
 
                 Column() {
                     Text(
@@ -108,7 +112,7 @@ fun RoutinesScreen(viewModel: RoutinesViewModel, navController: NavHostControlle
                         textDecoration = TextDecoration.Underline
                     )
                     LazyRow {
-                        items(routines.filter { it.targetedBodyPart.capitalize() == thisBodyPart }) {
+                        items(routines.filter { it.targetedBodyPart.capitalize(Locale.ROOT) == thisBodyPart }) {
                             RoutineCard(
                                 routine = it, modifier = Modifier.combinedClickable(onClick = {
                                     viewModel.clickObserveRoutine(it)
@@ -171,11 +175,24 @@ fun EditRoutineExerciseRelation(
     )
 
     if (manualEdition) {
-        TextFieldWithTitle(title = "Series y repeticiones", text = setsAndReps)
+        TextFieldWithTitle(
+            title = "Series y repeticiones",
+            text = setsAndReps,
+            onWrite = { setsAndReps = it })
     } else {
-        Row (horizontalArrangement = Arrangement.SpaceEvenly){
-            Text(text = "Sets", modifier = Modifier.fillMaxWidth(0.5f).wrapContentWidth(align = Alignment.CenterHorizontally))
-            Text(text = "Repeticiones", Modifier.fillMaxWidth().wrapContentWidth(align = Alignment.CenterHorizontally))
+        Row(horizontalArrangement = Arrangement.SpaceEvenly) {
+            Text(
+                text = "Sets",
+                modifier = Modifier
+                    .fillMaxWidth(0.5f)
+                    .wrapContentWidth(align = Alignment.CenterHorizontally)
+            )
+            Text(
+                text = "Repeticiones",
+                Modifier
+                    .fillMaxWidth()
+                    .wrapContentWidth(align = Alignment.CenterHorizontally)
+            )
         }
         Row(
             Modifier
@@ -212,6 +229,35 @@ fun EditRoutineExerciseRelation(
         }
     }
 
+    TextFieldWithTitle(title = "Observaciones",
+        text = observations,
+        onWrite = { observations = it })
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Button(
+            onClick = { viewModel.updateRoutineExerciseRelation(setsAndReps, observations) },
+            colors = rutinAppButtonsColours(),
+            modifier = Modifier.weight(1f)
+        ) {
+            Icon(
+                imageVector = if (uiState.selectedExercise.setsAndReps == setsAndReps && uiState.selectedExercise.observations == observations) Icons.TwoTone.ArrowBack else Icons.TwoTone.Check,
+                contentDescription = "Delete exercise"
+            )
+        }
+        Button(onClick = {
+            manualEdition = !manualEdition
+            if (!setsAndReps.isSetsAndReps()) {
+                setsAndReps = "0x0"
+            }
+        }, colors = rutinAppButtonsColours()) {
+            Text(text = "Cambiar modo de escritura")
+        }
+    }
+
 }
 
 fun String.isSetsAndReps(): Boolean {
@@ -226,12 +272,10 @@ fun String.changeValue(firstValue: Boolean, addOrDelete: Boolean): String {
     if (this.isSetsAndReps()) {
         var firstNumber = this.split("x")[0].toInt()
         var secondNumber = this.split("x")[1].toInt()
-        if (firstValue)
-            if (addOrDelete) firstNumber++
-            else firstNumber--
-        else
-            if (addOrDelete) secondNumber++
-            else secondNumber--
+        if (firstValue) if (addOrDelete) firstNumber++
+        else firstNumber--
+        else if (addOrDelete) secondNumber++
+        else secondNumber--
         return "${max(firstNumber, 0)}x${max(secondNumber, 0)}"
     } else return ""
 }
@@ -260,7 +304,11 @@ fun EditRoutineExercises(uiState: RoutinesScreenState.Editing, viewModel: Routin
                 )
             }
 
-            if (uiState.selectedExercise in uiState.routine.exercises) IconButton(onClick = { viewModel.toggleEditingState() }) {
+            if (uiState.selectedExercise in uiState.routine.exercises) IconButton(onClick = {
+                viewModel.toggleEditingState(
+                    true
+                )
+            }) {
                 Icon(
                     imageVector = Icons.TwoTone.Edit, contentDescription = "Edit selected exercise"
                 )
@@ -278,7 +326,12 @@ fun EditRoutineExercises(uiState: RoutinesScreenState.Editing, viewModel: Routin
     }
 
     Button(onClick = { viewModel.toggleEditingState() }, colors = rutinAppButtonsColours()) {
-        Text(text = "Ir a rutina")
+        Text(
+            text = "Ir a rutina",
+            Modifier
+                .fillMaxWidth()
+                .wrapContentWidth(Alignment.CenterHorizontally)
+        )
     }
 
 }
@@ -305,7 +358,7 @@ fun ListOfExercises(
             .heightIn(max = 200.dp), verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         if (exercises.isEmpty()) item {
-            Text(text = "No hay ejercicios en esta rutina", color = Color.Red)
+            Text(text = "No hay ejercicios disponibles", color = Color.Red)
         } else items(exercises, contentType = { ExerciseModel::class.java }) {
 
             ExerciseItemForRoutineEditing(
@@ -452,7 +505,8 @@ fun CreateRoutineDialog(uiState: RoutinesScreenState.Creating, viewModel: Routin
                     })
             } else {
 
-                RelateExercisesPhase(onDismissRequest = { viewModel.backToObserve() },
+                RelateExercisesPhase(
+                    onDismissRequest = { viewModel.backToObserve() },
                     toggleExercise = { viewModel.toggleExerciseRelation(it) },
                     uiState = uiState
                 )
@@ -585,11 +639,13 @@ fun ExerciseItemForRoutineEditing(
             )
             Text(
                 text = if (item.description.length > 50 && !opened) item.description.substring(
-                    0, 40
+                    0, 50
                 ) + "..."
                 else item.description
             )
             if (opened) {
+                if (item.setsAndReps != "" && item.setsAndReps != "0x0") Text(text = "Series y repeticiones : ${item.setsAndReps}")
+                if (item.observations != "") Text(text = "Observaciones : ${item.observations}")
                 Text(text = "Parte del cuerpo : ${item.targetedBodyPart}")
                 if (item.equivalentExercises.isEmpty()) Text(text = "No hay ejercicios equivalentes")
                 else {
