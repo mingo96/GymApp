@@ -24,7 +24,7 @@ data class RoutineEntity(
 interface RoutineDao {
 
     @Query("SELECT * FROM RoutineEntity")
-    fun getAll(): Flow<List<RoutineEntity>>
+    fun getAllAsFlow(): Flow<List<RoutineEntity>>
 
     @Insert
     suspend fun addRoutine(routine: RoutineEntity)

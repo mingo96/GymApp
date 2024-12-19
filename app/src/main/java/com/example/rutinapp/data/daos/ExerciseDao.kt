@@ -47,10 +47,13 @@ data class ExerciseToExerciseEntity(
 interface ExerciseDao {
 
     @Query("SELECT * FROM ExerciseEntity")
-    fun getAll(): Flow<List<ExerciseEntity>>
+    fun getAllAsFlow(): Flow<List<ExerciseEntity>>
+
+    @Query("SELECT * FROM ExerciseEntity")
+    fun getAll(): List<ExerciseEntity>
 
     @Query("SELECT * FROM ExerciseEntity WHERE exerciseId = :id")
-    fun getById(id: Int): Flow<ExerciseEntity>
+    suspend fun getById(id: Int): ExerciseEntity
 
     @Insert
     suspend fun insert(item : ExerciseEntity)

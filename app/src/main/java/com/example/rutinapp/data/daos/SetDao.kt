@@ -8,7 +8,9 @@ import androidx.room.Insert
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Update
+import com.example.rutinapp.data.models.SetModel
 import kotlinx.coroutines.flow.Flow
+import java.util.Date
 
 
 @Entity(
@@ -27,7 +29,17 @@ data class SetEntity(
     val reps: Int,
     val date: String,
     var observations: String
-)
+){
+    fun toModel():SetModel{
+        return SetModel(
+            id = setId,
+            weight = weight,
+            reps = reps,
+            date = Date(date),
+            observations = observations
+        )
+    }
+}
 
 @Dao
 interface SetDao {
@@ -43,5 +55,8 @@ interface SetDao {
 
     @Update
     suspend fun updateSet(set: SetEntity)
+
+    @Query("SELECT * FROM SetEntity WHERE setId = :id")
+    fun getById(id: Int): SetEntity
 
 }

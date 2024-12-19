@@ -1,5 +1,6 @@
 package com.example.rutinapp.domain.getUseCases
 
+import android.util.Log
 import com.example.rutinapp.data.models.RoutineModel
 import com.example.rutinapp.data.repositories.ExerciseRepository
 import com.example.rutinapp.data.repositories.RoutineRepository
@@ -14,8 +15,9 @@ class GetRoutinesUseCase @Inject constructor(
 ) {
     operator fun invoke(): Flow<List<RoutineModel>> {
         return routinesRepository.routines.map { items ->
-            items.map { routineEntity ->
+            val result = items.map { routineEntity ->
                 routineEntity.toModel().apply {
+
                     exercises =
                         routinesRepository.getExercisesForRoutine(routineEntity.routineId.toLong())
                             .map { it.toModel() }.toMutableList()
@@ -34,6 +36,8 @@ class GetRoutinesUseCase @Inject constructor(
                     }
                 }
             }
+            Log.d("RoutinesTest", result.map { it.id }.joinToString(","))
+            result
         }
     }
 }

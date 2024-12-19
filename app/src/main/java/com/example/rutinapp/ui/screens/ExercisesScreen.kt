@@ -5,10 +5,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -30,7 +30,7 @@ import androidx.compose.material.icons.twotone.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -55,16 +55,19 @@ import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import com.example.rutinapp.data.models.ExerciseModel
 import com.example.rutinapp.ui.screenStates.ExercisesState
 import com.example.rutinapp.ui.theme.PrimaryColor
+import com.example.rutinapp.ui.theme.ScreenContainer
+import com.example.rutinapp.ui.theme.SecondaryColor
 import com.example.rutinapp.ui.theme.TextFieldColor
 import com.example.rutinapp.ui.theme.rutinAppButtonsColours
 import com.example.rutinapp.ui.theme.rutinAppTextFieldColors
 import com.example.rutinapp.viewmodels.ExercisesViewModel
 
 @Composable
-fun ExercisesScreen(viewModel: ExercisesViewModel, navController: NavController) {
+fun ExercisesScreen(viewModel: ExercisesViewModel, navController: NavHostController) {
 
     val lifecycle = LocalLifecycleOwner.current.lifecycle
 
@@ -96,7 +99,10 @@ fun ExercisesScreen(viewModel: ExercisesViewModel, navController: NavController)
         null -> {}
     }
 
-    ExercisesContainer(navController = navController, viewModel) { it ->
+    ScreenContainer(navController = navController,
+        buttonText = "Crear un ejercicio",
+        title = "Entrenamientos",
+        bottomButtonAction = { viewModel.clickToCreate() }) { it ->
         LazyColumn(
             Modifier
                 .fillMaxHeight()
@@ -122,7 +128,11 @@ fun AddRelationsDialog(
     Dialog(onDismissRequest = { viewModel.backToObserve() }) {
 
         DialogContainer {
-            Text(text = "Añadir ejercicios relacionados", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+            Text(
+                text = "Añadir ejercicios relacionados",
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp
+            )
             LazyVerticalGrid(
                 columns = GridCells.Adaptive(100.dp),
                 modifier = Modifier
@@ -144,7 +154,11 @@ fun AddRelationsDialog(
                 }
             }
 
-            Button(onClick = { viewModel.clickToEdit(addingRelations.exerciseModel) }, colors = rutinAppButtonsColours(), modifier = Modifier.fillMaxWidth()) {
+            Button(
+                onClick = { viewModel.clickToEdit(addingRelations.exerciseModel) },
+                colors = rutinAppButtonsColours(),
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Text(text = "Volver")
             }
         }
@@ -182,49 +196,37 @@ fun ExerciseItem(item: ExerciseModel, onEditClick: () -> Unit, onClick: () -> Un
 }
 
 @Composable
-fun ExercisesContainer(
-    navController: NavController,
-    viewModel: ExercisesViewModel,
-    content: @Composable (PaddingValues) -> Unit
-) {
-    Scaffold(modifier = Modifier.padding(16.dp), containerColor = PrimaryColor, topBar = {
-        TopBar(navController = navController, "Ejercicios")
-    }, bottomBar = {
-        Button(
-            onClick = { viewModel.clickToCreate() },
-            colors = rutinAppButtonsColours(),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                text = "Añadir ejercicio", fontWeight = FontWeight.Bold, fontSize = 16.sp
-            )
-        }
-
-    }, content = content
-    )
-}
-
-@Composable
 fun TopBar(navController: NavController, text: String) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterHorizontally),
+    Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentHeight()
             .background(PrimaryColor)
     ) {
-        Icon(imageVector = Icons.Outlined.Clear,
-            contentDescription = "Exit",
-            Modifier
-                .clickable { navController.navigateUp() }
-                .size(40.dp))
-        Text(
-            text = text,
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterHorizontally),
             modifier = Modifier
                 .fillMaxWidth()
-                .wrapContentWidth(Alignment.CenterHorizontally),
-            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 24.sp)
+                .padding(24.dp)
+                .wrapContentHeight()
+        ) {
+            Icon(imageVector = Icons.Outlined.Clear,
+                contentDescription = "Exit",
+                Modifier
+                    .clickable { navController.navigateUp() }
+                    .size(40.dp))
+            Text(
+                text = text,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentWidth(Alignment.CenterHorizontally),
+                style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 24.sp)
+            )
+        }
+        LinearProgressIndicator(
+            progress = 1f, color = SecondaryColor, modifier = Modifier
+                .fillMaxWidth()
+                .height(2.dp)
         )
     }
 }
@@ -338,7 +340,13 @@ fun ModifyExerciseDialog(viewModel: ExercisesViewModel, uiState: ExercisesState.
                         horizontalArrangement = Arrangement.SpaceBetween,
                         modifier = Modifier.padding(horizontal = 8.dp)
                     ) {
-                        Text(text = it.name, Modifier.fillMaxWidth(0.8f).clickable { viewModel.clickToObserve(it) }, maxLines = 2)
+                        Text(
+                            text = it.name,
+                            Modifier
+                                .fillMaxWidth(0.8f)
+                                .clickable { viewModel.clickToObserve(it) },
+                            maxLines = 2
+                        )
                         IconButton(onClick = { viewModel.toggleExercisesRelation(it) }) {
                             Icon(
                                 imageVector = Icons.TwoTone.Delete, contentDescription = "Unrelate"
@@ -432,9 +440,9 @@ fun ObserveExerciseDialog(viewModel: ExercisesViewModel, uiState: ExercisesState
                     horizontalArrangement = Arrangement.Center
                 ) {
                     items(uiState.exercise.equivalentExercises) {
-                        Text(
-                            text = it.name, maxLines = 2, modifier = Modifier.clickable {viewModel.clickToObserve(it)}
-                        )
+                        Text(text = it.name,
+                            maxLines = 2,
+                            modifier = Modifier.clickable { viewModel.clickToObserve(it) })
                     }
                 }
             }

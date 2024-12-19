@@ -25,15 +25,15 @@ import kotlin.math.min
 
 @HiltViewModel
 class RoutinesViewModel @Inject constructor(
-    private val getRoutinesUseCase: GetRoutinesUseCase,
+    getRoutinesUseCase: GetRoutinesUseCase,
     private val createRoutineUseCase: AddRoutineUseCase,
-    private val getExercisesUseCase: GetExercisesUseCase,
+    getExercisesUseCase: GetExercisesUseCase,
     private val addRoutineExerciseRelationUseCase: AddRoutineExerciseRelationUseCase,
     private val deleteRoutineExerciseRelationUseCase: DeleteRoutineExerciseRelationUseCase,
     private val updateRoutineExerciseRelationUseCase: UpdateRoutineExerciseRelationUseCase
 ) : ViewModel() {
 
-    val routines: StateFlow<List<RoutineModel>> = getRoutinesUseCase().catch { Error(it) }
+    val routines: StateFlow<List<RoutineModel>> = getRoutinesUseCase().catch {Error(it)}
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val exercisesState: StateFlow<List<ExerciseModel>> =

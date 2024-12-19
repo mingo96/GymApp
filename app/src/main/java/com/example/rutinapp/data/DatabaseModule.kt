@@ -9,6 +9,7 @@ import com.example.rutinapp.data.daos.RoutineExerciseDao
 import com.example.rutinapp.data.daos.SetDao
 import com.example.rutinapp.data.daos.SetsWorkOutDao
 import com.example.rutinapp.data.daos.WorkOutDao
+import com.example.rutinapp.data.daos.WorkoutRoutinesDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -54,6 +55,11 @@ class DatabaseModule {
     @Provides
     fun provideWorkOutDao(database: RutinAppDatabase): WorkOutDao {
         return database.workoutDao()
+    }
+
+    @Provides
+    fun provideWorkoutRoutineDao(database: RutinAppDatabase): WorkoutRoutinesDao {
+        return database.workoutRoutineDao()
     }
 
     @Provides

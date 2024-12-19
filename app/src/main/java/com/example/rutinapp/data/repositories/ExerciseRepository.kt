@@ -1,5 +1,6 @@
 package com.example.rutinapp.data.repositories
 
+import android.util.Log
 import com.example.rutinapp.data.daos.ExerciseDao
 import com.example.rutinapp.data.daos.ExerciseEntity
 import com.example.rutinapp.data.daos.ExerciseToExerciseDao
@@ -29,7 +30,7 @@ class ExerciseRepository @Inject constructor(
     private val exerciseDao: ExerciseDao, private val exerciseToExerciseDao: ExerciseToExerciseDao
 ) {
 
-    val allExercises: Flow<List<ExerciseEntity>> = exerciseDao.getAll()
+    val allExercises: Flow<List<ExerciseEntity>> = exerciseDao.getAllAsFlow()
 
     suspend fun getRelatedExercises(id: String): List<ExerciseEntity> {
         val relatedOnes = exerciseToExerciseDao.getRelatedExercises(id.toInt()).first()
@@ -38,14 +39,14 @@ class ExerciseRepository @Inject constructor(
 
         if (relatedOnes.isNotEmpty()) {
             val ids = relatedOnes.map { if (it.exercise1Id == id.toInt()) it.exercise2Id else it.exercise1Id }
-            ids.forEach { result.add(exerciseDao.getById(it).first()) }
+            ids.forEach { result.add(exerciseDao.getById(it)) }
         }
 
         return result
     }
 
     suspend fun getExercise(id: String): ExerciseEntity {
-        return exerciseDao.getById(id.toInt()).first()
+        return exerciseDao.getById(id.toInt())
     }
 
     suspend fun addExercise(exercise: ExerciseEntity) {

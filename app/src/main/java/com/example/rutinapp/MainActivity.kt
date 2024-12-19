@@ -25,10 +25,12 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.rutinapp.ui.screens.ExercisesScreen
 import com.example.rutinapp.ui.screens.RoutinesScreen
+import com.example.rutinapp.ui.screens.WorkoutsScreen
 import com.example.rutinapp.ui.theme.PrimaryColor
 import com.example.rutinapp.ui.theme.RutinAppTheme
 import com.example.rutinapp.viewmodels.ExercisesViewModel
 import com.example.rutinapp.viewmodels.RoutinesViewModel
+import com.example.rutinapp.viewmodels.WorkoutsViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.HiltAndroidApp
 
@@ -40,6 +42,7 @@ class MainActivity : ComponentActivity() {
 
     private val exercisesViewModel: ExercisesViewModel by viewModels()
     private val routinesViewModel: RoutinesViewModel by viewModels()
+    private val workoutsViewModel: WorkoutsViewModel by viewModels()
 
     @SuppressLint("SourceLockedOrientationActivity")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -74,6 +77,9 @@ class MainActivity : ComponentActivity() {
                                 Button(onClick = { navController.navigate("routines") }) {
                                     Text(text = "Rutinas")
                                 }
+                                Button(onClick = { navController.navigate("workouts") }) {
+                                    Text(text = "entrenamientos")
+                                }
                             }
                         }
 
@@ -85,8 +91,8 @@ class MainActivity : ComponentActivity() {
                             RoutinesScreen(viewModel = routinesViewModel, navController = navController)
                         }
 
-                        composable("enter", enterTransition = { onEnter }, exitTransition = { onExit }) {
-
+                        composable("workouts", enterTransition = { onEnter }, exitTransition = { onExit }) {
+                            WorkoutsScreen(viewModel = workoutsViewModel, navController = navController)
                         }
 
                     }

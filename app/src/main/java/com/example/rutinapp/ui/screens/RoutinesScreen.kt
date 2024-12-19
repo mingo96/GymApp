@@ -1,5 +1,6 @@
 package com.example.rutinapp.ui.screens
 
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.slideInHorizontally
@@ -63,10 +64,13 @@ import com.example.rutinapp.data.models.ExerciseModel
 import com.example.rutinapp.data.models.RoutineModel
 import com.example.rutinapp.ui.screenStates.RoutinesScreenState
 import com.example.rutinapp.ui.theme.PrimaryColor
+import com.example.rutinapp.ui.theme.ScreenContainer
 import com.example.rutinapp.ui.theme.TextFieldColor
 import com.example.rutinapp.ui.theme.rutinAppButtonsColours
 import com.example.rutinapp.ui.theme.rutinappCardColors
 import com.example.rutinapp.viewmodels.RoutinesViewModel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import java.util.Locale
 import kotlin.math.max
 
@@ -77,8 +81,17 @@ fun RoutinesScreen(viewModel: RoutinesViewModel, navController: NavHostControlle
     val lifecycle = LocalLifecycleOwner.current.lifecycle
 
     val routines by viewModel.routines.collectAsStateWithLifecycle(
-        initialValue = emptyList(), lifecycle = lifecycle
+         lifecycle = lifecycle
     )
+
+    //val flo = flow {
+    //    while (true){
+    //        emit(routines.size)
+    //        Log.d("RoutinesScreen", "RoutinesScreen: ${routines.size}")
+    //    }
+    //}
+//
+    //flo.collectAsStateWithLifecycle(initialValue = 0, lifecycle = lifecycle)
 
     val uiState by viewModel.uiState.observeAsState()
 
@@ -99,7 +112,12 @@ fun RoutinesScreen(viewModel: RoutinesViewModel, navController: NavHostControlle
         RoutinesScreenState.Overview -> {}
     }
 
-    RoutinesContainer(navController = navController, viewModel = viewModel) {
+    ScreenContainer(
+        navController = navController,
+        bottomButtonAction = { viewModel.clickCreateRoutine() },
+        title = "Rutinas",
+        buttonText = "Crear nueva rutina"
+    ) {
         LazyColumn(modifier = Modifier.padding(it)) {
             items(routines.map { it.targetedBodyPart.capitalize(Locale.ROOT) }
                 .distinct()) { thisBodyPart ->
@@ -175,8 +193,7 @@ fun EditRoutineExerciseRelation(
     )
 
     if (manualEdition) {
-        TextFieldWithTitle(
-            title = "Series y repeticiones",
+        TextFieldWithTitle(title = "Series y repeticiones",
             text = setsAndReps,
             onWrite = { setsAndReps = it })
     } else {
@@ -229,7 +246,8 @@ fun EditRoutineExerciseRelation(
         }
     }
 
-    TextFieldWithTitle(title = "Observaciones",
+    TextFieldWithTitle(
+        title = "Observaciones",
         text = observations,
         onWrite = { observations = it })
 
@@ -458,38 +476,6 @@ fun ObserveRoutineDialog(uiState: RoutinesScreenState.Observe, viewModel: Routin
 
         }
     }
-
-}
-
-@Composable
-fun RoutinesContainer(
-    navController: NavHostController,
-    viewModel: RoutinesViewModel,
-    content: @Composable (PaddingValues) -> Unit
-) {
-
-    Scaffold(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        containerColor = PrimaryColor,
-        topBar = { TopBar(navController = navController, "Rutinas") },
-        bottomBar = {
-            Button(
-                onClick = { viewModel.clickCreateRoutine() }, colors = rutinAppButtonsColours()
-            ) {
-                Text(
-                    text = "Crear nueva rutina",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .wrapContentWidth(Alignment.CenterHorizontally),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
-                )
-            }
-        },
-        content = content
-    )
 
 }
 

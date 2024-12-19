@@ -34,7 +34,7 @@ interface SetsWorkOutDao {
     fun getAll(): Flow<List<SetsWorkoutEntity>>
 
     @Query("SELECT * FROM SetsWorkoutEntity WHERE workOutId = :id")
-    fun getByWorOutId(id: Int): SetsWorkoutEntity
+    fun getByWorOutId(id: Int): List<SetsWorkoutEntity>
 
     @Query("SELECT * FROM SetsWorkoutEntity WHERE `setId` = :id")
     fun getBySetId(id: Int): SetsWorkoutEntity
