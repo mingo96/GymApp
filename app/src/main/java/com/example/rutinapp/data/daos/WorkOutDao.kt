@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.Flow
 @Entity
 data class WorkOutEntity(
     @PrimaryKey(autoGenerate = true) val workOutId: Int,
-    val date: String,
+    val date: Long,
     var title: String,
 )
 
@@ -26,7 +26,7 @@ interface WorkOutDao {
     suspend fun addWorkOut(training: WorkOutEntity)
 
     @Query("SELECT * FROM WorkOutEntity WHERE date = :date")
-    suspend fun getByDate(date: String): WorkOutEntity
+    suspend fun getByDate(date: Long): WorkOutEntity
 
     @Delete
     suspend fun delete(workout: WorkOutEntity)

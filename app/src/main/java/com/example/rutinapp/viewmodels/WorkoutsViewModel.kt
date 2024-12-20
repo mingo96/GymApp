@@ -81,8 +81,7 @@ class WorkoutsViewModel @Inject constructor(
 
             addWorkoutUseCase(workout = newWorkout)
 
-            newWorkout.id =
-                getWorkoutIdByDateUseCase(newWorkout.date.toString())
+            newWorkout.id = getWorkoutIdByDateUseCase(newWorkout.date.time)
             _workoutScreenStates.postValue(
                 WorkoutsScreenState.WorkoutStarted(
                     workout = newWorkout, otherExercises = availableExercises
@@ -104,8 +103,7 @@ class WorkoutsViewModel @Inject constructor(
 
             addWorkoutUseCase(workout = newWorkout)
 
-            newWorkout.id =
-                getWorkoutIdByDateUseCase(newWorkout.date.toString())
+            newWorkout.id = getWorkoutIdByDateUseCase(newWorkout.date.time)
 
             _workoutScreenStates.postValue(
                 WorkoutsScreenState.WorkoutStarted(
@@ -171,11 +169,13 @@ class WorkoutsViewModel @Inject constructor(
 
         val currentState = _workoutScreenStates.value as WorkoutsScreenState.WorkoutStarted
 
-        currentState.workout.exercisesAndSets += Pair(exercise, mutableListOf())
-
         _workoutScreenStates.postValue(
             WorkoutsScreenState.WorkoutStarted(
-                currentState.workout, currentState.otherExercises - exercise
+                currentState.workout.copy(
+                    exercisesAndSets = (currentState.workout.exercisesAndSets + Pair(
+                        exercise, mutableListOf()
+                    )).toMutableList()
+                ), currentState.otherExercises - exercise
             )
         )
     }
@@ -218,13 +218,44 @@ class WorkoutsViewModel @Inject constructor(
         )
     }
 
-    fun backToObserve() {
-        val actualState = _workoutScreenStates.value as WorkoutsScreenState.WorkoutStarted
+    fun continueWorkout(workout: WorkoutModel) {
+        viewModelScope.launch(Dispatchers.IO) {
 
-        if(actualState.workout.exercisesAndSets.isEmpty()){
-            viewModelScope.launch(Dispatchers.IO) {
-                deleteWorkoutUseCase(actualState.workout)
+            val routine = routines.value.find { it.id == workout.baseRoutine?.id }
+
+            workout.baseRoutine = routine
+
+            var availableExercises =
+                (exercises.first() - workout.exercisesAndSets.map { it.first }.toSet())
+
+            if (routine?.exercises?.isNotEmpty() == true) {
+                availableExercises =
+                    availableExercises.filter { it.id !in routine.exercises.map { it.id } }
+
+                workout.exercisesAndSets += routine.exercises.filter { it.id !in workout.exercisesAndSets.map { it.first.id } }
+                    .map { it to mutableListOf() }
             }
+
+            _workoutScreenStates.postValue(
+                WorkoutsScreenState.WorkoutStarted(
+                    workout = workout, otherExercises = availableExercises
+                )
+            )
+        }
+    }
+
+    fun backToObserve() {
+        try {
+
+            val actualState = _workoutScreenStates.value as WorkoutsScreenState.WorkoutStarted
+
+            if (actualState.workout.exercisesAndSets.find { it.second.isNotEmpty() } != null) {
+                viewModelScope.launch(Dispatchers.IO) {
+                    deleteWorkoutUseCase(actualState.workout)
+                }
+            }
+        } catch (e: Exception) {
+            //state is not WorkoutStarted
         }
 
         _workoutScreenStates.postValue(WorkoutsScreenState.Observe)

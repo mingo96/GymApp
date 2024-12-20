@@ -1,6 +1,7 @@
 package com.example.rutinapp.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -136,7 +137,7 @@ fun ObservationContent(viewModel: WorkoutsViewModel) {
             }
         }
         items(workouts) {
-            WorkoutItem(item = it)
+            WorkoutItem(item = it, onClick = { viewModel.continueWorkout(it) })
         }
     }
     Text(text = "Rutinas", fontSize = 20.sp, fontWeight = FontWeight.Bold)
@@ -408,11 +409,12 @@ fun OtherExercises(uiState: WorkoutsScreenState.WorkoutStarted, viewModel: Worko
 }
 
 @Composable
-fun WorkoutItem(item: WorkoutModel) {
+fun WorkoutItem(item: WorkoutModel, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .padding(16.dp)
             .background(PrimaryColor, RoundedCornerShape(15.dp))
+            .clickable { onClick() }
     ) {
         Column(Modifier.padding(16.dp)) {
 

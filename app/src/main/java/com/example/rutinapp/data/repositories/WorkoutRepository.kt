@@ -23,7 +23,7 @@ fun WorkOutEntity.toModel(): WorkoutModel {
 
 fun WorkoutModel.toEntity(): WorkOutEntity {
     return WorkOutEntity(
-        workOutId = this.id, date = this.date.toString(), title = this.title
+        workOutId = this.id, date = this.date.time, title = this.title
     )
 }
 
@@ -76,7 +76,7 @@ class WorkoutRepository @Inject constructor(
 
     }
 
-    suspend fun getWorkOutFromDate(date: String): WorkOutEntity {
+    suspend fun getWorkOutFromDate(date: Long): WorkOutEntity {
         return workoutDao.getByDate(date)
     }
 
