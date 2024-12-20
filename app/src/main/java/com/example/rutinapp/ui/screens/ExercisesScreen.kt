@@ -54,7 +54,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.example.rutinapp.data.models.ExerciseModel
 import com.example.rutinapp.ui.screenStates.ExercisesState
@@ -99,7 +98,10 @@ fun ExercisesScreen(viewModel: ExercisesViewModel, navController: NavHostControl
         null -> {}
     }
 
-    ScreenContainer(navController = navController,
+    ScreenContainer(onExit = {
+        navController.navigateUp()
+        viewModel.backToObserve()
+    },
         buttonText = "Crear un ejercicio",
         title = "Entrenamientos",
         bottomButtonAction = { viewModel.clickToCreate() }) { it ->
@@ -196,10 +198,9 @@ fun ExerciseItem(item: ExerciseModel, onEditClick: () -> Unit, onClick: () -> Un
 }
 
 @Composable
-fun TopBar(navController: NavController, text: String) {
+fun TopBar(onExit: () -> Unit, text: String) {
     Column(
-        modifier = Modifier
-            .background(PrimaryColor)
+        modifier = Modifier.background(PrimaryColor)
     ) {
 
         Row(
@@ -213,7 +214,7 @@ fun TopBar(navController: NavController, text: String) {
             Icon(imageVector = Icons.Outlined.Clear,
                 contentDescription = "Exit",
                 Modifier
-                    .clickable { navController.navigateUp() }
+                    .clickable { onExit() }
                     .size(40.dp))
             Text(
                 text = text,
@@ -237,6 +238,7 @@ fun TextFieldWithTitle(
     onWrite: (String) -> Unit = {},
     text: String,
     editing: Boolean = true,
+    typeOfKeyBoard: KeyboardType = KeyboardType.Text,
     sendFunction: (() -> Unit)? = null
 ) {
 
@@ -250,12 +252,10 @@ fun TextFieldWithTitle(
         colors = rutinAppTextFieldColors(),
         textStyle = TextStyle(fontWeight = FontWeight.Bold),
         shape = RoundedCornerShape(15.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentWidth(align = Alignment.CenterHorizontally),
+        modifier = Modifier.fillMaxWidth(),
         keyboardOptions = KeyboardOptions(
             imeAction = if (sendFunction == null) ImeAction.Next else ImeAction.Done,
-            keyboardType = KeyboardType.Text,
+            keyboardType = typeOfKeyBoard,
             capitalization = KeyboardCapitalization.Sentences,
             autoCorrectEnabled = true
         ),

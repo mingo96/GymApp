@@ -1,6 +1,5 @@
 package com.example.rutinapp.ui.screens
 
-import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.slideInHorizontally
@@ -14,7 +13,6 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -41,7 +39,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -69,8 +66,6 @@ import com.example.rutinapp.ui.theme.TextFieldColor
 import com.example.rutinapp.ui.theme.rutinAppButtonsColours
 import com.example.rutinapp.ui.theme.rutinappCardColors
 import com.example.rutinapp.viewmodels.RoutinesViewModel
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import java.util.Locale
 import kotlin.math.max
 
@@ -81,7 +76,7 @@ fun RoutinesScreen(viewModel: RoutinesViewModel, navController: NavHostControlle
     val lifecycle = LocalLifecycleOwner.current.lifecycle
 
     val routines by viewModel.routines.collectAsStateWithLifecycle(
-         lifecycle = lifecycle
+        lifecycle = lifecycle
     )
 
     //val flo = flow {
@@ -113,7 +108,10 @@ fun RoutinesScreen(viewModel: RoutinesViewModel, navController: NavHostControlle
     }
 
     ScreenContainer(
-        navController = navController,
+        onExit = {
+            viewModel.backToObserve()
+            navController.navigateUp()
+        },
         bottomButtonAction = { viewModel.clickCreateRoutine() },
         title = "Rutinas",
         buttonText = "Crear nueva rutina"
@@ -193,7 +191,8 @@ fun EditRoutineExerciseRelation(
     )
 
     if (manualEdition) {
-        TextFieldWithTitle(title = "Series y repeticiones",
+        TextFieldWithTitle(
+            title = "Series y repeticiones",
             text = setsAndReps,
             onWrite = { setsAndReps = it })
     } else {
@@ -246,8 +245,7 @@ fun EditRoutineExerciseRelation(
         }
     }
 
-    TextFieldWithTitle(
-        title = "Observaciones",
+    TextFieldWithTitle(title = "Observaciones",
         text = observations,
         onWrite = { observations = it })
 

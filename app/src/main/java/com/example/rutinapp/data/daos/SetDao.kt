@@ -19,12 +19,18 @@ import java.util.Date
         parentColumns = ["exerciseId"],
         childColumns = ["exerciseDoneId"],
         onDelete = ForeignKey.CASCADE
+    ),ForeignKey(
+        entity = WorkOutEntity::class,
+        parentColumns = ["workOutId"],
+        childColumns = ["workoutDoneId"],
+        onDelete = ForeignKey.CASCADE
     )]
 )
 
 data class SetEntity(
-    @PrimaryKey(autoGenerate = true) val setId: Int,
+    @PrimaryKey(autoGenerate = true) val setId: Int=0,
     val exerciseDoneId: Int,
+    val workoutDoneId: Int,
     val weight: Double,
     val reps: Int,
     val date: String,
@@ -32,11 +38,12 @@ data class SetEntity(
 ){
     fun toModel():SetModel{
         return SetModel(
-            id = setId,
             weight = weight,
             reps = reps,
             date = Date(date),
-            observations = observations
+            observations = observations,
+            exercise = null,
+            workoutDone = null
         )
     }
 }
@@ -47,16 +54,22 @@ interface SetDao {
     @Query("SELECT * FROM SetEntity")
     fun getAll(): Flow<List<SetEntity>>
 
+    @Query("SELECT * FROM SetEntity WHERE exerciseDoneId = :id")
+    suspend fun getByExerciseId(id: Int): List<SetEntity>
+
+    @Query("SELECT * FROM SetEntity WHERE workoutDoneId = :id")
+    suspend fun getByWorkoutId(id: Int): List<SetEntity>
+
     @Insert
     suspend fun addSet(set: SetEntity)
 
-    @Delete
-    suspend fun deleteSet(set: SetEntity)
+    @Query("DELETE FROM SetEntity WHERE date = :date")
+    suspend fun deleteSet(date: String)
 
     @Update
     suspend fun updateSet(set: SetEntity)
 
     @Query("SELECT * FROM SetEntity WHERE setId = :id")
-    fun getById(id: Int): SetEntity
+    suspend fun getById(id: Int): SetEntity
 
 }

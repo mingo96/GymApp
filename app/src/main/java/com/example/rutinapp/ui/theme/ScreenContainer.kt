@@ -23,8 +23,8 @@ import com.example.rutinapp.ui.screens.TopBar
 @Composable
 fun ScreenContainer(
     title: String,
-    navController: NavHostController,
-    bottomButtonAction: () -> Unit,
+    onExit: () -> Unit,
+    bottomButtonAction: (() -> Unit)?,
     buttonText: String,
     content: @Composable (PaddingValues) -> Unit
 ) {
@@ -33,8 +33,9 @@ fun ScreenContainer(
         modifier = Modifier
             .fillMaxWidth(),
         containerColor = PrimaryColor,
-        topBar = { TopBar(navController = navController, title) },
+        topBar = { TopBar(onExit, title) },
         bottomBar = {
+            if (bottomButtonAction != null)
             Button(
                 onClick = { bottomButtonAction() }, colors = rutinAppButtonsColours(), modifier = Modifier.padding(16.dp)
             ) {
@@ -50,7 +51,7 @@ fun ScreenContainer(
         },
         content = {
             val padding = PaddingValues(start = it.calculateStartPadding(LocalLayoutDirection.current)+16.dp, top = it.calculateTopPadding()+16.dp, end = it.calculateEndPadding(
-                LocalLayoutDirection.current)+16.dp, bottom = it.calculateBottomPadding()+16.dp)
+                LocalLayoutDirection.current)+16.dp, bottom = it.calculateBottomPadding())
 
             content(padding)
         }

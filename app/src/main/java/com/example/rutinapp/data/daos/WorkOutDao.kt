@@ -1,6 +1,7 @@
 package com.example.rutinapp.data.daos
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Entity
 import androidx.room.Insert
 import androidx.room.PrimaryKey
@@ -18,10 +19,16 @@ data class WorkOutEntity(
 @Dao
 interface WorkOutDao {
 
-    @Query("SELECT * FROM WorkOutEntity")
-    fun getAll(): Flow<List<WorkOutEntity>>
+    @Query("SELECT * FROM WorkOutEntity ORDER BY date LIMIT 10")
+    fun get10MoreRecent(): Flow<List<WorkOutEntity>>
 
     @Insert
     suspend fun addWorkOut(training: WorkOutEntity)
+
+    @Query("SELECT * FROM WorkOutEntity WHERE date = :date")
+    suspend fun getByDate(date: String): WorkOutEntity
+
+    @Delete
+    suspend fun delete(workout: WorkOutEntity)
 
 }

@@ -7,7 +7,6 @@ import com.example.rutinapp.data.daos.ExerciseToExerciseDao
 import com.example.rutinapp.data.daos.RoutineDao
 import com.example.rutinapp.data.daos.RoutineExerciseDao
 import com.example.rutinapp.data.daos.SetDao
-import com.example.rutinapp.data.daos.SetsWorkOutDao
 import com.example.rutinapp.data.daos.WorkOutDao
 import com.example.rutinapp.data.daos.WorkoutRoutinesDao
 import dagger.Module
@@ -45,11 +44,6 @@ class DatabaseModule {
     @Provides
     fun provideSetDao(database: RutinAppDatabase): SetDao {
         return database.setDao()
-    }
-
-    @Provides
-    fun provideSetsWorkOutDao(database: RutinAppDatabase): SetsWorkOutDao {
-        return database.setsWorkOutDao()
     }
 
     @Provides

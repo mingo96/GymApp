@@ -26,6 +26,9 @@ interface RoutineDao {
     @Query("SELECT * FROM RoutineEntity")
     fun getAllAsFlow(): Flow<List<RoutineEntity>>
 
+    @Query("SELECT * FROM RoutineEntity WHERE routineId = :routineId")
+    suspend fun getFromId(routineId: Int) : RoutineEntity
+
     @Insert
     suspend fun addRoutine(routine: RoutineEntity)
 

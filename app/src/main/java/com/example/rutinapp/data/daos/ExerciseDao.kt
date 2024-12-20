@@ -50,7 +50,7 @@ interface ExerciseDao {
     fun getAllAsFlow(): Flow<List<ExerciseEntity>>
 
     @Query("SELECT * FROM ExerciseEntity")
-    fun getAll(): List<ExerciseEntity>
+    suspend fun getAll(): List<ExerciseEntity>
 
     @Query("SELECT * FROM ExerciseEntity WHERE exerciseId = :id")
     suspend fun getById(id: Int): ExerciseEntity

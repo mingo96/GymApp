@@ -25,7 +25,7 @@ interface WorkoutRoutinesDao{
     fun getAll() : Flow<List<WorkoutRoutineEntity>>
 
     @Query("SELECT * FROM WorkoutRoutineEntity WHERE workoutId = :workoutId")
-    suspend fun getByWorkoutId(workoutId : Int):WorkoutRoutineEntity
+    suspend fun getByWorkoutId(workoutId : Int):WorkoutRoutineEntity?
 
     @Insert
     suspend fun insert(workoutRoutineEntity: WorkoutRoutineEntity)
