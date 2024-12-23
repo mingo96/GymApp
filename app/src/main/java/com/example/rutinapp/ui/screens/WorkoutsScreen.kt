@@ -1,5 +1,10 @@
 package com.example.rutinapp.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -16,6 +21,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.twotone.Add
+import androidx.compose.material.icons.twotone.ArrowBack
 import androidx.compose.material.icons.twotone.ArrowForward
 import androidx.compose.material.icons.twotone.Delete
 import androidx.compose.material.icons.twotone.Edit
@@ -35,6 +41,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -60,15 +67,14 @@ fun WorkoutsScreen(viewModel: WorkoutsViewModel, navController: NavHostControlle
 
     val workoutScreenState by viewModel.workoutScreenStates.observeAsState(WorkoutsScreenState.Observe)
 
-    ScreenContainer(
-        onExit = {
+    ScreenContainer(onExit = {
 
-            if (workoutScreenState is WorkoutsScreenState.WorkoutStarted) {
-                viewModel.backToObserve()
-            }else {
-                navController.navigateUp()
-            }
-        },
+        if (workoutScreenState is WorkoutsScreenState.WorkoutStarted) {
+            viewModel.backToObserve()
+        } else {
+            navController.navigateUp()
+        }
+    },
         bottomButtonAction = {
             if (workoutScreenState is WorkoutsScreenState.WorkoutStarted) {
                 viewModel.backToObserve()
@@ -181,12 +187,16 @@ fun WorkoutProgression(viewModel: WorkoutsViewModel, uiState: WorkoutsScreenStat
             .heightIn(min = 200.dp, max = 500.dp)
             .padding(top = 16.dp),
     ) {
-        items(uiState.workout.exercisesAndSets, key = {it.first.id}) {
-            Column (modifier = Modifier.animateItem()){
+        items(uiState.workout.exercisesAndSets, key = { it.first.id }) {
+            Column(modifier = Modifier.animateItem(placementSpec = spring(stiffness = Spring.StiffnessHigh))) {
 
-                ExerciseInfo(it, uiState)
+                var setsOpened by rememberSaveable {
+                    mutableStateOf(false)
+                }
 
-                ExerciseSets(it, viewModel, uiState)
+                ExerciseInfo(it, uiState, setsOpened) { setsOpened = !setsOpened }
+
+                ExerciseSets(it, viewModel, uiState, setsOpened)
             }
 
         }
@@ -195,38 +205,51 @@ fun WorkoutProgression(viewModel: WorkoutsViewModel, uiState: WorkoutsScreenStat
 }
 
 @Composable
-fun ExerciseSets(exerciseAndSets: Pair<ExerciseModel, List<SetModel>>, viewModel: WorkoutsViewModel, uiState: WorkoutsScreenState.WorkoutStarted){
+fun ExerciseSets(
+    exerciseAndSets: Pair<ExerciseModel, List<SetModel>>,
+    viewModel: WorkoutsViewModel,
+    uiState: WorkoutsScreenState.WorkoutStarted,
+    setsOpened: Boolean
+) {
+    AnimatedVisibility(
+        visible = setsOpened, enter = expandVertically(), exit = shrinkVertically()
+    ) {
 
-    Column() {
-        for (i in exerciseAndSets.second) {
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp)
-                    .background(TextFieldColor, RoundedCornerShape(15.dp))
-            ) {
-                Text(
-                    text = i.reps.toString() + " reps x " + i.weight.toString() + " kgs",
-                    fontSize = 15.sp,
-                    modifier = Modifier.padding(8.dp)
-                )
-                IconButton(onClick = { /*TODO*/ }) {
-                    Icon(imageVector = Icons.TwoTone.Edit, contentDescription = " ")
+        Column {
+
+            for (i in exerciseAndSets.second) {
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                        .background(TextFieldColor, RoundedCornerShape(15.dp))
+                ) {
+                    Text(
+                        text = i.reps.toString() + " reps x " + i.weight.toString() + " kgs",
+                        fontSize = 15.sp,
+                        modifier = Modifier.padding(8.dp)
+                    )
+                    IconButton(onClick = { /*TODO*/ }) {
+                        Icon(imageVector = Icons.TwoTone.Edit, contentDescription = " ")
+                    }
                 }
             }
         }
-        ExerciseActions(
-            viewModel = viewModel,
-            exerciseAndSets = exerciseAndSets,
-            uiState = uiState
-        )
     }
+    ExerciseActions(
+        viewModel = viewModel, exerciseAndSets = exerciseAndSets, uiState = uiState
+    )
+
 }
 
 @Composable
-fun ExerciseActions(viewModel: WorkoutsViewModel, exerciseAndSets: Pair<ExerciseModel, List<SetModel>>, uiState: WorkoutsScreenState.WorkoutStarted){
+fun ExerciseActions(
+    viewModel: WorkoutsViewModel,
+    exerciseAndSets: Pair<ExerciseModel, List<SetModel>>,
+    uiState: WorkoutsScreenState.WorkoutStarted
+) {
 
     Row {
         IconButton(onClick = {
@@ -237,29 +260,48 @@ fun ExerciseActions(viewModel: WorkoutsViewModel, exerciseAndSets: Pair<Exercise
         IconButton(onClick = { viewModel.removeExerciseFromRoutine(exerciseAndSets.first) }) {
             Icon(imageVector = Icons.TwoTone.Delete, contentDescription = " ")
         }
-        if(exerciseAndSets!= uiState.workout.exercisesAndSets.last()){
+        if (exerciseAndSets != uiState.workout.exercisesAndSets.last()) {
             IconButton(onClick = { viewModel.moveExercise(exerciseAndSets.first, false) }) {
-                Icon(imageVector = Icons.TwoTone.KeyboardArrowDown, contentDescription = " ")
+                Icon(
+                    imageVector = Icons.TwoTone.ArrowBack,
+                    contentDescription = " ",
+                    modifier = Modifier.rotate(-90f)
+                )
             }
         }
-        if(exerciseAndSets!= uiState.workout.exercisesAndSets.first()){
+        if (exerciseAndSets != uiState.workout.exercisesAndSets.first()) {
             IconButton(onClick = { viewModel.moveExercise(exerciseAndSets.first, true) }) {
-                Icon(imageVector = Icons.TwoTone.KeyboardArrowUp, contentDescription = " ")
+                Icon(
+                    imageVector = Icons.TwoTone.ArrowBack,
+                    contentDescription = " ",
+                    modifier = Modifier.rotate(90f)
+                )
             }
         }
     }
 }
 
 @Composable
-fun ExerciseInfo(exerciseAndSets: Pair<ExerciseModel, List<SetModel>>, uiState: WorkoutsScreenState.WorkoutStarted){
+fun ExerciseInfo(
+    exerciseAndSets: Pair<ExerciseModel, List<SetModel>>,
+    uiState: WorkoutsScreenState.WorkoutStarted,
+    setsOpened: Boolean,
+    changeSetsOpened: () -> Unit
+) {
 
-    Text(
-        text = exerciseAndSets.first.name + if (exerciseAndSets.first in (uiState.workout.baseRoutine?.exercises
-                ?: emptyList())
-        ) " (" + exerciseAndSets.first.setsAndReps + ")" else "",
-        fontSize = 15.sp,
-        modifier = Modifier.padding(bottom = 8.dp)
-    )
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = exerciseAndSets.first.name + if (exerciseAndSets.first in (uiState.workout.baseRoutine?.exercises
+                    ?: emptyList())
+            ) " (" + exerciseAndSets.first.setsAndReps + ")" else "", fontSize = 15.sp, maxLines = 1
+        )
+        if (exerciseAndSets.second.isNotEmpty()) IconButton(onClick = { changeSetsOpened() }) {
+            Icon(
+                imageVector = if (!setsOpened) Icons.TwoTone.KeyboardArrowDown else Icons.TwoTone.KeyboardArrowUp,
+                contentDescription = " "
+            )
+        }
+    }
 }
 
 @Composable
@@ -341,9 +383,13 @@ fun RoutineContent(uiState: WorkoutsScreenState.WorkoutStarted, viewModel: Worko
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(uiState.workout.baseRoutine!!.exercises) {
-                    Row (Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween){
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
                         Text(text = it.name, fontSize = 15.sp)
-                        if(it.id !in uiState.workout.exercisesAndSets.map { it.first.id }){
+                        if (it.id !in uiState.workout.exercisesAndSets.map { it.first.id }) {
                             IconButton(onClick = { viewModel.addExerciseToWorkout(it) }) {
                                 Icon(imageVector = Icons.TwoTone.Add, contentDescription = " ")
                             }
@@ -410,12 +456,10 @@ fun OtherExercises(uiState: WorkoutsScreenState.WorkoutStarted, viewModel: Worko
 
 @Composable
 fun WorkoutItem(item: WorkoutModel, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .padding(16.dp)
-            .background(PrimaryColor, RoundedCornerShape(15.dp))
-            .clickable { onClick() }
-    ) {
+    Box(modifier = Modifier
+        .padding(16.dp)
+        .background(PrimaryColor, RoundedCornerShape(15.dp))
+        .clickable { onClick() }) {
         Column(Modifier.padding(16.dp)) {
 
             Text(text = item.title)
