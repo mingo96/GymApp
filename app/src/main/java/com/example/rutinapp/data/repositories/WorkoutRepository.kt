@@ -1,5 +1,6 @@
 package com.example.rutinapp.data.repositories
 
+import android.util.Log
 import com.example.rutinapp.data.daos.ExerciseDao
 import com.example.rutinapp.data.daos.ExerciseEntity
 import com.example.rutinapp.data.daos.RoutineDao
@@ -57,9 +58,9 @@ class WorkoutRepository @Inject constructor(
         val sets = setDao.getByWorkoutId(id).map {
             setDao.getById(it.setId)
         }
-        val exercises = sets.map { set ->
+        val exercises = sets.distinctBy { it.exerciseDoneId }.map { set ->
             exerciseDao.getById(set.exerciseDoneId)
-        }.distinct()
+        }
 
         val response = mutableListOf<Pair<ExerciseEntity, List<SetEntity>>>()
 

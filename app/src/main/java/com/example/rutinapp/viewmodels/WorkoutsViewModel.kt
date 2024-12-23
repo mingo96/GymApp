@@ -1,5 +1,6 @@
 package com.example.rutinapp.viewmodels
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -232,9 +233,12 @@ class WorkoutsViewModel @Inject constructor(
                 availableExercises =
                     availableExercises.filter { it.id !in routine.exercises.map { it.id } }
 
+
                 workout.exercisesAndSets += routine.exercises.filter { it.id !in workout.exercisesAndSets.map { it.first.id } }
                     .map { it to mutableListOf() }
             }
+
+            Log.d("WOEXES", workout.exercisesAndSets.joinToString { it.first.id+" " })
 
             _workoutScreenStates.postValue(
                 WorkoutsScreenState.WorkoutStarted(
