@@ -145,9 +145,16 @@ fun AddRelationsDialog(
             ) {
                 if (addingRelations.possibleValues.isNotEmpty()) {
                     items(addingRelations.possibleValues) {
-                        Text(text = it.name, maxLines = 1, modifier = Modifier.clickable {
-                            viewModel.toggleExercisesRelation(it)
-                        })
+                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = it.name, maxLines = 1, modifier = Modifier.padding(8.dp), fontSize = 16.sp
+                            )
+                            IconButton(onClick = {
+                                viewModel.toggleExercisesRelation(it)
+                            }) {
+                                Icon(imageVector = Icons.TwoTone.Add, contentDescription = "Add exercise relation")
+                            }
+                        }
                     }
                 } else {
                     item {
@@ -338,7 +345,7 @@ fun ModifyExerciseDialog(viewModel: ExercisesViewModel, uiState: ExercisesState.
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween,
-                        modifier = Modifier.padding(horizontal = 8.dp)
+                        modifier = Modifier.padding(horizontal = 8.dp).animateItem()
                     ) {
                         Text(
                             text = it.name,
@@ -379,7 +386,7 @@ fun ModifyExerciseDialog(viewModel: ExercisesViewModel, uiState: ExercisesState.
 }
 
 @Composable
-fun CreateExerciseDialog(viewModel: ExercisesViewModel) {
+fun CreateExerciseDialog(viewModel: ExercisesViewModel, onExit: (() -> Unit)? = null) {
 
     var name by rememberSaveable { mutableStateOf("") }
     var description by rememberSaveable { mutableStateOf("") }
@@ -400,6 +407,7 @@ fun CreateExerciseDialog(viewModel: ExercisesViewModel) {
                     viewModel.addExercise(
                         name, description, targetedBodyPart
                     )
+                    if (onExit != null) onExit()
                 },
                 modifier = Modifier
                     .fillMaxWidth()

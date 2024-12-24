@@ -11,9 +11,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -445,8 +448,13 @@ fun OtherExercises(uiState: WorkoutsScreenState.WorkoutStarted, viewModel: Worko
                         IconButton(onClick = {
                             viewModel.addExerciseToWorkout(it)
                         }) {
-                            Icon(imageVector = Icons.TwoTone.Add, contentDescription = " ")
+                            Icon(imageVector = Icons.TwoTone.Add, contentDescription = "add exercise to workout")
                         }
+                    }
+                }
+                item {
+                    IconButton(onClick = { /*TODO*/ }, Modifier.fillMaxWidth()) {
+                        Icon(imageVector = Icons.TwoTone.Add, contentDescription = "add new exercise")
                     }
                 }
             }

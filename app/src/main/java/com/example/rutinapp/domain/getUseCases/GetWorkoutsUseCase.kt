@@ -34,7 +34,7 @@ class GetWorkoutsUseCase @Inject constructor(private val workoutRepository: Work
                 }
                 workoutModel.exercisesAndSets = result.sortedBy { it.second.map { it.date }.max() }.toMutableList()
                 return@map workoutModel
-            }
+            }.sortedBy { it.date }.reversed()
         }
     }
 

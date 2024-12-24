@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -45,14 +46,36 @@ class WorkoutsViewModel @Inject constructor(
     private val deleteWorkoutUseCase: DeleteWorkoutUseCase
 ) : ViewModel() {
 
-    val workouts: StateFlow<List<WorkoutModel>> = getWorkoutsUseCase().catch { Error(it) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    lateinit var exercisesViewModel: ExercisesViewModel
+
+    val workouts: StateFlow<List<WorkoutModel>> = getWorkoutsUseCase().catch { Error(it) }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
 
     val routines: StateFlow<List<RoutineModel>> = getRoutinesUseCase().catch { Error(it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    private val exercises: Flow<List<ExerciseModel>> = getExercisesUseCase().catch { Error(it) }
+    private val exercises: Flow<List<ExerciseModel>> = getExercisesUseCase().map  {
+        try {
+            val state = _workoutScreenStates.value as WorkoutsScreenState.WorkoutStarted
+
+            val availableExercises = it
+                .filter { it.id !in state.workout.exercisesAndSets.map { it.first.id } }
+                .toMutableList()
+
+            if (state.workout.baseRoutine != null) {
+                availableExercises.removeIf { it.id in state.workout.baseRoutine!!.exercises.toSet().map { it.id } }
+            }
+            Log.d("AVAILABLE", availableExercises.joinToString { it.name })
+            _workoutScreenStates.postValue(
+                WorkoutsScreenState.WorkoutStarted(
+                    workout = state.workout, otherExercises = availableExercises, setBeingCreated = state.setBeingCreated
+                )
+            )
+        } catch (_: Exception) {
+
+        }
+        it
+    }.catch { Error(it) }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     private val _workoutScreenStates: MutableLiveData<WorkoutsScreenState> =
         MutableLiveData(WorkoutsScreenState.Observe)
@@ -238,7 +261,7 @@ class WorkoutsViewModel @Inject constructor(
                     .map { it to mutableListOf() }
             }
 
-            Log.d("WOEXES", workout.exercisesAndSets.joinToString { it.first.id+" " })
+            Log.d("WOEXES", workout.exercisesAndSets.joinToString { it.first.id + " " })
 
             _workoutScreenStates.postValue(
                 WorkoutsScreenState.WorkoutStarted(

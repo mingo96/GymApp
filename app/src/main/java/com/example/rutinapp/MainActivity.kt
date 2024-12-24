@@ -50,6 +50,8 @@ class MainActivity : ComponentActivity() {
 
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 
+        workoutsViewModel.exercisesViewModel = exercisesViewModel
+
         // Screen transitions
         val onEnter = slideInHorizontally { -it } + scaleIn()
         val onExit = slideOutHorizontally {
