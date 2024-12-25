@@ -7,9 +7,9 @@ import javax.inject.Inject
 
 class SetRepository @Inject constructor(private val setDao: SetDao, private val workoutDao: WorkOutDao) {
 
-    suspend fun insertSet(set: SetEntity) {
+    suspend fun insertSet(set: SetEntity):Int {
 
-        setDao.addSet(set)
+        return setDao.addSet(set).toInt()
 
     }
 

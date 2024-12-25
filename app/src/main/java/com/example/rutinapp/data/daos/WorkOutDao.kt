@@ -23,7 +23,7 @@ interface WorkOutDao {
     fun get10MoreRecent(): Flow<List<WorkOutEntity>>
 
     @Insert
-    suspend fun addWorkOut(training: WorkOutEntity)
+    suspend fun addWorkOut(training: WorkOutEntity):Long
 
     @Query("SELECT * FROM WorkOutEntity WHERE date = :date")
     suspend fun getByDate(date: Long): WorkOutEntity

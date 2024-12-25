@@ -38,8 +38,8 @@ class WorkoutRepository @Inject constructor(
 
     val workOuts: Flow<List<WorkOutEntity>> = workoutDao.get10MoreRecent()
 
-    suspend fun addWorkout(workOutEntity: WorkOutEntity) {
-        workoutDao.addWorkOut(workOutEntity)
+    suspend fun addWorkout(workOutEntity: WorkOutEntity):Int {
+        return workoutDao.addWorkOut(workOutEntity).toInt()
     }
 
     suspend fun addWorkoutRoutineRelation(workOutEntity: WorkOutEntity, routineEntity: RoutineEntity){

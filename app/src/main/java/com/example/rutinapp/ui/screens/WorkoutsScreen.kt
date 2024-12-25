@@ -11,12 +11,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -27,9 +24,9 @@ import androidx.compose.material.icons.twotone.Add
 import androidx.compose.material.icons.twotone.ArrowBack
 import androidx.compose.material.icons.twotone.ArrowForward
 import androidx.compose.material.icons.twotone.Delete
-import androidx.compose.material.icons.twotone.Edit
 import androidx.compose.material.icons.twotone.KeyboardArrowDown
 import androidx.compose.material.icons.twotone.KeyboardArrowUp
+import androidx.compose.material.icons.twotone.MoreVert
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -37,7 +34,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -101,7 +97,8 @@ fun WorkoutsScreen(viewModel: WorkoutsViewModel, navController: NavHostControlle
                         item {
                             WorkoutProgression(
                                 viewModel = viewModel,
-                                uiState = workoutScreenState as WorkoutsScreenState.WorkoutStarted
+                                uiState = workoutScreenState as WorkoutsScreenState.WorkoutStarted,
+                                navController = navController
                             )
                         }
                     }
@@ -166,10 +163,14 @@ fun ObservationContent(viewModel: WorkoutsViewModel) {
 }
 
 @Composable
-fun WorkoutProgression(viewModel: WorkoutsViewModel, uiState: WorkoutsScreenState.WorkoutStarted) {
+fun WorkoutProgression(viewModel: WorkoutsViewModel, uiState: WorkoutsScreenState.WorkoutStarted, navController: NavHostController) {
 
     if (uiState.setBeingCreated != null) {
-        SetCreationDialog(viewModel = viewModel, uiState = uiState)
+        if (uiState.setBeingCreated.id == 0) {
+            SetCreationDialog(viewModel = viewModel, uiState = uiState)
+        }else{
+            SetOptionsDialog(viewModel = viewModel, uiState = uiState)
+        }
     }
 
     LazyRow(modifier = Modifier.padding(bottom = 16.dp)) {
@@ -177,8 +178,7 @@ fun WorkoutProgression(viewModel: WorkoutsViewModel, uiState: WorkoutsScreenStat
             RoutineContent(uiState = uiState, viewModel = viewModel)
         }
         item {
-            OtherExercises(uiState = uiState, viewModel = viewModel)
-
+            OtherExercises(uiState = uiState, viewModel = viewModel, navController = navController)
         }
     }
 
@@ -199,7 +199,11 @@ fun WorkoutProgression(viewModel: WorkoutsViewModel, uiState: WorkoutsScreenStat
 
                 ExerciseInfo(it, uiState, setsOpened) { setsOpened = !setsOpened }
 
-                ExerciseSets(it, viewModel, uiState, setsOpened)
+                ExerciseSets(it, viewModel, setsOpened)
+
+                ExerciseActions(
+                    viewModel = viewModel, exerciseAndSets = it, uiState = uiState
+                )
             }
 
         }
@@ -208,10 +212,20 @@ fun WorkoutProgression(viewModel: WorkoutsViewModel, uiState: WorkoutsScreenStat
 }
 
 @Composable
+fun SetOptionsDialog(viewModel: WorkoutsViewModel, uiState: WorkoutsScreenState.WorkoutStarted) {
+    Dialog(onDismissRequest = { viewModel.cancelSetEditing() }) {
+
+        DialogContainer {
+            Text(text = "Opciones de serie", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+        }
+
+    }
+}
+
+@Composable
 fun ExerciseSets(
     exerciseAndSets: Pair<ExerciseModel, List<SetModel>>,
     viewModel: WorkoutsViewModel,
-    uiState: WorkoutsScreenState.WorkoutStarted,
     setsOpened: Boolean
 ) {
     AnimatedVisibility(
@@ -234,16 +248,13 @@ fun ExerciseSets(
                         fontSize = 15.sp,
                         modifier = Modifier.padding(8.dp)
                     )
-                    IconButton(onClick = { /*TODO*/ }) {
-                        Icon(imageVector = Icons.TwoTone.Edit, contentDescription = " ")
+                    IconButton(onClick = { viewModel.editSetClicked(i) }) {
+                        Icon(imageVector = Icons.TwoTone.MoreVert, contentDescription = "set options")
                     }
                 }
             }
         }
     }
-    ExerciseActions(
-        viewModel = viewModel, exerciseAndSets = exerciseAndSets, uiState = uiState
-    )
 
 }
 
@@ -310,10 +321,10 @@ fun ExerciseInfo(
 @Composable
 fun SetCreationDialog(viewModel: WorkoutsViewModel, uiState: WorkoutsScreenState.WorkoutStarted) {
 
-    Dialog(onDismissRequest = { viewModel.cancelSetCreation() }) {
+    Dialog(onDismissRequest = { viewModel.cancelSetEditing() }) {
 
         var reps by rememberSaveable { mutableIntStateOf(uiState.setBeingCreated!!.reps) }
-        var weight by rememberSaveable { mutableDoubleStateOf(uiState.setBeingCreated!!.weight) }
+        var weight by rememberSaveable { mutableStateOf(uiState.setBeingCreated!!.weight.toString()) }
         var observations by rememberSaveable { mutableStateOf(uiState.setBeingCreated!!.observations) }
 
         DialogContainer {
@@ -325,21 +336,24 @@ fun SetCreationDialog(viewModel: WorkoutsViewModel, uiState: WorkoutsScreenState
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { reps++ }) {
-                    Icon(imageVector = Icons.TwoTone.KeyboardArrowUp, contentDescription = null)
+                    Icon(imageVector = Icons.TwoTone.KeyboardArrowUp, contentDescription = "more reps")
                 }
                 Text(text = reps.toString(), fontSize = 20.sp)
                 IconButton(onClick = { reps-- }) {
-                    Icon(imageVector = Icons.TwoTone.KeyboardArrowDown, contentDescription = null)
+                    Icon(imageVector = Icons.TwoTone.KeyboardArrowDown, contentDescription = "less reps")
                 }
             }
             TextFieldWithTitle(
-                title = "Peso",
-                text = weight.toString(),
-                onWrite = { weight = it.toDouble() },
-                typeOfKeyBoard = KeyboardType.Number
+                title = "Peso", text = weight, onWrite = {
+                    try {
+                        it.toDouble()
+                        weight = it
+                    } catch (_: Exception) {
+
+                    }
+                }, typeOfKeyBoard = KeyboardType.Number
             )
-            TextFieldWithTitle(
-                title = "Observaciones",
+            TextFieldWithTitle(title = "Observaciones",
                 text = observations,
                 onWrite = { observations = it })
             Row(
@@ -349,14 +363,13 @@ fun SetCreationDialog(viewModel: WorkoutsViewModel, uiState: WorkoutsScreenState
             ) {
                 Button(colors = rutinAppButtonsColours(), onClick = {
                     viewModel.createSet(
-                        weight = weight, reps = reps, observations = observations
+                        weight = weight.toDouble(), reps = reps, observations = observations
                     )
                 }) {
                     Text(text = "Guardar")
                 }
-                Button(
-                    colors = rutinAppButtonsColours(),
-                    onClick = { viewModel.cancelSetCreation() }) {
+                Button(colors = rutinAppButtonsColours(),
+                    onClick = { viewModel.cancelSetEditing() }) {
                     Text(text = "Cancelar")
                 }
             }
@@ -406,7 +419,7 @@ fun RoutineContent(uiState: WorkoutsScreenState.WorkoutStarted, viewModel: Worko
 }
 
 @Composable
-fun OtherExercises(uiState: WorkoutsScreenState.WorkoutStarted, viewModel: WorkoutsViewModel) {
+fun OtherExercises(uiState: WorkoutsScreenState.WorkoutStarted, viewModel: WorkoutsViewModel, navController: NavHostController) {
 
     Column(
         modifier = Modifier.background(TextFieldColor, RoundedCornerShape(15.dp))
@@ -448,13 +461,21 @@ fun OtherExercises(uiState: WorkoutsScreenState.WorkoutStarted, viewModel: Worko
                         IconButton(onClick = {
                             viewModel.addExerciseToWorkout(it)
                         }) {
-                            Icon(imageVector = Icons.TwoTone.Add, contentDescription = "add exercise to workout")
+                            Icon(
+                                imageVector = Icons.TwoTone.Add,
+                                contentDescription = "add exercise to workout"
+                            )
                         }
                     }
                 }
                 item {
-                    IconButton(onClick = { /*TODO*/ }, Modifier.fillMaxWidth()) {
-                        Icon(imageVector = Icons.TwoTone.Add, contentDescription = "add new exercise")
+                    IconButton(onClick = {
+                        navController.navigate("exercises")
+                        viewModel.exercisesViewModel.clickToCreate()
+                                         }, Modifier.fillMaxWidth()) {
+                        Icon(
+                            imageVector = Icons.TwoTone.Add, contentDescription = "add new exercise"
+                        )
                     }
                 }
             }

@@ -61,7 +61,7 @@ interface SetDao {
     suspend fun getByWorkoutId(id: Int): List<SetEntity>
 
     @Insert
-    suspend fun addSet(set: SetEntity)
+    suspend fun addSet(set: SetEntity):Long
 
     @Query("DELETE FROM SetEntity WHERE date = :date")
     suspend fun deleteSet(date: String)

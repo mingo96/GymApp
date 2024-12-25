@@ -65,7 +65,6 @@ class WorkoutsViewModel @Inject constructor(
             if (state.workout.baseRoutine != null) {
                 availableExercises.removeIf { it.id in state.workout.baseRoutine!!.exercises.toSet().map { it.id } }
             }
-            Log.d("AVAILABLE", availableExercises.joinToString { it.name })
             _workoutScreenStates.postValue(
                 WorkoutsScreenState.WorkoutStarted(
                     workout = state.workout, otherExercises = availableExercises, setBeingCreated = state.setBeingCreated
@@ -103,9 +102,8 @@ class WorkoutsViewModel @Inject constructor(
             val availableExercises =
                 exercises.first().filter { it.id !in routine.exercises.map { it.id } }
 
-            addWorkoutUseCase(workout = newWorkout)
+            newWorkout.id = addWorkoutUseCase(workout = newWorkout)
 
-            newWorkout.id = getWorkoutIdByDateUseCase(newWorkout.date.time)
             _workoutScreenStates.postValue(
                 WorkoutsScreenState.WorkoutStarted(
                     workout = newWorkout, otherExercises = availableExercises
@@ -125,9 +123,9 @@ class WorkoutsViewModel @Inject constructor(
 
             val availableExercises = exercises.first()
 
-            addWorkoutUseCase(workout = newWorkout)
 
-            newWorkout.id = getWorkoutIdByDateUseCase(newWorkout.date.time)
+            newWorkout.id = addWorkoutUseCase(workout = newWorkout)
+
 
             _workoutScreenStates.postValue(
                 WorkoutsScreenState.WorkoutStarted(
@@ -166,20 +164,16 @@ class WorkoutsViewModel @Inject constructor(
 
         val currentState = _workoutScreenStates.value as WorkoutsScreenState.WorkoutStarted
 
-        val momentOfCreation = Date.from(Instant.now())
+        currentState.setBeingCreated!!.apply {
+            this.weight = weight
+            this.reps = reps
+            this.observations = observations
+        }
 
-        val newSet = SetModel(
-            weight = weight,
-            reps = reps,
-            date = momentOfCreation,
-            observations = observations,
-            exercise = currentState.setBeingCreated!!.exercise,
-            workoutDone = currentState.workout
-        )
-        currentState.workout.exercisesAndSets.find { it.first == newSet.exercise }!!.second += newSet
+        currentState.workout.exercisesAndSets.find { it.first == currentState.setBeingCreated.exercise }!!.second += currentState.setBeingCreated
 
         viewModelScope.launch(Dispatchers.IO) {
-            addSetUseCase(newSet)
+            currentState.setBeingCreated.id = addSetUseCase(currentState.setBeingCreated)
             _workoutScreenStates.postValue(
                 WorkoutsScreenState.WorkoutStarted(
                     workout = currentState.workout, otherExercises = currentState.otherExercises
@@ -204,7 +198,7 @@ class WorkoutsViewModel @Inject constructor(
         )
     }
 
-    fun cancelSetCreation() {
+    fun cancelSetEditing() {
         val currentState = _workoutScreenStates.value as WorkoutsScreenState.WorkoutStarted
 
         _workoutScreenStates.postValue(
@@ -276,7 +270,7 @@ class WorkoutsViewModel @Inject constructor(
 
             val actualState = _workoutScreenStates.value as WorkoutsScreenState.WorkoutStarted
 
-            if (actualState.workout.exercisesAndSets.find { it.second.isNotEmpty() } != null) {
+            if (actualState.workout.exercisesAndSets.find { it.second.isNotEmpty() } == null) {
                 viewModelScope.launch(Dispatchers.IO) {
                     deleteWorkoutUseCase(actualState.workout)
                 }
@@ -308,6 +302,17 @@ class WorkoutsViewModel @Inject constructor(
                 actualState.workout.copy(exercisesAndSets = newList),
                 actualState.otherExercises,
                 actualState.setBeingCreated
+            )
+        )
+    }
+
+    fun editSetClicked(set: SetModel) {
+
+        val actualState = _workoutScreenStates.value as WorkoutsScreenState.WorkoutStarted
+
+        _workoutScreenStates.postValue(
+            WorkoutsScreenState.WorkoutStarted(
+                actualState.workout, actualState.otherExercises, set
             )
         )
     }

@@ -4,13 +4,13 @@ import com.example.rutinapp.data.daos.SetEntity
 import java.util.Date
 
 data class SetModel(
-    var id: Int=1,
-    val weight : Double,
+    var id: Int=0,
+    var weight : Double,
     var exercise : ExerciseModel?,
     var workoutDone : WorkoutModel?,
-    val reps : Int,
+    var reps : Int,
     val date : Date,
-    val observations : String
+    var observations : String
 ){
     fun toEntity():SetEntity{
         return SetEntity(

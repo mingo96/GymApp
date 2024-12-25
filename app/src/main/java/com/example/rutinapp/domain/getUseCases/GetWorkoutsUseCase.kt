@@ -28,7 +28,10 @@ class GetWorkoutsUseCase @Inject constructor(private val workoutRepository: Work
 
                     val sets = info.second.map {it.toModel()}.toMutableList()
 
-                    sets.forEach { it.exercise = model }
+                    sets.forEach {
+                        it.exercise = model
+                        it.workoutDone = workoutModel
+                    }
 
                     Pair(model, sets)
                 }
