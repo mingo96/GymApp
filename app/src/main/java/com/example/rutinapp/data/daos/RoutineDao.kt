@@ -30,7 +30,7 @@ interface RoutineDao {
     suspend fun getFromId(routineId: Int) : RoutineEntity
 
     @Insert
-    suspend fun addRoutine(routine: RoutineEntity)
+    suspend fun addRoutine(routine: RoutineEntity):Long
 
     @Delete
     suspend fun deleteRoutine(routine: RoutineEntity)

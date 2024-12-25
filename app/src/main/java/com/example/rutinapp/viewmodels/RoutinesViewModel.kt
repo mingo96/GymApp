@@ -70,9 +70,9 @@ class RoutinesViewModel @Inject constructor(
 
         viewModelScope.launch(Dispatchers.IO) {
             val createdRoutine = RoutineModel(
-                id = routines.value.size, name = name, targetedBodyPart = targetedBodyPart
+                name = name, targetedBodyPart = targetedBodyPart
             )
-            createRoutineUseCase(createdRoutine)
+            createdRoutine.id = createRoutineUseCase(createdRoutine)
 
             _uiState.postValue(
                 RoutinesScreenState.Creating(createdRoutine,

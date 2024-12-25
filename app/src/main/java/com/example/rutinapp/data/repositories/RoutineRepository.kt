@@ -48,8 +48,8 @@ class RoutineRepository @Inject constructor(
         return relatedExercises
     }
 
-    suspend fun addRoutine(routine: RoutineEntity) {
-        routineDao.addRoutine(routine)
+    suspend fun addRoutine(routine: RoutineEntity):Int {
+        return routineDao.addRoutine(routine).toInt()
     }
 
     suspend fun relateExerciseToRoutine(routineid : Int, exerciseId: Int) {
