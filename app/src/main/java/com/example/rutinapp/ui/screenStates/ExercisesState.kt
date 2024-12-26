@@ -11,4 +11,6 @@ sealed interface ExercisesState{
 
     data class AddingRelations(val exerciseModel: ExerciseModel, val possibleValues :List<ExerciseModel>) : ExercisesState
 
+    data class SearchingForExercise(val possibleValues: List<ExerciseModel>) : ExercisesState
+
 }

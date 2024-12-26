@@ -1,5 +1,6 @@
 package com.example.rutinapp.ui.theme
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
@@ -53,7 +54,9 @@ fun ScreenContainer(
             val padding = PaddingValues(start = it.calculateStartPadding(LocalLayoutDirection.current)+16.dp, top = it.calculateTopPadding()+16.dp, end = it.calculateEndPadding(
                 LocalLayoutDirection.current)+16.dp, bottom = it.calculateBottomPadding())
 
-            content(padding)
+            Column {
+                content(padding)
+            }
         }
     )
 

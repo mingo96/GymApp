@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -28,10 +29,11 @@ import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.twotone.Add
 import androidx.compose.material.icons.twotone.Delete
 import androidx.compose.material.icons.twotone.Edit
+import androidx.compose.material.icons.twotone.Search
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -50,6 +52,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -66,6 +69,7 @@ import com.example.rutinapp.ui.theme.rutinAppButtonsColours
 import com.example.rutinapp.ui.theme.rutinAppTextFieldColors
 import com.example.rutinapp.viewmodels.ExercisesViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExercisesScreen(viewModel: ExercisesViewModel, navController: NavHostController) {
 
@@ -96,6 +100,10 @@ fun ExercisesScreen(viewModel: ExercisesViewModel, navController: NavHostControl
             AddRelationsDialog(viewModel, uiState as ExercisesState.AddingRelations)
         }
 
+        is ExercisesState.SearchingForExercise -> {
+
+        }
+
         null -> {}
     }
 
@@ -106,14 +114,26 @@ fun ExercisesScreen(viewModel: ExercisesViewModel, navController: NavHostControl
         buttonText = "Crear un ejercicio",
         title = "Entrenamientos",
         bottomButtonAction = { viewModel.clickToCreate() }) { it ->
+
+        var name by rememberSaveable { mutableStateOf("") }
+        SearchTextField(
+            value = name,
+            onValueChange = { name = it },
+            search = { viewModel.writeOnExerciseName(name) },
+            modifier = Modifier.padding(top = it.calculateTopPadding() - 16.dp)
+        )
+
         LazyColumn(
-            Modifier
-                .fillMaxHeight()
-                .padding(vertical = 16.dp),
-            contentPadding = it,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            Modifier.fillMaxHeight(), contentPadding = PaddingValues(
+                top = 16.dp,
+                start = it.calculateLeftPadding(LayoutDirection.Ltr),
+                end = it.calculateRightPadding(LayoutDirection.Ltr)
+            ), verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            items(exercises) { exercise ->
+            items(
+                if (uiState is ExercisesState.SearchingForExercise) (uiState as ExercisesState.SearchingForExercise).possibleValues
+                else exercises
+            ) { exercise ->
                 ExerciseItem(item = exercise,
                     onEditClick = { viewModel.clickToEdit(exercise) },
                     onClick = { viewModel.clickToObserve(exercise) })
@@ -121,6 +141,27 @@ fun ExercisesScreen(viewModel: ExercisesViewModel, navController: NavHostControl
         }
     }
 
+}
+
+@Composable
+fun SearchTextField(
+    value: String, onValueChange: (String) -> Unit, search: () -> Unit, modifier: Modifier
+) {
+    TextField(value = value,
+        onValueChange = onValueChange,
+        colors = rutinAppTextFieldColors(),
+        modifier = modifier.fillMaxWidth(),
+        keyboardOptions = KeyboardOptions(
+            capitalization = KeyboardCapitalization.Sentences,
+            autoCorrectEnabled = true,
+            imeAction = ImeAction.Search
+        ),
+        keyboardActions = KeyboardActions(onSearch = { search() }),
+        trailingIcon = {
+            IconButton(onClick = { search() }) {
+                Icon(imageVector = Icons.TwoTone.Search, contentDescription = "Delete")
+            }
+        })
 }
 
 @Composable
@@ -146,14 +187,26 @@ fun AddRelationsDialog(
             ) {
                 if (addingRelations.possibleValues.isNotEmpty()) {
                     items(addingRelations.possibleValues) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Text(
-                                text = it.name, maxLines = 3, modifier = Modifier.padding(8.dp).fillMaxWidth(0.6f), fontWeight = FontWeight.Bold, fontSize = 12.sp
+                                text = it.name,
+                                maxLines = 3,
+                                modifier = Modifier
+                                    .padding(8.dp)
+                                    .fillMaxWidth(0.6f),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp
                             )
                             IconButton(onClick = {
                                 viewModel.toggleExercisesRelation(it)
                             }) {
-                                Icon(imageVector = Icons.TwoTone.Add, contentDescription = "Add exercise relation")
+                                Icon(
+                                    imageVector = Icons.TwoTone.Add,
+                                    contentDescription = "Add exercise relation"
+                                )
                             }
                         }
                     }
@@ -232,7 +285,12 @@ fun TopBar(onExit: () -> Unit, text: String) {
                 style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 24.sp)
             )
         }
-        Spacer(modifier = Modifier.fillMaxWidth().height(4.dp).background(SecondaryColor.copy(alpha = 0.7f)))
+        Spacer(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(4.dp)
+                .background(SecondaryColor.copy(alpha = 0.7f))
+        )
     }
 }
 
@@ -342,7 +400,9 @@ fun ModifyExerciseDialog(viewModel: ExercisesViewModel, uiState: ExercisesState.
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween,
-                        modifier = Modifier.padding(horizontal = 8.dp).animateItem()
+                        modifier = Modifier
+                            .padding(horizontal = 8.dp)
+                            .animateItem()
                     ) {
                         Text(
                             text = it.name,

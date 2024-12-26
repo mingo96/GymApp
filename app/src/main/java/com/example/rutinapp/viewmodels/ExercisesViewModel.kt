@@ -6,12 +6,12 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.rutinapp.data.models.ExerciseModel
 import com.example.rutinapp.domain.addUseCases.AddExerciseUseCase
 import com.example.rutinapp.domain.addUseCases.AddExercisesRelationUseCase
 import com.example.rutinapp.domain.deleteUseCases.DeleteExerciseRelationUseCase
 import com.example.rutinapp.domain.getUseCases.GetExercisesUseCase
 import com.example.rutinapp.domain.updateUseCases.UpdateExerciseUseCase
-import com.example.rutinapp.data.models.ExerciseModel
 import com.example.rutinapp.ui.screenStates.ExercisesState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
@@ -38,6 +39,16 @@ class ExercisesViewModel @Inject constructor(
         MutableLiveData(ExercisesState.Observe())
 
     val uiState: LiveData<ExercisesState> = _uiState
+
+    fun writeOnExerciseName(name: String) {
+
+        _uiState.postValue(
+            ExercisesState.SearchingForExercise(exercisesState.value.filter {
+                it.name.lowercase(Locale.getDefault()).contains(name.lowercase(Locale.getDefault()))
+            })
+        )
+
+    }
 
     fun addExercise(name: String, description: String, targetedBodyPart: String) {
         viewModelScope.launch(context = Dispatchers.IO) {

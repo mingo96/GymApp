@@ -122,19 +122,8 @@ class RoutinesViewModel @Inject constructor(
                 it
             )
             if (createdRoutine.targetedBodyPart == it.targetedBodyPart) return@sortedBy 100
-            return@sortedBy nameSimilarity(createdRoutine.targetedBodyPart, it.targetedBodyPart)
+            return@sortedBy createdRoutine.targetedBodyPart.nameSimilarity(it.targetedBodyPart)
         }.reversed()
-    }
-
-    private fun nameSimilarity(word1: String, word2: String): Int {
-
-        var count = 0
-        for (i in 0..<min(
-            word2.length, word1.length
-        )) {
-            if (word1[i] == word2[i]) count++
-        }
-        return count
     }
 
     fun clickEditRoutine(routine: RoutineModel) {
@@ -225,4 +214,15 @@ class RoutinesViewModel @Inject constructor(
         toggleEditingState(true)
     }
 
+}
+
+fun String.nameSimilarity(word2: String): Int {
+
+    var count = 0
+    for (i in 0..<min(
+        word2.length, this.length
+    )) {
+        if (this[i] == word2[i]) count++
+    }
+    return count
 }
