@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -147,7 +148,7 @@ fun AddRelationsDialog(
                     items(addingRelations.possibleValues) {
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = it.name, maxLines = 1, modifier = Modifier.padding(8.dp), fontSize = 16.sp
+                                text = it.name, maxLines = 3, modifier = Modifier.padding(8.dp).fillMaxWidth(0.6f), fontWeight = FontWeight.Bold, fontSize = 12.sp
                             )
                             IconButton(onClick = {
                                 viewModel.toggleExercisesRelation(it)
@@ -231,11 +232,7 @@ fun TopBar(onExit: () -> Unit, text: String) {
                 style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 24.sp)
             )
         }
-        LinearProgressIndicator(
-            progress = 1f, color = SecondaryColor, modifier = Modifier
-                .fillMaxWidth()
-                .height(2.dp)
-        )
+        Spacer(modifier = Modifier.fillMaxWidth().height(4.dp).background(SecondaryColor.copy(alpha = 0.7f)))
     }
 }
 

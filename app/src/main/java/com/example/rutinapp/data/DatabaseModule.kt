@@ -14,7 +14,6 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import java.io.File
 import javax.inject.Singleton
 
 @Module
@@ -59,7 +58,7 @@ class DatabaseModule {
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext appContext: Context): RutinAppDatabase {
-        return Room.databaseBuilder(appContext, RutinAppDatabase::class.java, "RutinAppDatabase")
+        return Room.databaseBuilder(appContext, RutinAppDatabase::class.java, "RutinAppDatabase.db")//.createFromAsset("database/RutinAppDatabase.db")
             .build()
     }
 
