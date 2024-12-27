@@ -17,28 +17,26 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavHostController
 import com.example.rutinapp.ui.screens.TopBar
 
 
 @Composable
 fun ScreenContainer(
     title: String,
-    onExit: () -> Unit,
-    bottomButtonAction: (() -> Unit)?,
-    buttonText: String,
+    onExit: (() -> Unit)? = null,
+    bottomButtonAction: (() -> Unit)? = null,
+    buttonText: String="",
     content: @Composable (PaddingValues) -> Unit
 ) {
 
-    Scaffold(
-        modifier = Modifier
-            .fillMaxWidth(),
+    Scaffold(modifier = Modifier.fillMaxWidth(),
         containerColor = PrimaryColor,
         topBar = { TopBar(onExit, title) },
         bottomBar = {
-            if (bottomButtonAction != null)
-            Button(
-                onClick = { bottomButtonAction() }, colors = rutinAppButtonsColours(), modifier = Modifier.padding(16.dp)
+            if (bottomButtonAction != null) Button(
+                onClick = { bottomButtonAction() },
+                colors = rutinAppButtonsColours(),
+                modifier = Modifier.padding(16.dp)
             ) {
                 Text(
                     text = buttonText,
@@ -51,13 +49,18 @@ fun ScreenContainer(
             }
         },
         content = {
-            val padding = PaddingValues(start = it.calculateStartPadding(LocalLayoutDirection.current)+16.dp, top = it.calculateTopPadding()+16.dp, end = it.calculateEndPadding(
-                LocalLayoutDirection.current)+16.dp, bottom = it.calculateBottomPadding())
+            val padding = PaddingValues(
+                start = it.calculateStartPadding(LocalLayoutDirection.current) + 16.dp,
+                top = it.calculateTopPadding() + 16.dp,
+                end = it.calculateEndPadding(
+                    LocalLayoutDirection.current
+                ) + 16.dp,
+                bottom = it.calculateBottomPadding()
+            )
 
             Column {
                 content(padding)
             }
-        }
-    )
+        })
 
 }

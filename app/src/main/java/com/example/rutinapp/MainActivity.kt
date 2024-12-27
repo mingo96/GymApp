@@ -24,12 +24,15 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.rutinapp.ui.screens.ExercisesScreen
+import com.example.rutinapp.ui.screens.MainScreen
 import com.example.rutinapp.ui.screens.RoutinesScreen
+import com.example.rutinapp.ui.screens.StatsScreen
 import com.example.rutinapp.ui.screens.WorkoutsScreen
 import com.example.rutinapp.ui.theme.PrimaryColor
 import com.example.rutinapp.ui.theme.RutinAppTheme
 import com.example.rutinapp.viewmodels.ExercisesViewModel
 import com.example.rutinapp.viewmodels.RoutinesViewModel
+import com.example.rutinapp.viewmodels.StatsViewModel
 import com.example.rutinapp.viewmodels.WorkoutsViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.HiltAndroidApp
@@ -43,6 +46,7 @@ class MainActivity : ComponentActivity() {
     private val exercisesViewModel: ExercisesViewModel by viewModels()
     private val routinesViewModel: RoutinesViewModel by viewModels()
     private val workoutsViewModel: WorkoutsViewModel by viewModels()
+    private val statsViewModel: StatsViewModel by viewModels()
 
     @SuppressLint("SourceLockedOrientationActivity")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -71,18 +75,7 @@ class MainActivity : ComponentActivity() {
                     NavHost(navController = navController, startDestination = "start") {
 
                         composable("start", enterTransition = { onEnter }, exitTransition = { onExit }) {
-                            Column {
-
-                                Button(onClick = { navController.navigate("exercises") }) {
-                                    Text(text = "ejercicios")
-                                }
-                                Button(onClick = { navController.navigate("routines") }) {
-                                    Text(text = "Rutinas")
-                                }
-                                Button(onClick = { navController.navigate("workouts") }) {
-                                    Text(text = "entrenamientos")
-                                }
-                            }
+                            MainScreen(navController = navController)
                         }
 
                         composable("exercises", enterTransition = { onEnter }, exitTransition = { onExit }) {
@@ -95,6 +88,10 @@ class MainActivity : ComponentActivity() {
 
                         composable("workouts", enterTransition = { onEnter }, exitTransition = { onExit }) {
                             WorkoutsScreen(viewModel = workoutsViewModel, navController = navController)
+                        }
+
+                        composable("stats", enterTransition = { onEnter }, exitTransition = { onExit }) {
+                            StatsScreen(navController = navController, statsViewModel = statsViewModel)
                         }
 
                     }

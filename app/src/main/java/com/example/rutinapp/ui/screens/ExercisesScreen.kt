@@ -119,7 +119,7 @@ fun ExercisesScreen(viewModel: ExercisesViewModel, navController: NavHostControl
         SearchTextField(
             value = name,
             onValueChange = { name = it },
-            search = { viewModel.writeOnExerciseName(name) },
+            onSearch = { viewModel.writeOnExerciseName(name) },
             modifier = Modifier.padding(top = it.calculateTopPadding() - 16.dp)
         )
 
@@ -145,9 +145,10 @@ fun ExercisesScreen(viewModel: ExercisesViewModel, navController: NavHostControl
 
 @Composable
 fun SearchTextField(
-    value: String, onValueChange: (String) -> Unit, search: () -> Unit, modifier: Modifier
+    value: String, onValueChange: (String) -> Unit, onSearch: () -> Unit, modifier: Modifier
 ) {
     TextField(value = value,
+        textStyle = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold),
         onValueChange = onValueChange,
         colors = rutinAppTextFieldColors(),
         modifier = modifier.fillMaxWidth(),
@@ -156,9 +157,9 @@ fun SearchTextField(
             autoCorrectEnabled = true,
             imeAction = ImeAction.Search
         ),
-        keyboardActions = KeyboardActions(onSearch = { search() }),
+        keyboardActions = KeyboardActions(onSearch = { onSearch() }),
         trailingIcon = {
-            IconButton(onClick = { search() }) {
+            IconButton(onClick = { onSearch() }) {
                 Icon(imageVector = Icons.TwoTone.Search, contentDescription = "Delete")
             }
         })
@@ -259,7 +260,7 @@ fun ExerciseItem(item: ExerciseModel, onEditClick: () -> Unit, onClick: () -> Un
 }
 
 @Composable
-fun TopBar(onExit: () -> Unit, text: String) {
+fun TopBar(onExit: (() -> Unit)?, text: String) {
     Column(
         modifier = Modifier.background(PrimaryColor)
     ) {
@@ -272,7 +273,7 @@ fun TopBar(onExit: () -> Unit, text: String) {
                 .padding(24.dp)
                 .wrapContentHeight()
         ) {
-            Icon(imageVector = Icons.Outlined.Clear,
+            if (onExit != null) Icon(imageVector = Icons.Outlined.Clear,
                 contentDescription = "Exit",
                 Modifier
                     .clickable { onExit() }
