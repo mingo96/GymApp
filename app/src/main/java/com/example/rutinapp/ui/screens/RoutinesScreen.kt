@@ -622,10 +622,7 @@ fun ExerciseItemForRoutineEditing(
                 text = item.name, fontWeight = FontWeight.Bold, maxLines = 1
             )
             Text(
-                text = if (item.description.length > 50 && !opened) item.description.substring(
-                    0, 50
-                ) + "..."
-                else item.description
+                text = item.description.take(40)
             )
             if (opened) {
                 if (item.setsAndReps != "" && item.setsAndReps != "0x0") Text(text = "Series y repeticiones : ${item.setsAndReps}")
@@ -685,10 +682,7 @@ fun ExerciseItemForRoutineCreationPhase(
                 modifier = Modifier.fillMaxWidth(0.8f)
             )
             Text(
-                text = if (item.description.length > 50 && !opened) item.description.substring(
-                    0, 40
-                ) + "..."
-                else item.description, modifier = Modifier.fillMaxWidth(0.8f)
+                text = item.description.take(40), modifier = Modifier.fillMaxWidth(0.8f)
             )
             if (opened) {
                 Text(text = "Parte del cuerpo : ${item.targetedBodyPart}")
@@ -728,8 +722,7 @@ fun SimpleExerciseItem(
                 modifier = Modifier.fillMaxWidth()
             )
             Text(
-                text = if (item.description.length > 50) item.description.substring(0, 40) + "..."
-                else item.description, modifier = Modifier.fillMaxWidth()
+                text = item.description.take(40), modifier = Modifier.fillMaxWidth()
             )
         }
     }

@@ -127,7 +127,8 @@ fun ExercisesScreen(viewModel: ExercisesViewModel, navController: NavHostControl
             Modifier.fillMaxHeight(), contentPadding = PaddingValues(
                 top = 16.dp,
                 start = it.calculateLeftPadding(LayoutDirection.Ltr),
-                end = it.calculateRightPadding(LayoutDirection.Ltr)
+                end = it.calculateRightPadding(LayoutDirection.Ltr),
+                bottom = it.calculateBottomPadding()
             ), verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             items(
@@ -247,8 +248,7 @@ fun ExerciseItem(item: ExerciseModel, onEditClick: () -> Unit, onClick: () -> Un
                 modifier = Modifier.fillMaxWidth(0.8f)
             )
             Text(
-                text = if (item.description.length > 50) item.description.substring(0, 40) + "..."
-                else item.description, modifier = Modifier.fillMaxWidth(0.8f)
+                text = item.description.take(40), modifier = Modifier.fillMaxWidth(0.8f)
             )
         }
         Icon(imageVector = Icons.TwoTone.Edit,
