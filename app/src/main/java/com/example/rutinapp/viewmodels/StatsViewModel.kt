@@ -12,11 +12,15 @@ import com.example.rutinapp.domain.getUseCases.GetSetsOfExerciseUseCase
 import com.example.rutinapp.ui.screenStates.StatsScreenState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.util.Date
 import javax.inject.Inject
 
 @HiltViewModel
@@ -26,19 +30,23 @@ class StatsViewModel @Inject constructor(
     private val getSetsUseCase: GetSetsOfExerciseUseCase
 ) : ViewModel() {
 
-    val exercisesState: StateFlow<List<ExerciseModel>> = getExercisesUseCase().catch { Error(it) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val exercisesState: StateFlow<List<ExerciseModel>> = getExercisesUseCase().map {
+        if (_uiState.value is StatsScreenState.Observation) {
+            _uiState.postValue(StatsScreenState.Observation(it))
+        }
+        it
+    }.catch { Error(it) }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val routinesState: StateFlow<List<RoutineModel>> = getRoutinesUseCase().catch { Error(it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _uiState: MutableLiveData<StatsScreenState> =
-        MutableLiveData(StatsScreenState.Observation)
+        MutableLiveData(StatsScreenState.Observation(exercisesState.value))
 
     val uiState: LiveData<StatsScreenState> = _uiState
 
     fun backToObservation() {
-        _uiState.postValue(StatsScreenState.Observation)
+        _uiState.postValue(StatsScreenState.Observation(exercisesState.value))
     }
 
     fun selectExerciseForStats(exerciseModel: ExerciseModel) {
@@ -49,7 +57,7 @@ class StatsViewModel @Inject constructor(
 
             if (setsDone.isNotEmpty()) {
 
-                val maxWeigth =
+                val maxWeight =
                     setsDone.map { Triple(it.weight, it.date, it.observations) }.maxBy { it.first }
 
                 val timesDone = setsDone.size
@@ -63,8 +71,9 @@ class StatsViewModel @Inject constructor(
                 val lastTimeDone = setsDone.maxOf { it.date }
 
                 val newState = StatsScreenState.StatsOfExercise(
+                    true,
                     exerciseModel,
-                    maxWeigth,
+                    maxWeight,
                     timesDone,
                     avgWeight,
                     mostWeightOnASet,
@@ -73,11 +82,16 @@ class StatsViewModel @Inject constructor(
 
                 _uiState.postValue(newState)
             } else {
-                _uiState.postValue(StatsScreenState.StatsOfExercise(exerciseModel))
+                _uiState.postValue(StatsScreenState.StatsOfExercise(exercise = exerciseModel))
             }
-
         }
+    }
 
+    fun searchExercise(name: String) {
+        if (_uiState.value is StatsScreenState.Observation) {
+            val newList = exercisesState.value.filter { it.name.contains(name) }
+            _uiState.postValue(StatsScreenState.Observation(newList))
+        }
     }
 
 }

@@ -52,6 +52,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -283,7 +284,7 @@ fun TopBar(onExit: (() -> Unit)?, text: String) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .wrapContentWidth(Alignment.CenterHorizontally),
-                style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 24.sp)
+                style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 24.sp, textAlign = TextAlign.Center)
             )
         }
         Spacer(

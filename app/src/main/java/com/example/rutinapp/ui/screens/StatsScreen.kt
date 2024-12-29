@@ -28,7 +28,10 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -56,35 +59,51 @@ fun StatsScreen(navController: NavHostController, statsViewModel: StatsViewModel
 
     val routines by statsViewModel.routinesState.collectAsState()
 
-    val uiState by statsViewModel.uiState.observeAsState(StatsScreenState.Observation)
+    val uiState by statsViewModel.uiState.observeAsState(StatsScreenState.Observation())
 
-    when (uiState) {
-        StatsScreenState.Observation -> {}
-        is StatsScreenState.StatsOfExercise -> {
-            Dialog(
-                onDismissRequest = { statsViewModel.backToObservation() },
-                properties = DialogProperties(usePlatformDefaultWidth = false)
-            ) {
-                DialogContainer {
-                    ExerciseStats(uiState = uiState as StatsScreenState.StatsOfExercise)
-                }
-            }
-        }
-    }
 
     ScreenContainer(title = "Tus estadisticas", onExit = { navController.navigateUp() }) {
 
-        Column(Modifier.padding(it), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        when (uiState) {
+            is StatsScreenState.Observation -> {
 
-            Text(text = "Ejercicios", fontSize = 30.sp)
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Column(Modifier.padding(it), verticalArrangement = Arrangement.spacedBy(16.dp)) {
 
-                items(exercises) {
-                    ExerciseItem(exercise = it) {
-                        statsViewModel.selectExerciseForStats(it)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Text(text = "Ejercicios", fontSize = 30.sp)
+
+                        var name by rememberSaveable { mutableStateOf("") }
+                        SearchTextField(
+                            value = name,
+                            onValueChange = { name = it },
+                            onSearch = { statsViewModel.searchExercise(name) },
+                            modifier = Modifier
+                        )
+                    }
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+
+                        items(if (uiState is StatsScreenState.Observation) (uiState as StatsScreenState.Observation).exercises else exercises) {
+                            ExerciseItem(exercise = it) {
+                                statsViewModel.selectExerciseForStats(it)
+                            }
+                        }
+
                     }
                 }
+            }
 
+            is StatsScreenState.StatsOfExercise -> {
+                Dialog(
+                    onDismissRequest = { statsViewModel.backToObservation() },
+                    properties = DialogProperties(usePlatformDefaultWidth = false)
+                ) {
+                    DialogContainer {
+                        ExerciseStats(uiState = uiState as StatsScreenState.StatsOfExercise)
+                    }
+                }
             }
         }
 
@@ -113,42 +132,50 @@ fun ExerciseItem(exercise: ExerciseModel, onClick: () -> Unit) {
 @Composable
 fun ExerciseStats(uiState: StatsScreenState.StatsOfExercise) {
 
-    Text(text = "Estadisticas de " + uiState.exercise.name, fontSize = 30.sp)
+    if (!uiState.hasBeenDone) {
+        Text(text = "Aún no has hecho este ejercicio", fontSize = 30.sp, color = Color.Red, modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center)
+    } else {
+        Text(text = "Estadisticas de " + uiState.exercise.name, fontSize = 30.sp)
 
-    Column(
-        verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier
-            .background(
-                TextFieldColor, RoundedCornerShape(15.dp)
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier
+                .background(
+                    TextFieldColor, RoundedCornerShape(15.dp)
+                )
+                .padding(8.dp)
+                .fillMaxWidth()
+        ) {
+
+            WeightContainer(
+                content = uiState.highestWeight, title = "Mayor peso usado"
             )
-            .padding(8.dp)
-            .fillMaxWidth()
-    ) {
 
-        WeightContainer(
-            content = uiState.highestWeight, title = "Mayor peso usado"
-        )
+            WeightContainer(
+                content = uiState.mostWeightOnASet, title = "Mayor peso en una serie"
+            )
 
-        WeightContainer(
-            content = uiState.mostWeigthOnASet, title = "Mayor peso en una serie"
-        )
+            TextContainer(
+                text = uiState.averageWeight.toString() + " kg", title = "Peso promedio"
+            )
 
-        TextContainer(
-            text = uiState.averageWeight.toString() + " kg", title = "Peso promedio"
-        )
+            TextContainer(text = uiState.timesDone.toString(), title = "Veces hecho")
 
-        TextContainer(text = uiState.timesDone.toString(), title = "Veces hecho")
+            TextContainer(text = uiState.lastTimeDone, title = "Ultima vez hecho")
 
-        TextContainer(text = uiState.lastTimeDone, title = "Ultima vez hecho")
-
+        }
     }
 }
 
 @Composable
-fun TextContainer(text: String, title: String) {
+fun TextContainer(text: String, title: String, modifier: Modifier = Modifier) {
 
-    Column {
-        Text(text = title, fontSize = 25.sp)
-        Text(text = text, fontSize = 25.sp)
+    Column(modifier) {
+        Column(modifier = Modifier.padding(8.dp)) {
+
+            Text(text = title, fontSize = 25.sp)
+            Text(text = text, fontSize = 25.sp)
+        }
     }
 }
 
@@ -159,7 +186,7 @@ fun WeightContainer(content: Triple<Double, Date, String>, title: String) {
         mutableStateOf(false)
     }
 
-    Box() {
+    Box(Modifier.padding(8.dp)) {
         AnimatedVisibility(visible = !isOpened,
             enter = slideInHorizontally { -it },
             exit = slideOutHorizontally { -it }) {
@@ -169,7 +196,7 @@ fun WeightContainer(content: Triple<Double, Date, String>, title: String) {
                 verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
             ) {
 
-                Column {
+                Column(Modifier.fillMaxWidth(0.8f)) {
                     Text(text = title, fontSize = 25.sp)
                     Text(text = "${content.first} kg", fontSize = 25.sp)
                 }

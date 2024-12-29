@@ -18,14 +18,17 @@ import com.example.rutinapp.domain.getUseCases.GetRoutinesUseCase
 import com.example.rutinapp.domain.getUseCases.GetWorkoutIdByDateUseCase
 import com.example.rutinapp.domain.getUseCases.GetWorkoutsUseCase
 import com.example.rutinapp.domain.updateUseCases.UpdateSetUseCase
+import com.example.rutinapp.ui.screenStates.SetState
 import com.example.rutinapp.ui.screenStates.WorkoutsScreenState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -48,26 +51,30 @@ class WorkoutsViewModel @Inject constructor(
 
     lateinit var exercisesViewModel: ExercisesViewModel
 
-    val workouts: StateFlow<List<WorkoutModel>> = getWorkoutsUseCase().catch { Error(it) }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
+    val workouts: StateFlow<List<WorkoutModel>> = getWorkoutsUseCase().catch { Error(it) }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     val routines: StateFlow<List<RoutineModel>> = getRoutinesUseCase().catch { Error(it) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
-    private val exercises: Flow<List<ExerciseModel>> = getExercisesUseCase().map  {
+    private val exercises: Flow<List<ExerciseModel>> = getExercisesUseCase().map {
         try {
             val state = _workoutScreenStates.value as WorkoutsScreenState.WorkoutStarted
 
-            val availableExercises = it
-                .filter { it.id !in state.workout.exercisesAndSets.map { it.first.id } }
-                .toMutableList()
+            val availableExercises =
+                it.filter { it.id !in state.workout.exercisesAndSets.map { it.first.id } }
+                    .toMutableList()
 
             if (state.workout.baseRoutine != null) {
-                availableExercises.removeIf { it.id in state.workout.baseRoutine!!.exercises.toSet().map { it.id } }
+                availableExercises.removeIf {
+                    it.id in state.workout.baseRoutine!!.exercises.toSet().map { it.id }
+                }
             }
             _workoutScreenStates.postValue(
                 WorkoutsScreenState.WorkoutStarted(
-                    workout = state.workout, otherExercises = availableExercises, setBeingCreated = state.setBeingCreated
+                    workout = state.workout,
+                    otherExercises = availableExercises,
+                    setBeingCreated = state.setBeingCreated
                 )
             )
         } catch (_: Exception) {
@@ -80,6 +87,15 @@ class WorkoutsViewModel @Inject constructor(
         MutableLiveData(WorkoutsScreenState.Observe)
 
     val workoutScreenStates: LiveData<WorkoutsScreenState> = _workoutScreenStates
+
+    val currentDate: StateFlow<Long> = flow {
+        while (true) {
+            delay(1000)
+            Log.d("DATE", "UPDATING DATE")
+            emit(Date().time)
+        }
+
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), Date().time)
 
     fun startFromRoutine(routine: RoutineModel) {
 
@@ -152,35 +168,61 @@ class WorkoutsViewModel @Inject constructor(
 
         _workoutScreenStates.postValue(
             WorkoutsScreenState.WorkoutStarted(
-                currentState.workout, currentState.otherExercises, newSet
+                currentState.workout, currentState.otherExercises, SetState.CreatingSet(newSet)
             )
 
         )
 
-
     }
 
-    fun createSet(weight: Double, reps: Int, observations: String) {
+    fun saveSet(weight: Double, reps: Int, observations: String) {
 
         val currentState = _workoutScreenStates.value as WorkoutsScreenState.WorkoutStarted
 
-        currentState.setBeingCreated!!.apply {
+        if (currentState.setBeingCreated!! is SetState.CreatingSet) {
+            createSet(currentState, weight, reps, observations)
+        } else {
+            updateSet(currentState, weight, reps, observations)
+        }
+    }
+
+    private fun createSet(currentState: WorkoutsScreenState.WorkoutStarted, weight: Double, reps: Int, observations: String){
+
+        val setState = currentState.setBeingCreated as SetState.CreatingSet
+        setState.set.apply {
             this.weight = weight
             this.reps = reps
             this.observations = observations
         }
 
-        currentState.workout.exercisesAndSets.find { it.first == currentState.setBeingCreated.exercise }!!.second += currentState.setBeingCreated
+        currentState.workout.exercisesAndSets.find { it.first == setState.set.exercise }!!.second += setState.set
 
         viewModelScope.launch(Dispatchers.IO) {
-            currentState.setBeingCreated.id = addSetUseCase(currentState.setBeingCreated)
+            setState.set.id = addSetUseCase(setState.set)
             _workoutScreenStates.postValue(
                 WorkoutsScreenState.WorkoutStarted(
                     workout = currentState.workout, otherExercises = currentState.otherExercises
                 )
             )
         }
+    }
 
+    private fun updateSet(currentState: WorkoutsScreenState.WorkoutStarted, weight: Double, reps: Int, observations: String){
+
+        val setState = currentState.setBeingCreated as SetState.OptionsOfSet
+        setState.set.apply {
+            this.weight = weight
+            this.reps = reps
+            this.observations = observations
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            updateSetUseCase(setState.set)
+            _workoutScreenStates.postValue(
+                WorkoutsScreenState.WorkoutStarted(
+                    workout = currentState.workout, otherExercises = currentState.otherExercises
+                )
+            )
+        }
     }
 
     fun addExerciseToWorkout(exercise: ExerciseModel) {
@@ -306,15 +348,34 @@ class WorkoutsViewModel @Inject constructor(
         )
     }
 
-    fun editSetClicked(set: SetModel) {
+    fun setOptionsClicked(set: SetModel) {
 
         val actualState = _workoutScreenStates.value as WorkoutsScreenState.WorkoutStarted
 
+        val setState = SetState.OptionsOfSet(set)
+
         _workoutScreenStates.postValue(
             WorkoutsScreenState.WorkoutStarted(
-                actualState.workout, actualState.otherExercises, set
+                actualState.workout, actualState.otherExercises, setState
             )
         )
+    }
+
+    fun clickEditSet(set: SetModel) {
+
+    }
+
+    fun deleteSet(set: SetModel) {
+        viewModelScope.launch(Dispatchers.IO) {
+            deleteSetUseCase(set)
+            val actualState = _workoutScreenStates.value as WorkoutsScreenState.WorkoutStarted
+            actualState.workout.exercisesAndSets.find { it.first.id == set.exercise!!.id }!!.second -= set
+            _workoutScreenStates.postValue(
+                WorkoutsScreenState.WorkoutStarted(
+                    actualState.workout, actualState.otherExercises, null
+                )
+            )
+        }
     }
 
 }

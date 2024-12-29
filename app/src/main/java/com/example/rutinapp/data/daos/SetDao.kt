@@ -38,6 +38,7 @@ data class SetEntity(
 ){
     fun toModel():SetModel{
         return SetModel(
+            id = setId,
             weight = weight,
             reps = reps,
             date = Date(date),

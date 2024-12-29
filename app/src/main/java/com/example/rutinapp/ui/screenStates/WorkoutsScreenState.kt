@@ -8,6 +8,6 @@ import com.example.rutinapp.viewmodels.ExercisesViewModel
 sealed interface WorkoutsScreenState {
     data object Observe : WorkoutsScreenState
 
-    data class WorkoutStarted(val workout: WorkoutModel, val otherExercises: List<ExerciseModel>, val setBeingCreated : SetModel? = null) : WorkoutsScreenState
+    data class WorkoutStarted(val workout: WorkoutModel, val otherExercises: List<ExerciseModel>, val setBeingCreated : SetState? = null) : WorkoutsScreenState
 
 }

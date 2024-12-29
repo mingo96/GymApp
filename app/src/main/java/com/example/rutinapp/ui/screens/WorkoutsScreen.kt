@@ -1,5 +1,6 @@
 package com.example.rutinapp.ui.screens
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -47,6 +48,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
@@ -54,12 +56,15 @@ import com.example.rutinapp.data.models.ExerciseModel
 import com.example.rutinapp.data.models.RoutineModel
 import com.example.rutinapp.data.models.SetModel
 import com.example.rutinapp.data.models.WorkoutModel
+import com.example.rutinapp.ui.screenStates.SetState
 import com.example.rutinapp.ui.screenStates.WorkoutsScreenState
 import com.example.rutinapp.ui.theme.PrimaryColor
 import com.example.rutinapp.ui.theme.ScreenContainer
 import com.example.rutinapp.ui.theme.TextFieldColor
 import com.example.rutinapp.ui.theme.rutinAppButtonsColours
 import com.example.rutinapp.viewmodels.WorkoutsViewModel
+import java.text.SimpleDateFormat
+import java.util.Date
 
 @Composable
 fun WorkoutsScreen(viewModel: WorkoutsViewModel, navController: NavHostController) {
@@ -162,15 +167,40 @@ fun ObservationContent(viewModel: WorkoutsViewModel) {
 
 }
 
+@SuppressLint("SimpleDateFormat", "ScheduleExactAlarm")
 @Composable
-fun WorkoutProgression(viewModel: WorkoutsViewModel, uiState: WorkoutsScreenState.WorkoutStarted, navController: NavHostController) {
+fun WorkoutProgression(
+    viewModel: WorkoutsViewModel,
+    uiState: WorkoutsScreenState.WorkoutStarted,
+    navController: NavHostController
+) {
+
+    val actualDate by viewModel.currentDate.collectAsStateWithLifecycle(initialValue = System.currentTimeMillis())
 
     if (uiState.setBeingCreated != null) {
-        if (uiState.setBeingCreated.id == 0) {
-            SetCreationDialog(viewModel = viewModel, uiState = uiState)
-        }else{
+        if (uiState.setBeingCreated is SetState.CreatingSet) {
+            SetEditionDialog(viewModel = viewModel, set = uiState.setBeingCreated.set)
+        } else {
             SetOptionsDialog(viewModel = viewModel, uiState = uiState)
         }
+    }
+
+
+    Row(
+        modifier = Modifier.padding(bottom = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Text(
+            text = SimpleDateFormat("HH:mm:ss").format(Date(actualDate)),
+            fontSize = 20.sp,
+            modifier = Modifier.padding(8.dp)
+        )
+
+        Button(onClick = {}, colors = rutinAppButtonsColours()) {
+            Text(text = "poner alarma")
+        }
+
     }
 
     LazyRow(modifier = Modifier.padding(bottom = 16.dp)) {
@@ -213,12 +243,72 @@ fun WorkoutProgression(viewModel: WorkoutsViewModel, uiState: WorkoutsScreenStat
 
 @Composable
 fun SetOptionsDialog(viewModel: WorkoutsViewModel, uiState: WorkoutsScreenState.WorkoutStarted) {
-    Dialog(onDismissRequest = { viewModel.cancelSetEditing() }) {
 
-        DialogContainer {
-            Text(text = "Opciones de serie", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+    val setState = uiState.setBeingCreated!! as SetState.OptionsOfSet
+
+    var isEditing by rememberSaveable { mutableStateOf(false) }
+
+    if (isEditing) {
+        SetEditionDialog(viewModel = viewModel, set = setState.set)
+    } else
+
+        Dialog(
+            onDismissRequest = { viewModel.cancelSetEditing() },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+
+            DialogContainer {
+                Text(
+                    text = "Opciones de serie",
+                    fontSize = 35.sp,
+                    fontWeight = FontWeight.Bold,
+                    lineHeight = 40.sp
+                )
+
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    TextContainer(
+                        text = setState.set.observations,
+                        title = "Observaciones",
+                        modifier = Modifier
+                            .background(TextFieldColor, RoundedCornerShape(15.dp))
+                            .fillMaxWidth()
+                    )
+                    TextContainer(
+                        text = setState.set.date.toGMTString().take(20),
+                        title = "Momento de ejecución",
+                        modifier = Modifier
+                            .background(TextFieldColor, RoundedCornerShape(15.dp))
+                            .fillMaxWidth()
+                    )
+                }
+
+                ButtonsOfEditSet(exit = { viewModel.cancelSetEditing() },
+                    onEditClick = { isEditing = true }) {
+                    viewModel.deleteSet(setState.set)
+                }
+
+            }
+
         }
+}
 
+@Composable
+fun ButtonsOfEditSet(exit: () -> Unit, onEditClick: () -> Unit, delete: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .padding(vertical = 16.dp)
+            .fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Button(onClick = { onEditClick() }, colors = rutinAppButtonsColours()) {
+            Text(text = "Editar", fontSize = 20.sp)
+        }
+        Button(onClick = { exit() }, colors = rutinAppButtonsColours()) {
+            Text(text = "Salir", fontSize = 20.sp)
+        }
+        Button(onClick = { delete() }, colors = rutinAppButtonsColours()) {
+            Text(text = "Eliminar", fontSize = 20.sp)
+        }
     }
 }
 
@@ -248,8 +338,10 @@ fun ExerciseSets(
                         fontSize = 15.sp,
                         modifier = Modifier.padding(8.dp)
                     )
-                    IconButton(onClick = { viewModel.editSetClicked(i) }) {
-                        Icon(imageVector = Icons.TwoTone.MoreVert, contentDescription = "set options")
+                    IconButton(onClick = { viewModel.setOptionsClicked(i) }) {
+                        Icon(
+                            imageVector = Icons.TwoTone.MoreVert, contentDescription = "set options"
+                        )
                     }
                 }
             }
@@ -269,16 +361,16 @@ fun ExerciseActions(
         IconButton(onClick = {
             viewModel.addSetClicked(exerciseAndSets.first)
         }) {
-            Icon(imageVector = Icons.TwoTone.Add, contentDescription = " ")
+            Icon(imageVector = Icons.TwoTone.Add, contentDescription = "add sett to exercise")
         }
         IconButton(onClick = { viewModel.removeExerciseFromRoutine(exerciseAndSets.first) }) {
-            Icon(imageVector = Icons.TwoTone.Delete, contentDescription = " ")
+            Icon(imageVector = Icons.TwoTone.Delete, contentDescription = "delete exercise")
         }
         if (exerciseAndSets != uiState.workout.exercisesAndSets.last()) {
             IconButton(onClick = { viewModel.moveExercise(exerciseAndSets.first, false) }) {
                 Icon(
                     imageVector = Icons.TwoTone.ArrowBack,
-                    contentDescription = " ",
+                    contentDescription = "move up",
                     modifier = Modifier.rotate(-90f)
                 )
             }
@@ -287,7 +379,7 @@ fun ExerciseActions(
             IconButton(onClick = { viewModel.moveExercise(exerciseAndSets.first, true) }) {
                 Icon(
                     imageVector = Icons.TwoTone.ArrowBack,
-                    contentDescription = " ",
+                    contentDescription = "move down",
                     modifier = Modifier.rotate(90f)
                 )
             }
@@ -319,13 +411,13 @@ fun ExerciseInfo(
 }
 
 @Composable
-fun SetCreationDialog(viewModel: WorkoutsViewModel, uiState: WorkoutsScreenState.WorkoutStarted) {
+fun SetEditionDialog(viewModel: WorkoutsViewModel, set: SetModel) {
 
     Dialog(onDismissRequest = { viewModel.cancelSetEditing() }) {
 
-        var reps by rememberSaveable { mutableIntStateOf(uiState.setBeingCreated!!.reps) }
-        var weight by rememberSaveable { mutableStateOf(uiState.setBeingCreated!!.weight.toString()) }
-        var observations by rememberSaveable { mutableStateOf(uiState.setBeingCreated!!.observations) }
+        var reps by rememberSaveable { mutableIntStateOf(set.reps) }
+        var weight by rememberSaveable { mutableStateOf(set.weight.toString()) }
+        var observations by rememberSaveable { mutableStateOf(set.observations) }
 
         DialogContainer {
             Text(text = "Añadir serie", fontSize = 20.sp, fontWeight = FontWeight.Bold)
@@ -336,11 +428,17 @@ fun SetCreationDialog(viewModel: WorkoutsViewModel, uiState: WorkoutsScreenState
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { reps++ }) {
-                    Icon(imageVector = Icons.TwoTone.KeyboardArrowUp, contentDescription = "more reps")
+                    Icon(
+                        imageVector = Icons.TwoTone.KeyboardArrowUp,
+                        contentDescription = "more reps"
+                    )
                 }
                 Text(text = reps.toString(), fontSize = 20.sp)
                 IconButton(onClick = { reps-- }) {
-                    Icon(imageVector = Icons.TwoTone.KeyboardArrowDown, contentDescription = "less reps")
+                    Icon(
+                        imageVector = Icons.TwoTone.KeyboardArrowDown,
+                        contentDescription = "less reps"
+                    )
                 }
             }
             TextFieldWithTitle(
@@ -353,7 +451,8 @@ fun SetCreationDialog(viewModel: WorkoutsViewModel, uiState: WorkoutsScreenState
                     }
                 }, typeOfKeyBoard = KeyboardType.Number
             )
-            TextFieldWithTitle(title = "Observaciones",
+            TextFieldWithTitle(
+                title = "Observaciones",
                 text = observations,
                 onWrite = { observations = it })
             Row(
@@ -362,13 +461,14 @@ fun SetCreationDialog(viewModel: WorkoutsViewModel, uiState: WorkoutsScreenState
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Button(colors = rutinAppButtonsColours(), onClick = {
-                    viewModel.createSet(
+                    viewModel.saveSet(
                         weight = weight.toDouble(), reps = reps, observations = observations
                     )
                 }) {
                     Text(text = "Guardar")
                 }
-                Button(colors = rutinAppButtonsColours(),
+                Button(
+                    colors = rutinAppButtonsColours(),
                     onClick = { viewModel.cancelSetEditing() }) {
                     Text(text = "Cancelar")
                 }
@@ -419,7 +519,11 @@ fun RoutineContent(uiState: WorkoutsScreenState.WorkoutStarted, viewModel: Worko
 }
 
 @Composable
-fun OtherExercises(uiState: WorkoutsScreenState.WorkoutStarted, viewModel: WorkoutsViewModel, navController: NavHostController) {
+fun OtherExercises(
+    uiState: WorkoutsScreenState.WorkoutStarted,
+    viewModel: WorkoutsViewModel,
+    navController: NavHostController
+) {
 
     Column(
         modifier = Modifier.background(TextFieldColor, RoundedCornerShape(15.dp))
@@ -472,7 +576,7 @@ fun OtherExercises(uiState: WorkoutsScreenState.WorkoutStarted, viewModel: Worko
                     IconButton(onClick = {
                         navController.navigate("exercises")
                         viewModel.exercisesViewModel.clickToCreate()
-                                         }, Modifier.fillMaxWidth()) {
+                    }, Modifier.fillMaxWidth()) {
                         Icon(
                             imageVector = Icons.TwoTone.Add, contentDescription = "add new exercise"
                         )
