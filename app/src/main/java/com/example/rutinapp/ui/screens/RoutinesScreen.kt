@@ -381,7 +381,7 @@ fun ListOfExercises(
                 item = it, modifier = Modifier
                     .animateItem()
                     .background(
-                        if (it != selected) TextFieldColor else TextFieldColor.copy(1f),
+                        if (it != selected) TextFieldColor else TextFieldColor.copy(0.7f),
                         RoundedCornerShape(15.dp)
                     )
                     .padding(8.dp), onEditClick = { selectExercise(it) }, opened = it == selected

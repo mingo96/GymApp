@@ -52,6 +52,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -284,7 +286,9 @@ fun TopBar(onExit: (() -> Unit)?, text: String) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .wrapContentWidth(Alignment.CenterHorizontally),
-                style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 24.sp, textAlign = TextAlign.Center)
+                style = TextStyle(
+                    fontWeight = FontWeight.Bold, fontSize = 24.sp, textAlign = TextAlign.Center
+                )
             )
         }
         Spacer(
@@ -323,6 +327,7 @@ fun TextFieldWithTitle(
             capitalization = KeyboardCapitalization.Sentences,
             autoCorrectEnabled = true
         ),
+        visualTransformation = if (typeOfKeyBoard == KeyboardType.Password) PasswordVisualTransformation() else VisualTransformation.None,
         keyboardActions = KeyboardActions(onDone = {
             if (sendFunction != null) sendFunction() else focusManager.moveFocus(
                 FocusDirection.Down

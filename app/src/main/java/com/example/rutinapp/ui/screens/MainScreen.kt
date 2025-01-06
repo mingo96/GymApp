@@ -31,6 +31,10 @@ fun MainScreen(navController: NavHostController){
             Button(onClick = { navController.navigate("stats") }, colors = rutinAppButtonsColours()) {
                 Text(text = "Estadisticas")
             }
+
+            Button(onClick = { navController.navigate("Settings") }, colors = rutinAppButtonsColours()) {
+                Text(text = "Configuración")
+            }
         }
     }
 

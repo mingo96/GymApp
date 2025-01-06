@@ -11,7 +11,7 @@ fun rutinAppButtonsColours(): ButtonColors {
     return ButtonDefaults.buttonColors(
         contentColor = Color.White,
         containerColor = SecondaryColor,
-        disabledContainerColor = Color.White,
+        disabledContainerColor = ContentColor,
         disabledContentColor = SecondaryColor
     )
 }
