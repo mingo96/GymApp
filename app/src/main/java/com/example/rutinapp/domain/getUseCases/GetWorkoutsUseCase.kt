@@ -9,34 +9,38 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
-class GetWorkoutsUseCase @Inject constructor(private val workoutRepository: WorkoutRepository, private val exerciseRepository: ExerciseRepository) {
+class GetWorkoutsUseCase @Inject constructor(private val workoutRepository: WorkoutRepository) {
 
     operator fun invoke(): Flow<List<WorkoutModel>> {
         return workoutRepository.workOuts.map {
 
             it.map { workoutEntity ->
-                val workoutModel = workoutEntity.toModel()
+                val workoutModel = workoutEntity.workOut.toModel()
 
                 workoutModel.baseRoutine =
                     workoutRepository.getWorkoutsRoutine(workoutModel.id)?.toModel()
 
                 val response = workoutRepository.getExercisesOfWorkout(workoutModel.id)
 
-                val result = response.map { info ->
+                val result = response.map { exercise ->
 
-                    val model = info.first.toModel()
+                    val model = exercise.toModel()
 
-                    val sets = info.second.map {it.toModel()}.toMutableList()
+                    val sets = workoutEntity.sets.filter { it.exerciseDoneId == exercise.exerciseId }.map { set ->
+                        val setModel = set.toModel()
 
-                    sets.forEach {
-                        it.exercise = model
-                        it.workoutDone = workoutModel
-                    }
+                        setModel.exercise = model
+                        setModel.workoutDone = workoutModel.copy(exercisesAndSets = mutableListOf())
+
+                        setModel
+                    }.toMutableList()
 
                     Pair(model, sets)
                 }
+
                 workoutModel.exercisesAndSets = result.sortedBy { it.second.map { it.date }.max() }.toMutableList()
-                return@map workoutModel
+
+                workoutModel
             }.sortedBy { it.date }.reversed()
         }
     }

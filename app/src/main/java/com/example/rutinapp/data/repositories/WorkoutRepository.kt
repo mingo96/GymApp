@@ -9,6 +9,7 @@ import com.example.rutinapp.data.daos.SetDao
 import com.example.rutinapp.data.daos.SetEntity
 import com.example.rutinapp.data.daos.WorkOutDao
 import com.example.rutinapp.data.daos.WorkOutEntity
+import com.example.rutinapp.data.daos.WorkOutWithSets
 import com.example.rutinapp.data.daos.WorkoutRoutineEntity
 import com.example.rutinapp.data.daos.WorkoutRoutinesDao
 import com.example.rutinapp.data.models.WorkoutModel
@@ -36,7 +37,7 @@ class WorkoutRepository @Inject constructor(
     private val exerciseDao: ExerciseDao
 ) {
 
-    val workOuts: Flow<List<WorkOutEntity>> = workoutDao.get10MoreRecent()
+    val workOuts: Flow<List<WorkOutWithSets>> = workoutDao.get10MoreRecent()
 
     suspend fun addWorkout(workOutEntity: WorkOutEntity):Int {
         return workoutDao.addWorkOut(workOutEntity).toInt()
@@ -53,28 +54,12 @@ class WorkoutRepository @Inject constructor(
         return routineDao.getFromId(relation.routineId)
     }
 
-    //returns the exercise itself, a string with the sets and reps, and a list of the observations
-    suspend fun getExercisesOfWorkout(id: Int): List<Pair<ExerciseEntity, List<SetEntity>>> {
-        val sets = setDao.getByWorkoutId(id).map {
-            setDao.getById(it.setId)
+    suspend fun getExercisesOfWorkout(id: Int):List<ExerciseEntity>{
+        val sets = setDao.getByWorkoutId(id).map { it.exerciseDoneId }.distinct()
+
+        return sets.map {
+            exerciseDao.getById(it)
         }
-        val exercises = sets.distinctBy { it.exerciseDoneId }.map { set ->
-            exerciseDao.getById(set.exerciseDoneId)
-        }
-
-        val response = mutableListOf<Pair<ExerciseEntity, List<SetEntity>>>()
-
-        exercises.forEach { exercise ->
-            val setsOfThisExercise = sets.filter { it.exerciseDoneId == exercise.exerciseId }
-
-            response.add(
-                Pair(
-                    exercise, setsOfThisExercise
-                )
-            )
-        }
-        return response.toList()
-
     }
 
     suspend fun getWorkOutFromDate(date: Long): WorkOutEntity {

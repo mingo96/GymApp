@@ -1,5 +1,6 @@
 package com.example.rutinapp.viewmodels
 
+import android.annotation.SuppressLint
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -20,6 +21,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
 import java.util.Date
 import javax.inject.Inject
 
@@ -49,6 +51,7 @@ class StatsViewModel @Inject constructor(
         _uiState.postValue(StatsScreenState.Observation(exercisesState.value))
     }
 
+    @SuppressLint("SimpleDateFormat")
     fun selectExerciseForStats(exerciseModel: ExerciseModel) {
 
         viewModelScope.launch(Dispatchers.IO) {
@@ -77,7 +80,7 @@ class StatsViewModel @Inject constructor(
                     timesDone,
                     avgWeight,
                     mostWeightOnASet,
-                    lastTimeDone.toGMTString().substring(0, 11)
+                    SimpleDateFormat("dd MMMM yyyy : hh:mm:ss").format(lastTimeDone)
                 )
 
                 _uiState.postValue(newState)

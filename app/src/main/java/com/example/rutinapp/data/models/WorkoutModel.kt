@@ -8,5 +8,4 @@ data class WorkoutModel(
     var exercisesAndSets: MutableList<Pair<ExerciseModel, MutableList<SetModel>>> = mutableListOf(),
     val date: Date,
     var title: String
-){
-}
+)

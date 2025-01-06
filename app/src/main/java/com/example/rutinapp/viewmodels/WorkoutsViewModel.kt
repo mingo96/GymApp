@@ -91,7 +91,6 @@ class WorkoutsViewModel @Inject constructor(
     val currentDate: StateFlow<Long> = flow {
         while (true) {
             delay(1000)
-            Log.d("DATE", "UPDATING DATE")
             emit(Date().time)
         }
 

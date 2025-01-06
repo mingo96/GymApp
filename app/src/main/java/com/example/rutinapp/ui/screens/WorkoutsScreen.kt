@@ -71,14 +71,15 @@ fun WorkoutsScreen(viewModel: WorkoutsViewModel, navController: NavHostControlle
 
     val workoutScreenState by viewModel.workoutScreenStates.observeAsState(WorkoutsScreenState.Observe)
 
-    ScreenContainer(onExit = {
+    ScreenContainer(
+        onExit = {
 
-        if (workoutScreenState is WorkoutsScreenState.WorkoutStarted) {
-            viewModel.backToObserve()
-        } else {
-            navController.navigateUp()
-        }
-    },
+            if (workoutScreenState is WorkoutsScreenState.WorkoutStarted) {
+                viewModel.backToObserve()
+            } else {
+                navController.navigateUp()
+            }
+        },
         bottomButtonAction = {
             if (workoutScreenState is WorkoutsScreenState.WorkoutStarted) {
                 viewModel.backToObserve()
@@ -167,7 +168,7 @@ fun ObservationContent(viewModel: WorkoutsViewModel) {
 
 }
 
-@SuppressLint("SimpleDateFormat", "ScheduleExactAlarm")
+@SuppressLint("SimpleDateFormat")
 @Composable
 fun WorkoutProgression(
     viewModel: WorkoutsViewModel,
@@ -185,21 +186,26 @@ fun WorkoutProgression(
         }
     }
 
-
     Row(
-        modifier = Modifier.padding(bottom = 16.dp),
+        modifier = Modifier
+            .padding(bottom = 16.dp)
+            .fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
+        if (uiState.workout.exercisesAndSets.isNotEmpty() && uiState.workout.exercisesAndSets.first().second.isNotEmpty()) {
+            val lastSet = uiState.workout.exercisesAndSets.maxOf { it.second.maxOf { it.date } }
+            Text(
+                text = "Último hecho " + SimpleDateFormat("HH:mm:ss").format(lastSet),
+                fontSize = 18.sp,
+                modifier = Modifier.padding(8.dp)
+            )
+        }
         Text(
             text = SimpleDateFormat("HH:mm:ss").format(Date(actualDate)),
-            fontSize = 20.sp,
+            fontSize = 18.sp,
             modifier = Modifier.padding(8.dp)
         )
-
-        Button(onClick = {}, colors = rutinAppButtonsColours()) {
-            Text(text = "poner alarma")
-        }
 
     }
 
@@ -217,7 +223,7 @@ fun WorkoutProgression(
     LazyColumn(
         Modifier
             .fillMaxWidth()
-            .heightIn(min = 200.dp, max = 500.dp)
+            .heightIn(max = 500.dp)
             .padding(top = 16.dp),
     ) {
         items(uiState.workout.exercisesAndSets, key = { it.first.id }) {
@@ -451,8 +457,7 @@ fun SetEditionDialog(viewModel: WorkoutsViewModel, set: SetModel) {
                     }
                 }, typeOfKeyBoard = KeyboardType.Number
             )
-            TextFieldWithTitle(
-                title = "Observaciones",
+            TextFieldWithTitle(title = "Observaciones",
                 text = observations,
                 onWrite = { observations = it })
             Row(
@@ -467,8 +472,7 @@ fun SetEditionDialog(viewModel: WorkoutsViewModel, set: SetModel) {
                 }) {
                     Text(text = "Guardar")
                 }
-                Button(
-                    colors = rutinAppButtonsColours(),
+                Button(colors = rutinAppButtonsColours(),
                     onClick = { viewModel.cancelSetEditing() }) {
                     Text(text = "Cancelar")
                 }
