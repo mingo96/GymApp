@@ -26,6 +26,7 @@ fun ScreenContainer(
     onExit: (() -> Unit)? = null,
     bottomButtonAction: (() -> Unit)? = null,
     buttonText: String="",
+    floatingActionButton: @Composable () -> Unit = {},
     content: @Composable (PaddingValues) -> Unit
 ) {
 
@@ -48,6 +49,7 @@ fun ScreenContainer(
                 )
             }
         },
+        floatingActionButton = floatingActionButton,
         content = {
             val padding = PaddingValues(
                 start = it.calculateStartPadding(LocalLayoutDirection.current) + 16.dp,

@@ -80,7 +80,7 @@ class StatsViewModel @Inject constructor(
                     timesDone,
                     avgWeight,
                     mostWeightOnASet,
-                    SimpleDateFormat("dd MMMM yyyy : hh:mm:ss").format(lastTimeDone)
+                    SimpleDateFormat("dd MMMM yyyy : HH:mm:ss").format(lastTimeDone)
                 )
 
                 _uiState.postValue(newState)

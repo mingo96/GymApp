@@ -66,20 +66,22 @@ import com.example.rutinapp.viewmodels.WorkoutsViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 
+@SuppressLint("SimpleDateFormat")
+fun Date.dateString() = SimpleDateFormat("dd/MM/yyyy").format(this)
+
 @Composable
 fun WorkoutsScreen(viewModel: WorkoutsViewModel, navController: NavHostController) {
 
     val workoutScreenState by viewModel.workoutScreenStates.observeAsState(WorkoutsScreenState.Observe)
 
-    ScreenContainer(
-        onExit = {
+    ScreenContainer(onExit = {
 
-            if (workoutScreenState is WorkoutsScreenState.WorkoutStarted) {
-                viewModel.backToObserve()
-            } else {
-                navController.navigateUp()
-            }
-        },
+        if (workoutScreenState is WorkoutsScreenState.WorkoutStarted) {
+            viewModel.backToObserve()
+        } else {
+            navController.navigateUp()
+        }
+    },
         bottomButtonAction = {
             if (workoutScreenState is WorkoutsScreenState.WorkoutStarted) {
                 viewModel.backToObserve()
@@ -194,15 +196,17 @@ fun WorkoutProgression(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         if (uiState.workout.exercisesAndSets.isNotEmpty() && uiState.workout.exercisesAndSets.first().second.isNotEmpty()) {
-            val lastSet = uiState.workout.exercisesAndSets.maxOf { it.second.maxOf { it.date } }
+            val lastSet = uiState.workout.exercisesAndSets.maxOf {
+                if (it.second.isEmpty()) Date(0) else it.second.maxOf { it.date }
+            }
             Text(
-                text = "Último hecho " + SimpleDateFormat("HH:mm:ss").format(lastSet),
+                text = "Último hecho " + lastSet.dateString(),
                 fontSize = 18.sp,
                 modifier = Modifier.padding(8.dp)
             )
         }
         Text(
-            text = SimpleDateFormat("HH:mm:ss").format(Date(actualDate)),
+            text = Date(actualDate).dateString(),
             fontSize = 18.sp,
             modifier = Modifier.padding(8.dp)
         )
@@ -457,7 +461,8 @@ fun SetEditionDialog(viewModel: WorkoutsViewModel, set: SetModel) {
                     }
                 }, typeOfKeyBoard = KeyboardType.Number
             )
-            TextFieldWithTitle(title = "Observaciones",
+            TextFieldWithTitle(
+                title = "Observaciones",
                 text = observations,
                 onWrite = { observations = it })
             Row(
@@ -472,7 +477,8 @@ fun SetEditionDialog(viewModel: WorkoutsViewModel, set: SetModel) {
                 }) {
                     Text(text = "Guardar")
                 }
-                Button(colors = rutinAppButtonsColours(),
+                Button(
+                    colors = rutinAppButtonsColours(),
                     onClick = { viewModel.cancelSetEditing() }) {
                     Text(text = "Cancelar")
                 }

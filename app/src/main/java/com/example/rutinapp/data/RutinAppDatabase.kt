@@ -6,6 +6,8 @@ import com.example.rutinapp.data.daos.ExerciseDao
 import com.example.rutinapp.data.daos.ExerciseEntity
 import com.example.rutinapp.data.daos.ExerciseToExerciseDao
 import com.example.rutinapp.data.daos.ExerciseToExerciseEntity
+import com.example.rutinapp.data.daos.PlanningDao
+import com.example.rutinapp.data.daos.PlanningEntity
 import com.example.rutinapp.data.daos.RoutineDao
 import com.example.rutinapp.data.daos.RoutineEntity
 import com.example.rutinapp.data.daos.RoutineExerciseDao
@@ -18,9 +20,9 @@ import com.example.rutinapp.data.daos.WorkoutRoutineEntity
 import com.example.rutinapp.data.daos.WorkoutRoutinesDao
 
 @Database(
-    entities = [ExerciseEntity::class, WorkoutRoutineEntity::class, ExerciseToExerciseEntity::class, RoutineEntity::class, RoutineExerciseEntity::class, SetEntity::class, WorkOutEntity::class],
-    version = 1,
-    exportSchema = true,
+    entities = [ExerciseEntity::class, WorkoutRoutineEntity::class, ExerciseToExerciseEntity::class, RoutineEntity::class, RoutineExerciseEntity::class, SetEntity::class, WorkOutEntity::class, PlanningEntity::class],
+    version = 2,
+    exportSchema = false,
 )
 abstract class RutinAppDatabase : RoomDatabase() {
 
@@ -37,5 +39,7 @@ abstract class RutinAppDatabase : RoomDatabase() {
     abstract fun workoutDao(): WorkOutDao
 
     abstract fun workoutRoutineDao(): WorkoutRoutinesDao
+
+    abstract fun planningDao(): PlanningDao
 
 }

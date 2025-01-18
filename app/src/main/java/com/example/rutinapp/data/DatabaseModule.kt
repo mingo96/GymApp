@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.example.rutinapp.data.daos.ExerciseDao
 import com.example.rutinapp.data.daos.ExerciseToExerciseDao
+import com.example.rutinapp.data.daos.PlanningDao
 import com.example.rutinapp.data.daos.RoutineDao
 import com.example.rutinapp.data.daos.RoutineExerciseDao
 import com.example.rutinapp.data.daos.SetDao
@@ -41,6 +42,11 @@ class DatabaseModule {
     }
 
     @Provides
+    fun providePlanningDao(database: RutinAppDatabase): PlanningDao {
+        return database.planningDao()
+    }
+
+    @Provides
     fun provideSetDao(database: RutinAppDatabase): SetDao {
         return database.setDao()
     }
@@ -58,7 +64,7 @@ class DatabaseModule {
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext appContext: Context): RutinAppDatabase {
-        return Room.databaseBuilder(appContext, RutinAppDatabase::class.java, "RutinAppDatabase.db").createFromAsset("database/RutinAppDatabase.db")
+        return Room.databaseBuilder(appContext, RutinAppDatabase::class.java, "RutinAppDatabase.db").fallbackToDestructiveMigration()
             .build()
     }
 

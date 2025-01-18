@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.Flow
     indices = [Index("routineId")]
 )
 data class RoutineEntity(
-    @PrimaryKey val routineId: Int,
+    @PrimaryKey(autoGenerate = true) val routineId: Int,
     var name: String,
     var targetedBodyPart: String,
 )
