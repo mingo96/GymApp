@@ -71,6 +71,8 @@ fun Date.dateString(): String = SimpleDateFormat("dd MMMM yyyy").format(this)
 
 fun Date.timeString(): String = SimpleDateFormat("HH:mm").format(this)
 
+fun Date.completeHourString(): String = SimpleDateFormat("HH:mm:ss").format(this)
+
 fun Date.dayOfWeekString() = SimpleDateFormat("EEEE").format(this).capitalize()
 
 @Composable
@@ -204,13 +206,13 @@ fun WorkoutProgression(
                 if (it.second.isEmpty()) Date(0) else it.second.maxOf { it.date }
             }
             Text(
-                text = "Último hecho " + lastSet.dateString(),
+                text = "Último hecho " + lastSet.completeHourString(),
                 fontSize = 18.sp,
                 modifier = Modifier.padding(8.dp)
             )
         }
         Text(
-            text = Date(actualDate).dateString(),
+            text = Date(actualDate).completeHourString(),
             fontSize = 18.sp,
             modifier = Modifier.padding(8.dp)
         )
