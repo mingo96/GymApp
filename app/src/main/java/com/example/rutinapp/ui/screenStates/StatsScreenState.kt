@@ -1,6 +1,7 @@
 package com.example.rutinapp.ui.screenStates
 
 import com.example.rutinapp.data.models.ExerciseModel
+import com.example.rutinapp.data.models.SetModel
 import java.util.Date
 
 sealed interface StatsScreenState {
@@ -13,8 +14,9 @@ sealed interface StatsScreenState {
         val highestWeight: Triple<Double, Date, String> = Triple(0.0, Date(), ""),
         val timesDone: Int=0,
         val averageWeight: Double=0.0,
-        val mostWeightOnASet : Triple<Double, Date, String> = Triple(0.0, Date(), ""),
-        val lastTimeDone : String=""
+        val lastTimeDone : String="",
+        val weigths : List<Double> = emptyList(),
+        val daysDone : List<Pair<String, Double>> = emptyList(),
     ) : StatsScreenState
 
 }

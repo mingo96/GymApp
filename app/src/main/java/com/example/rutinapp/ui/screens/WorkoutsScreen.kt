@@ -66,8 +66,12 @@ import com.example.rutinapp.viewmodels.WorkoutsViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 
-@SuppressLint("SimpleDateFormat")
-fun Date.dateString() = SimpleDateFormat("dd/MM/yyyy").format(this)
+
+fun Date.dateString(): String = SimpleDateFormat("dd MMMM yyyy").format(this)
+
+fun Date.timeString(): String = SimpleDateFormat("HH:mm").format(this)
+
+fun Date.dayOfWeekString() = SimpleDateFormat("EEEE").format(this).capitalize()
 
 @Composable
 fun WorkoutsScreen(viewModel: WorkoutsViewModel, navController: NavHostController) {

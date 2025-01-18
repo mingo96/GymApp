@@ -1,6 +1,9 @@
 package com.example.rutinapp.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
@@ -12,41 +15,47 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.twotone.ArrowBack
 import androidx.compose.material.icons.twotone.Info
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.example.rutinapp.data.models.ExerciseModel
+import com.example.rutinapp.ui.premade.RutinAppLineChart
+import com.example.rutinapp.ui.premade.RutinAppPieChart
 import com.example.rutinapp.ui.screenStates.StatsScreenState
+import com.example.rutinapp.ui.theme.ContentColor
 import com.example.rutinapp.ui.theme.ScreenContainer
 import com.example.rutinapp.ui.theme.SecondaryColor
 import com.example.rutinapp.ui.theme.TextFieldColor
 import com.example.rutinapp.viewmodels.StatsViewModel
+import ir.ehsannarmani.compose_charts.PieChart
+import ir.ehsannarmani.compose_charts.models.Pie
 import kotlinx.coroutines.delay
 import java.util.Date
+import kotlin.random.Random
 
 @Composable
 fun StatsScreen(navController: NavHostController, statsViewModel: StatsViewModel) {
@@ -57,17 +66,15 @@ fun StatsScreen(navController: NavHostController, statsViewModel: StatsViewModel
         initialValue = emptyList(), lifecycle = lifecycle
     )
 
-    val routines by statsViewModel.routinesState.collectAsState()
-
     val uiState by statsViewModel.uiState.observeAsState(StatsScreenState.Observation())
 
 
     ScreenContainer(title = "Tus estadisticas", onExit = { navController.navigateUp() }) {
 
-        when (uiState) {
-            is StatsScreenState.Observation -> {
+        Column(Modifier.padding(it), verticalArrangement = Arrangement.spacedBy(16.dp)) {
 
-                Column(Modifier.padding(it), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            when (uiState) {
+                is StatsScreenState.Observation -> {
 
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -92,17 +99,12 @@ fun StatsScreen(navController: NavHostController, statsViewModel: StatsViewModel
                         }
 
                     }
-                }
-            }
 
-            is StatsScreenState.StatsOfExercise -> {
-                Dialog(
-                    onDismissRequest = { statsViewModel.backToObservation() },
-                    properties = DialogProperties(usePlatformDefaultWidth = false)
-                ) {
-                    DialogContainer {
-                        ExerciseStats(uiState = uiState as StatsScreenState.StatsOfExercise)
-                    }
+                }
+
+                is StatsScreenState.StatsOfExercise -> {
+                    ExerciseStats(uiState = uiState as StatsScreenState.StatsOfExercise,
+                        onExit = { statsViewModel.backToObservation() })
                 }
             }
         }
@@ -130,51 +132,69 @@ fun ExerciseItem(exercise: ExerciseModel, onClick: () -> Unit) {
 }
 
 @Composable
-fun ExerciseStats(uiState: StatsScreenState.StatsOfExercise) {
+fun ExerciseStats(uiState: StatsScreenState.StatsOfExercise, onExit: () -> Unit) {
 
-    if (!uiState.hasBeenDone) {
-        Text(text = "Aún no has hecho este ejercicio", fontSize = 30.sp, color = Color.Red, modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Center)
-    } else {
-        Text(text = "Estadisticas de " + uiState.exercise.name, fontSize = 30.sp)
-
-        Column(
-            verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier
-                .background(
-                    TextFieldColor, RoundedCornerShape(15.dp)
-                )
-                .padding(8.dp)
-                .fillMaxWidth()
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = if (!uiState.hasBeenDone) "Aún no has hecho este ejercicio" else "Estadisticas de " + uiState.exercise.name,
+            fontSize = 30.sp,
+            modifier = Modifier.fillMaxWidth(0.8f),
+            color = if (!uiState.hasBeenDone) Color.Red else ContentColor,
+        )
+        IconButton(onClick = onExit) {
+            Icon(imageVector = Icons.TwoTone.ArrowBack, contentDescription = "go back")
+        }
+    }
+    if (uiState.hasBeenDone) {
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom =8.dp)
         ) {
 
-            WeightContainer(
-                content = uiState.highestWeight, title = "Mayor peso usado"
-            )
+            item {
+                TextContainer(title = "Gráfica de rendimiento")
 
-            WeightContainer(
-                content = uiState.mostWeightOnASet, title = "Mayor peso en una serie"
-            )
+                RutinAppLineChart(value = uiState.weigths)
+            }
+            item {
+                TextContainer(title = "Días que lo entrenas")
+                RutinAppPieChart(values = uiState.daysDone)
+            }
+            item {
 
-            TextContainer(
-                text = uiState.averageWeight.toString() + " kg", title = "Peso promedio"
-            )
+                WeightContainer(
+                    content = uiState.highestWeight, title = "Mayor peso usado"
+                )
 
-            TextContainer(text = uiState.timesDone.toString(), title = "Veces hecho")
+            }
+            item {
 
-            TextContainer(text = uiState.lastTimeDone, title = "Ultima vez hecho")
+                TextContainer(
+                    text = uiState.averageWeight.toString() + " kg", title = "Peso promedio"
+                )
+            }
+            item {
+
+                TextContainer(text = uiState.timesDone.toString(), title = "Veces hecho")
+
+            }
+            item {
+                TextContainer(text = uiState.lastTimeDone, title = "Ultima vez hecho")
+
+            }
+
 
         }
     }
 }
 
 @Composable
-fun TextContainer(text: String, title: String, modifier: Modifier = Modifier) {
+fun TextContainer(text: String? = null, title: String, modifier: Modifier = Modifier) {
 
     Column(modifier) {
         Column(modifier = Modifier.padding(8.dp)) {
 
             Text(text = title, fontSize = 25.sp)
-            Text(text = text, fontSize = 25.sp)
+            if (text != null) Text(text = text, fontSize = 25.sp)
         }
     }
 }
@@ -193,7 +213,7 @@ fun WeightContainer(content: Triple<Double, Date, String>, title: String) {
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically
             ) {
 
                 Column(Modifier.fillMaxWidth(0.8f)) {
@@ -217,7 +237,10 @@ fun WeightContainer(content: Triple<Double, Date, String>, title: String) {
             }
 
             Column(Modifier.fillMaxWidth()) {
-                Text(text = content.second.toGMTString(), fontSize = 25.sp)
+                Text(
+                    text = content.second.dateString() + " " + content.second.timeString(),
+                    fontSize = 25.sp
+                )
                 Text(text = content.third, fontSize = 25.sp)
             }
 

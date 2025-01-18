@@ -1,5 +1,6 @@
 package com.example.rutinapp.ui.screens
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -48,7 +49,7 @@ fun MainScreen(navController: NavHostController, mainScreenViewModel: MainScreen
     }) {
         LazyVerticalGrid(modifier = Modifier
             .padding(it)
-            .fillMaxSize(), columns = GridCells.Fixed(2)) {
+            .fillMaxSize(), columns = GridCells.Fixed(2), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             item {
 
                 Button(
