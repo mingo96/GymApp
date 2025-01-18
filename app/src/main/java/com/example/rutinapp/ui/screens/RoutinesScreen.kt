@@ -92,7 +92,7 @@ fun RoutinesScreen(viewModel: RoutinesViewModel, navController: NavHostControlle
 
     when (uiState) {
         is RoutinesScreenState.Creating -> {
-            CreateRoutineDialog(uiState = uiState as RoutinesScreenState.Creating, viewModel)
+            CreateRoutineDialog(viewModel)
         }
 
         is RoutinesScreenState.Editing -> {
@@ -478,24 +478,15 @@ fun ObserveRoutineDialog(uiState: RoutinesScreenState.Observe, viewModel: Routin
 }
 
 @Composable
-fun CreateRoutineDialog(uiState: RoutinesScreenState.Creating, viewModel: RoutinesViewModel) {
+fun CreateRoutineDialog(viewModel: RoutinesViewModel) {
 
     Dialog(onDismissRequest = { viewModel.backToObserve() }) {
         DialogContainer {
-            if (uiState.routine == null) {
-                RoutineCreationPhase(onDismissRequest = { viewModel.backToObserve() },
-                    onNextPhase = { name, targetedBodyPart ->
-                        viewModel.createRoutine(name, targetedBodyPart)
-                    })
-            } else {
+            RoutineCreationPhase(onDismissRequest = { viewModel.backToObserve() },
+                onNextPhase = { name, targetedBodyPart ->
+                    viewModel.createRoutine(name, targetedBodyPart)
+                })
 
-                RelateExercisesPhase(
-                    onDismissRequest = { viewModel.backToObserve() },
-                    toggleExercise = { viewModel.toggleExerciseRelation(it) },
-                    uiState = uiState
-                )
-
-            }
         }
     }
 }
@@ -536,59 +527,6 @@ fun RoutineCreationPhase(
     }
 }
 
-@Composable
-fun RelateExercisesPhase(
-    onDismissRequest: () -> Unit,
-    toggleExercise: (ExerciseModel) -> Unit,
-    uiState: RoutinesScreenState.Creating
-) {
-
-    LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.fillMaxWidth()
-    ) {
-        item {
-            Text(
-                text = "Ejercicios para la rutina", fontWeight = FontWeight.Bold, fontSize = 20.sp
-            )
-        }
-        if (uiState.availableExercises!!.isEmpty()) item {
-            Text(
-                text = "No hay ejercicios disponibles",
-                color = Color.Red,
-                modifier = Modifier.padding(16.dp)
-            )
-        }
-        else items(items = uiState.availableExercises, key = { it.first.id }) {
-            var opened by rememberSaveable { mutableStateOf(false) }
-
-            ExerciseItemForRoutineCreationPhase(opened = opened,
-                item = it.first,
-                onEditClick = { toggleExercise(it.first) },
-                selected = it.second,
-                modifier = Modifier
-                    .animateItem()
-                    .clickable { opened = !opened }
-                    .background(TextFieldColor, RoundedCornerShape(15.dp))
-                    .padding(8.dp))
-
-        }
-        item {
-            Button(
-                onClick = onDismissRequest, colors = rutinAppButtonsColours()
-            ) {
-                Text(
-                    text = "Salir",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .wrapContentWidth(Alignment.CenterHorizontally)
-                )
-            }
-
-        }
-
-    }
-
-}
 
 @Composable
 fun RoutineCard(routine: RoutineModel, modifier: Modifier) {

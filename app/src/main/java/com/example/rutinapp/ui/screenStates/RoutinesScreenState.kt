@@ -9,10 +9,7 @@ sealed interface RoutinesScreenState {
 
     data class Observe(val routine: RoutineModel) : RoutinesScreenState
 
-    data class Creating(
-        val routine: RoutineModel? = null,
-        val availableExercises: List<Pair<ExerciseModel, Boolean>>? = null
-    ) : RoutinesScreenState
+    data object Creating : RoutinesScreenState
 
     /**when [positionOfScreen] is true we are editing name and description of routine, false is exercises*/
     data class Editing(

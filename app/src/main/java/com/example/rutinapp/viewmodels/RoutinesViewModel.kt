@@ -50,14 +50,10 @@ class RoutinesViewModel @Inject constructor(
     }
 
     fun clickCreateRoutine() {
-        _uiState.postValue(RoutinesScreenState.Creating())
+        _uiState.postValue(RoutinesScreenState.Creating)
         viewModelScope.launch(Dispatchers.IO) {
             exercisesState.collect {
-                _uiState.postValue(RoutinesScreenState.Creating(availableExercises = it.map {
-                    Pair(
-                        it, false
-                    )
-                }))
+                _uiState.postValue(RoutinesScreenState.Creating)
             }
         }
     }
@@ -74,45 +70,10 @@ class RoutinesViewModel @Inject constructor(
             )
             createdRoutine.id = createRoutineUseCase(createdRoutine)
 
-            _uiState.postValue(
-                RoutinesScreenState.Creating(createdRoutine,
-                    relatedExercisesByBodyPart(createdRoutine).reversed().map { it to false })
-            )
-        }
-
-    }
-
-    fun toggleExerciseRelation(it: ExerciseModel) {
-
-        try {
-            val creatingState = _uiState.value as RoutinesScreenState.Creating
-
-            if (creatingState.routine != null && creatingState.routine.exercises.contains(it)
-                    .not()
-            ) {
-                viewModelScope.launch(Dispatchers.IO) {
-                    addRoutineExerciseRelationUseCase(creatingState.routine, it)
-                    creatingState.routine.exercises.add(it)
-                    _uiState.postValue(
-                        RoutinesScreenState.Creating(creatingState.routine,
-                            availableExercises = relatedExercisesByBodyPart(creatingState.routine).reversed()
-                                .map { it to creatingState.routine.exercises.contains(it) })
-                    )
-                }
-            } else if (creatingState.routine != null && creatingState.routine.exercises.contains(it)) {
-                viewModelScope.launch(Dispatchers.IO) {
-                    deleteRoutineExerciseRelationUseCase(creatingState.routine, it)
-                    creatingState.routine.exercises.remove(it)
-                    _uiState.postValue(
-                        RoutinesScreenState.Creating(creatingState.routine,
-                            availableExercises = relatedExercisesByBodyPart(creatingState.routine).reversed()
-                                .map { it to creatingState.routine.exercises.contains(it) })
-                    )
-                }
-            }
-        } catch (_: Exception) {
+            _uiState.postValue(RoutinesScreenState.Editing(createdRoutine, availableExercises = relatedExercisesByBodyPart(createdRoutine), positionOfScreen = false))
 
         }
+
     }
 
     private fun relatedExercisesByBodyPart(createdRoutine: RoutineModel): List<ExerciseModel> {
