@@ -33,13 +33,13 @@ class ExerciseRepository @Inject constructor(
     val allExercises: Flow<List<ExerciseEntity>> = exerciseDao.getAllAsFlow()
 
     suspend fun getRelatedExercises(id: String): List<ExerciseEntity> {
-        val relatedOnes = exerciseToExerciseDao.getRelatedExercises(id.toInt()).first()
+        val relatedOnes = exerciseToExerciseDao.getRelatedExercises(id.toInt())
 
         val result = mutableListOf<ExerciseEntity>()
 
         if (relatedOnes.isNotEmpty()) {
             val ids = relatedOnes.map { if (it.exercise1Id == id.toInt()) it.exercise2Id else it.exercise1Id }
-            ids.forEach { result.add(exerciseDao.getById(it)) }
+            ids.distinct().forEach { result.add(exerciseDao.getById(it)) }
         }
 
         return result

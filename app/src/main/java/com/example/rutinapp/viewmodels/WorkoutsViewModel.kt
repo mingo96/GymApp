@@ -296,8 +296,6 @@ class WorkoutsViewModel @Inject constructor(
                     .map { it to mutableListOf() }
             }
 
-            Log.d("WOEXES", workout.exercisesAndSets.joinToString { it.first.id + " " })
-
             _workoutScreenStates.postValue(
                 WorkoutsScreenState.WorkoutStarted(
                     workout = workout, otherExercises = availableExercises
@@ -375,6 +373,36 @@ class WorkoutsViewModel @Inject constructor(
                 )
             )
         }
+    }
+
+    fun cancelExerciseSwap() {
+        val actualState = _workoutScreenStates.value as WorkoutsScreenState.WorkoutStarted
+        _workoutScreenStates.postValue(
+            actualState.copy(exerciseBeingSwapped = null)
+        )
+    }
+
+    fun startSwappingExercise(exercise: ExerciseModel) {
+        val actualState = _workoutScreenStates.value as WorkoutsScreenState.WorkoutStarted
+
+        _workoutScreenStates.postValue(
+            actualState.copy(exerciseBeingSwapped = exercise)
+        )
+    }
+
+    fun swapExerciseBeingSwapped(newExercise: ExerciseModel){
+        val actualState = _workoutScreenStates.value as WorkoutsScreenState.WorkoutStarted
+
+        val newListOfExercises = actualState.workout.exercisesAndSets.toMutableList()
+        newListOfExercises[newListOfExercises.indexOfFirst { it.first.id == actualState.exerciseBeingSwapped!!.id }] = Pair(newExercise, mutableListOf())
+        _workoutScreenStates.postValue(
+            actualState.copy(
+                workout = actualState.workout.copy(exercisesAndSets = newListOfExercises),
+                otherExercises = actualState.otherExercises + actualState.exerciseBeingSwapped!!- newExercise,
+                exerciseBeingSwapped = null,
+                )
+        )
+
     }
 
 }

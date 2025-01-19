@@ -8,8 +8,11 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.snapping.SnapPosition
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,6 +22,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.twotone.Add
@@ -43,8 +47,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -52,6 +58,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.example.rutinapp.R
 import com.example.rutinapp.data.models.ExerciseModel
 import com.example.rutinapp.data.models.RoutineModel
 import com.example.rutinapp.data.models.SetModel
@@ -192,6 +199,8 @@ fun WorkoutProgression(
         } else {
             SetOptionsDialog(viewModel = viewModel, uiState = uiState)
         }
+    } else if (uiState.exerciseBeingSwapped != null) {
+        ExerciseSwapDialog(viewModel = viewModel, exercise = uiState.exerciseBeingSwapped)
     }
 
     Row(
@@ -219,12 +228,29 @@ fun WorkoutProgression(
 
     }
 
-    LazyRow(modifier = Modifier.padding(bottom = 16.dp)) {
-        if (uiState.workout.baseRoutine != null) item {
-            RoutineContent(uiState = uiState, viewModel = viewModel)
-        }
-        item {
-            OtherExercises(uiState = uiState, viewModel = viewModel, navController = navController)
+    BoxWithConstraints {
+
+        val listState = rememberLazyListState()
+        val flingBehavior =
+            rememberSnapFlingBehavior(lazyListState = listState, snapPosition = SnapPosition.Start)
+        LazyRow(
+            state = listState,
+            flingBehavior = flingBehavior,
+            modifier = Modifier
+                .padding(bottom = 16.dp)
+                .fillMaxWidth()
+        ) {
+            if (uiState.workout.baseRoutine != null) item {
+                RoutineContent(uiState = uiState, viewModel = viewModel, maxWidth - 32.dp)
+            }
+            item {
+                OtherExercises(
+                    uiState = uiState,
+                    viewModel = viewModel,
+                    navController = navController,
+                    maxWidth - 32.dp
+                )
+            }
         }
     }
 
@@ -243,7 +269,10 @@ fun WorkoutProgression(
                     mutableStateOf(false)
                 }
 
-                ExerciseInfo(it, uiState, setsOpened) { setsOpened = !setsOpened }
+                ExerciseInfo(it,
+                    uiState,
+                    setsOpened,
+                    { setsOpened = !setsOpened }) { viewModel.startSwappingExercise(it.first) }
 
                 ExerciseSets(it, viewModel, setsOpened)
 
@@ -255,6 +284,33 @@ fun WorkoutProgression(
         }
     }
 
+}
+
+@Composable
+fun ExerciseSwapDialog(viewModel: WorkoutsViewModel, exercise: ExerciseModel) {
+    Dialog(onDismissRequest = { viewModel.cancelExerciseSwap() }) {
+        DialogContainer {
+            Text(text = "Cambiar ejercicio por", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+
+            LazyColumn(Modifier.fillMaxWidth()) {
+                items(exercise.equivalentExercises) {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(text = it.name)
+                        IconButton(onClick = { viewModel.swapExerciseBeingSwapped(it) }) {
+                            Icon(
+                                imageVector = Icons.TwoTone.ArrowForward,
+                                contentDescription = "swap exercise for ${it.name}"
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -408,20 +464,33 @@ fun ExerciseInfo(
     exerciseAndSets: Pair<ExerciseModel, List<SetModel>>,
     uiState: WorkoutsScreenState.WorkoutStarted,
     setsOpened: Boolean,
-    changeSetsOpened: () -> Unit
+    changeSetsOpened: () -> Unit,
+    startSwapping: () -> Unit
 ) {
 
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
         Text(
             text = exerciseAndSets.first.name + if (exerciseAndSets.first in (uiState.workout.baseRoutine?.exercises
                     ?: emptyList())
-            ) " (" + exerciseAndSets.first.setsAndReps + ")" else "", fontSize = 15.sp, maxLines = 1
+            ) " (" + exerciseAndSets.first.setsAndReps + ")" else "",
+            fontSize = 15.sp,
+            maxLines = 1,
+            modifier = Modifier.padding(end = 16.dp)
         )
         if (exerciseAndSets.second.isNotEmpty()) IconButton(onClick = { changeSetsOpened() }) {
             Icon(
                 imageVector = if (!setsOpened) Icons.TwoTone.KeyboardArrowDown else Icons.TwoTone.KeyboardArrowUp,
-                contentDescription = " "
+                contentDescription = "toggle sets being opened"
             )
+        }
+        else if (exerciseAndSets.first.equivalentExercises.isNotEmpty()) {
+
+            IconButton(onClick = { startSwapping() }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.swap),
+                    contentDescription = "change exercise"
+                )
+            }
         }
     }
 }
@@ -467,8 +536,7 @@ fun SetEditionDialog(viewModel: WorkoutsViewModel, set: SetModel) {
                     }
                 }, typeOfKeyBoard = KeyboardType.Number
             )
-            TextFieldWithTitle(
-                title = "Observaciones",
+            TextFieldWithTitle(title = "Observaciones",
                 text = observations,
                 onWrite = { observations = it })
             Row(
@@ -483,8 +551,7 @@ fun SetEditionDialog(viewModel: WorkoutsViewModel, set: SetModel) {
                 }) {
                     Text(text = "Guardar")
                 }
-                Button(
-                    colors = rutinAppButtonsColours(),
+                Button(colors = rutinAppButtonsColours(),
                     onClick = { viewModel.cancelSetEditing() }) {
                     Text(text = "Cancelar")
                 }
@@ -494,7 +561,9 @@ fun SetEditionDialog(viewModel: WorkoutsViewModel, set: SetModel) {
 }
 
 @Composable
-fun RoutineContent(uiState: WorkoutsScreenState.WorkoutStarted, viewModel: WorkoutsViewModel) {
+fun RoutineContent(
+    uiState: WorkoutsScreenState.WorkoutStarted, viewModel: WorkoutsViewModel, maxWidth: Dp = 300.dp
+) {
 
     Column(
         modifier = Modifier
@@ -511,7 +580,7 @@ fun RoutineContent(uiState: WorkoutsScreenState.WorkoutStarted, viewModel: Worko
                     .background(PrimaryColor, RoundedCornerShape(15.dp))
                     .padding(16.dp)
                     .heightIn(max = 120.dp)
-                    .widthIn(max = 200.dp),
+                    .widthIn(max = maxWidth - 36.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(uiState.workout.baseRoutine!!.exercises) {
@@ -538,7 +607,8 @@ fun RoutineContent(uiState: WorkoutsScreenState.WorkoutStarted, viewModel: Worko
 fun OtherExercises(
     uiState: WorkoutsScreenState.WorkoutStarted,
     viewModel: WorkoutsViewModel,
-    navController: NavHostController
+    navController: NavHostController,
+    maxWidth: Dp = 300.dp
 ) {
 
     Column(
@@ -552,8 +622,8 @@ fun OtherExercises(
 
             LazyColumn(
                 Modifier
-                    .widthIn(150.dp, 300.dp)
-                    .heightIn(max = 150.dp)
+                    .widthIn(150.dp, maxWidth)
+                    .heightIn(max = 300.dp)
                     .background(PrimaryColor, RoundedCornerShape(15.dp))
                     .padding(16.dp),
             ) {

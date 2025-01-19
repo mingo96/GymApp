@@ -70,7 +70,7 @@ interface ExerciseToExerciseDao{
     fun getAll(): Flow<List<ExerciseToExerciseEntity>>
 
     @Query("SELECT * FROM ExerciseToExerciseEntity WHERE exercise1Id = :exerciseId OR exercise2Id = :exerciseId")
-    fun getRelatedExercises(exerciseId: Int): Flow<List<ExerciseToExerciseEntity>>
+    suspend fun getRelatedExercises(exerciseId: Int): List<ExerciseToExerciseEntity>
 
     @Insert
     suspend fun insert(item : ExerciseToExerciseEntity)
