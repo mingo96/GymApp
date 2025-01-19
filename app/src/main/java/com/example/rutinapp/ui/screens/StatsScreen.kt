@@ -18,6 +18,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -50,6 +53,7 @@ import com.example.rutinapp.ui.theme.ContentColor
 import com.example.rutinapp.ui.theme.ScreenContainer
 import com.example.rutinapp.ui.theme.SecondaryColor
 import com.example.rutinapp.ui.theme.TextFieldColor
+import com.example.rutinapp.utils.truncatedToNDecimals
 import com.example.rutinapp.viewmodels.StatsViewModel
 import ir.ehsannarmani.compose_charts.PieChart
 import ir.ehsannarmani.compose_charts.models.Pie
@@ -146,30 +150,37 @@ fun ExerciseStats(uiState: StatsScreenState.StatsOfExercise, onExit: () -> Unit)
         }
     }
     if (uiState.hasBeenDone) {
-        LazyColumn(
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
             verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom =8.dp)
         ) {
 
-            item {
-                TextContainer(title = "Gráfica de rendimiento")
+            item(span = { GridItemSpan(2) }) {
+                Column {
 
-                RutinAppLineChart(value = uiState.weigths)
+                    TextContainer(title = "Gráfica de rendimiento")
+
+                    RutinAppLineChart(value = uiState.weigths)
+                }
             }
-            item {
-                TextContainer(title = "Días que lo entrenas")
-                RutinAppPieChart(values = uiState.daysDone)
+            item(span = { GridItemSpan(2) }) {
+                Column {
+
+                    TextContainer(title = "Días que lo entrenas")
+                    RutinAppPieChart(values = uiState.daysDone)
+                }
             }
             item {
 
                 WeightContainer(
-                    content = uiState.highestWeight, title = "Mayor peso usado"
+                    content = uiState.highestWeight, title = "Mayor peso"
                 )
 
             }
             item {
 
                 TextContainer(
-                    text = uiState.averageWeight.toString() + " kg", title = "Peso promedio"
+                    text = uiState.averageWeight.truncatedToNDecimals(2) + " kg", title = "Peso promedio"
                 )
             }
             item {
@@ -188,13 +199,13 @@ fun ExerciseStats(uiState: StatsScreenState.StatsOfExercise, onExit: () -> Unit)
 }
 
 @Composable
-fun TextContainer(text: String? = null, title: String, modifier: Modifier = Modifier) {
+fun TextContainer(modifier: Modifier = Modifier,text: String? = null, title: String) {
 
     Column(modifier) {
         Column(modifier = Modifier.padding(8.dp)) {
 
-            Text(text = title, fontSize = 25.sp)
-            if (text != null) Text(text = text, fontSize = 25.sp)
+            Text(text = title, fontSize = 20.sp)
+            if (text != null) Text(text = text, fontSize = 20.sp)
         }
     }
 }
@@ -217,8 +228,8 @@ fun WeightContainer(content: Triple<Double, Date, String>, title: String) {
             ) {
 
                 Column(Modifier.fillMaxWidth(0.8f)) {
-                    Text(text = title, fontSize = 25.sp)
-                    Text(text = "${content.first} kg", fontSize = 25.sp)
+                    Text(text = title, fontSize = 20.sp)
+                    Text(text = "${content.first.truncatedToNDecimals(2)} kg", fontSize = 20.sp)
                 }
                 IconButton(onClick = { isOpened = true }) {
                     Icon(
@@ -241,7 +252,7 @@ fun WeightContainer(content: Triple<Double, Date, String>, title: String) {
                     text = content.second.dateString() + " " + content.second.timeString(),
                     fontSize = 25.sp
                 )
-                Text(text = content.third, fontSize = 25.sp)
+                Text(text = content.third, fontSize = 15.sp)
             }
 
 

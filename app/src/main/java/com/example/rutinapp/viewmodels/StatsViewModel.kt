@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.math.truncate
 
 @HiltViewModel
 class StatsViewModel @Inject constructor(
@@ -64,7 +65,7 @@ class StatsViewModel @Inject constructor(
 
                 val timesDone = setsDone.size
 
-                val avgWeight = setsDone.sumOf { it.weight } / timesDone
+                val avgWeight = (setsDone.sumOf { it.weight } / timesDone)
 
                 val lastTimeDone = setsDone.maxOf { it.date }
 

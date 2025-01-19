@@ -59,7 +59,7 @@ fun RutinAppPieChart(values: List<Pair<String, Double>>) {
         PieChart(
             modifier = Modifier
                 .size(200.dp)
-                .padding(8.dp),
+                .padding(16.dp),
             data = data,
             onPieClick = {
                 selectedDay = Triple(it.label!!, it.data, it.color)
