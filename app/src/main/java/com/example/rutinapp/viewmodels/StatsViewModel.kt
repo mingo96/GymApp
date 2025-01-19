@@ -95,7 +95,7 @@ class StatsViewModel @Inject constructor(
 
     fun searchExercise(name: String) {
         if (_uiState.value is StatsScreenState.Observation) {
-            val newList = exercisesState.value.filter { it.name.contains(name) }
+            val newList = exercisesState.value.filter { it.name.contains(name)||it.targetedBodyPart.contains(name) }
             _uiState.postValue(StatsScreenState.Observation(newList))
         }
     }

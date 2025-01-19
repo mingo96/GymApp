@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -47,6 +48,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -72,29 +74,36 @@ import com.example.rutinapp.ui.theme.rutinAppButtonsColours
 import com.example.rutinapp.viewmodels.WorkoutsViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Locale
 
 
+@SuppressLint("SimpleDateFormat")
 fun Date.dateString(): String = SimpleDateFormat("dd MMMM yyyy").format(this)
 
+@SuppressLint("SimpleDateFormat")
 fun Date.timeString(): String = SimpleDateFormat("HH:mm").format(this)
 
+@SuppressLint("SimpleDateFormat")
 fun Date.completeHourString(): String = SimpleDateFormat("HH:mm:ss").format(this)
 
-fun Date.dayOfWeekString() = SimpleDateFormat("EEEE").format(this).capitalize()
+@SuppressLint("SimpleDateFormat")
+fun Date.dayOfWeekString() = SimpleDateFormat("EEEE").format(this)
+    .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
 
 @Composable
 fun WorkoutsScreen(viewModel: WorkoutsViewModel, navController: NavHostController) {
 
     val workoutScreenState by viewModel.workoutScreenStates.observeAsState(WorkoutsScreenState.Observe)
 
-    ScreenContainer(onExit = {
+    ScreenContainer(
+        onExit = {
 
-        if (workoutScreenState is WorkoutsScreenState.WorkoutStarted) {
-            viewModel.backToObserve()
-        } else {
-            navController.navigateUp()
-        }
-    },
+            if (workoutScreenState is WorkoutsScreenState.WorkoutStarted) {
+                viewModel.backToObserve()
+            } else {
+                navController.navigateUp()
+            }
+        },
         bottomButtonAction = {
             if (workoutScreenState is WorkoutsScreenState.WorkoutStarted) {
                 viewModel.backToObserve()
@@ -269,7 +278,8 @@ fun WorkoutProgression(
                     mutableStateOf(false)
                 }
 
-                ExerciseInfo(it,
+                ExerciseInfo(
+                    it,
                     uiState,
                     setsOpened,
                     { setsOpened = !setsOpened }) { viewModel.startSwappingExercise(it.first) }
@@ -288,6 +298,7 @@ fun WorkoutProgression(
 
 @Composable
 fun ExerciseSwapDialog(viewModel: WorkoutsViewModel, exercise: ExerciseModel) {
+    val context = LocalContext.current
     Dialog(onDismissRequest = { viewModel.cancelExerciseSwap() }) {
         DialogContainer {
             Text(text = "Cambiar ejercicio por", fontSize = 20.sp, fontWeight = FontWeight.Bold)
@@ -300,9 +311,9 @@ fun ExerciseSwapDialog(viewModel: WorkoutsViewModel, exercise: ExerciseModel) {
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(text = it.name)
-                        IconButton(onClick = { viewModel.swapExerciseBeingSwapped(it) }) {
+                        IconButton(onClick = { viewModel.swapExerciseBeingSwapped(it, context) }) {
                             Icon(
-                                imageVector = Icons.TwoTone.ArrowForward,
+                                painter = painterResource(id = R.drawable.swap),
                                 contentDescription = "swap exercise for ${it.name}"
                             )
                         }
@@ -536,7 +547,8 @@ fun SetEditionDialog(viewModel: WorkoutsViewModel, set: SetModel) {
                     }
                 }, typeOfKeyBoard = KeyboardType.Number
             )
-            TextFieldWithTitle(title = "Observaciones",
+            TextFieldWithTitle(
+                title = "Observaciones",
                 text = observations,
                 onWrite = { observations = it })
             Row(
@@ -551,7 +563,8 @@ fun SetEditionDialog(viewModel: WorkoutsViewModel, set: SetModel) {
                 }) {
                     Text(text = "Guardar")
                 }
-                Button(colors = rutinAppButtonsColours(),
+                Button(
+                    colors = rutinAppButtonsColours(),
                     onClick = { viewModel.cancelSetEditing() }) {
                     Text(text = "Cancelar")
                 }
@@ -612,13 +625,27 @@ fun OtherExercises(
 ) {
 
     Column(
-        modifier = Modifier.background(TextFieldColor, RoundedCornerShape(15.dp))
+        modifier = Modifier
+            .background(TextFieldColor, RoundedCornerShape(15.dp))
+            .width(maxWidth + 36.dp)
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
 
-            Text(
-                text = "Ejercicios disponibles", fontSize = 20.sp, fontWeight = FontWeight.Bold
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = "Ejercicios disponibles", fontSize = 20.sp, fontWeight = FontWeight.Bold
+                )
+                var name by rememberSaveable { mutableStateOf("") }
+                SearchTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    onSearch = { viewModel.searchExercise(name) },
+                    modifier = Modifier
+                )
+            }
 
             LazyColumn(
                 Modifier

@@ -1,6 +1,7 @@
 package com.example.rutinapp.viewmodels
 
-import android.util.Log
+import android.content.Context
+import android.widget.Toast
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -185,7 +186,12 @@ class WorkoutsViewModel @Inject constructor(
         }
     }
 
-    private fun createSet(currentState: WorkoutsScreenState.WorkoutStarted, weight: Double, reps: Int, observations: String){
+    private fun createSet(
+        currentState: WorkoutsScreenState.WorkoutStarted,
+        weight: Double,
+        reps: Int,
+        observations: String
+    ) {
 
         val setState = currentState.setBeingCreated as SetState.CreatingSet
         setState.set.apply {
@@ -206,7 +212,12 @@ class WorkoutsViewModel @Inject constructor(
         }
     }
 
-    private fun updateSet(currentState: WorkoutsScreenState.WorkoutStarted, weight: Double, reps: Int, observations: String){
+    private fun updateSet(
+        currentState: WorkoutsScreenState.WorkoutStarted,
+        weight: Double,
+        reps: Int,
+        observations: String
+    ) {
 
         val setState = currentState.setBeingCreated as SetState.OptionsOfSet
         setState.set.apply {
@@ -390,18 +401,49 @@ class WorkoutsViewModel @Inject constructor(
         )
     }
 
-    fun swapExerciseBeingSwapped(newExercise: ExerciseModel){
+    fun swapExerciseBeingSwapped(newExercise: ExerciseModel, context: Context) {
         val actualState = _workoutScreenStates.value as WorkoutsScreenState.WorkoutStarted
 
         val newListOfExercises = actualState.workout.exercisesAndSets.toMutableList()
-        newListOfExercises[newListOfExercises.indexOfFirst { it.first.id == actualState.exerciseBeingSwapped!!.id }] = Pair(newExercise, mutableListOf())
-        _workoutScreenStates.postValue(
-            actualState.copy(
-                workout = actualState.workout.copy(exercisesAndSets = newListOfExercises),
-                otherExercises = actualState.otherExercises + actualState.exerciseBeingSwapped!!- newExercise,
-                exerciseBeingSwapped = null,
+
+        if (newExercise.id !in actualState.workout.exercisesAndSets.map { it.first.id }) {
+
+            newListOfExercises[newListOfExercises.indexOfFirst { it.first.id == actualState.exerciseBeingSwapped!!.id }] =
+                Pair(newExercise, mutableListOf())
+            _workoutScreenStates.postValue(
+                actualState.copy(
+                    workout = actualState.workout.copy(exercisesAndSets = newListOfExercises),
+                    otherExercises = actualState.otherExercises + actualState.exerciseBeingSwapped!! - newExercise,
+                    exerciseBeingSwapped = null,
                 )
-        )
+            )
+        } else {
+            Toast.makeText(context, "Ese ejercicio ya esta en el entrenamiento", Toast.LENGTH_SHORT)
+                .show()
+        }
+    }
+
+    fun searchExercise(name: String) {
+        val actualState = _workoutScreenStates.value as WorkoutsScreenState.WorkoutStarted
+
+        viewModelScope.launch {
+
+            var newListOfExercises = exercises.first()
+                .filter { it.name.contains(name) || it.targetedBodyPart.contains(name) }
+                .toMutableList()
+
+            newListOfExercises = newListOfExercises.filter { it.id !in actualState.workout.exercisesAndSets.map { it.first.id } }
+                .toMutableList()
+
+            if (actualState.workout.baseRoutine != null) {
+                newListOfExercises = newListOfExercises.filter { it.id !in actualState.workout.baseRoutine!!.exercises.map { it.id } }.toMutableList()
+            }
+
+            _workoutScreenStates.postValue(
+                actualState.copy(otherExercises = newListOfExercises)
+            )
+        }
+
 
     }
 

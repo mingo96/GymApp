@@ -44,7 +44,10 @@ class ExercisesViewModel @Inject constructor(
 
         _uiState.postValue(
             ExercisesState.SearchingForExercise(exercisesState.value.filter {
-                it.name.lowercase(Locale.getDefault()).contains(name.lowercase(Locale.getDefault()))
+                it.name.lowercase(Locale.getDefault())
+                    .contains(name.lowercase(Locale.getDefault())) || it.targetedBodyPart.lowercase(
+                    Locale.getDefault()
+                ).contains(name.lowercase(Locale.getDefault()))
             })
         )
 
