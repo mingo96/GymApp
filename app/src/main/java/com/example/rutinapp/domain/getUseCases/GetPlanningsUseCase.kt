@@ -24,7 +24,6 @@ class GetPlanningsUseCase @Inject constructor(
                 } else if (planning.routineId != null) {
                     newItem.statedRoutine =
                         routineRepository.getRoutineById(planning.routineId!!).toModel()
-                    newItem.statedBodyPart = newItem.statedRoutine!!.targetedBodyPart
                 }
 
                 newItem
