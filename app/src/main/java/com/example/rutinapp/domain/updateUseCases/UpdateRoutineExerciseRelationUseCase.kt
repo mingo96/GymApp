@@ -11,7 +11,12 @@ class UpdateRoutineExerciseRelationUseCase @Inject constructor(private val routi
     suspend operator fun invoke(
         routine: RoutineModel, exercise: ExerciseModel
     ) {
-        val relation = RoutineExerciseEntity(routine.id, exercise.id.toInt(), exercise.setsAndReps, exercise.observations)
+        val relation = RoutineExerciseEntity(
+            routine.id,
+            exercise.id.toInt(),
+            exercise.setsAndReps,
+            exercise.observations
+        )
         routineRepository.updateRoutineExerciseRelation(relation)
     }
 

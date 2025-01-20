@@ -1,7 +1,6 @@
 package com.example.rutinapp.data.daos
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Insert
@@ -19,7 +18,7 @@ import java.util.Date
         parentColumns = ["exerciseId"],
         childColumns = ["exerciseDoneId"],
         onDelete = ForeignKey.CASCADE
-    ),ForeignKey(
+    ), ForeignKey(
         entity = WorkOutEntity::class,
         parentColumns = ["workOutId"],
         childColumns = ["workoutDoneId"],
@@ -28,15 +27,15 @@ import java.util.Date
 )
 
 data class SetEntity(
-    @PrimaryKey(autoGenerate = true) val setId: Int=0,
+    @PrimaryKey(autoGenerate = true) val setId: Int = 0,
     val exerciseDoneId: Int,
     val workoutDoneId: Int,
     val weight: Double,
     val reps: Int,
     val date: String,
     var observations: String
-){
-    fun toModel():SetModel{
+) {
+    fun toModel(): SetModel {
         return SetModel(
             id = setId,
             weight = weight,
@@ -62,7 +61,7 @@ interface SetDao {
     suspend fun getByWorkoutId(id: Int): List<SetEntity>
 
     @Insert
-    suspend fun addSet(set: SetEntity):Long
+    suspend fun addSet(set: SetEntity): Long
 
     @Query("DELETE FROM SetEntity WHERE date = :date")
     suspend fun deleteSet(date: String)

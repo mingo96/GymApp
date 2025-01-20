@@ -1,6 +1,5 @@
 package com.example.rutinapp.data.repositories
 
-import android.util.Log
 import com.example.rutinapp.data.daos.ExerciseEntity
 import com.example.rutinapp.data.daos.RoutineDao
 import com.example.rutinapp.data.daos.RoutineEntity
@@ -9,7 +8,6 @@ import com.example.rutinapp.data.daos.RoutineExerciseEntity
 import com.example.rutinapp.data.models.RoutineModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 fun RoutineEntity.toModel(): RoutineModel {
@@ -48,11 +46,11 @@ class RoutineRepository @Inject constructor(
         return relatedExercises
     }
 
-    suspend fun addRoutine(routine: RoutineEntity):Int {
+    suspend fun addRoutine(routine: RoutineEntity): Int {
         return routineDao.addRoutine(routine).toInt()
     }
 
-    suspend fun relateExerciseToRoutine(routineid : Int, exerciseId: Int) {
+    suspend fun relateExerciseToRoutine(routineid: Int, exerciseId: Int) {
 
         routineExerciseDao.addRoutineExercise(
             RoutineExerciseEntity(
@@ -61,7 +59,7 @@ class RoutineRepository @Inject constructor(
         )
     }
 
-    suspend fun deleteRoutineExerciseRelation(routine : Int, exerciseId: Int) {
+    suspend fun deleteRoutineExerciseRelation(routine: Int, exerciseId: Int) {
 
         routineExerciseDao.deleteRoutineExercise(routine, exerciseId)
 
@@ -71,7 +69,7 @@ class RoutineRepository @Inject constructor(
         routineExerciseDao.updateRoutineExercise(relation)
     }
 
-    suspend fun getRoutineById(routineId: Int) : RoutineEntity {
+    suspend fun getRoutineById(routineId: Int): RoutineEntity {
         return routineDao.getFromId(routineId)
     }
 

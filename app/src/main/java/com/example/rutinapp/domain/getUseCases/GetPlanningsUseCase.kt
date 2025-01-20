@@ -1,6 +1,5 @@
 package com.example.rutinapp.domain.getUseCases
 
-import android.util.Log
 import com.example.rutinapp.data.models.PlanningModel
 import com.example.rutinapp.data.repositories.PlanningRepository
 import com.example.rutinapp.data.repositories.RoutineRepository
@@ -17,7 +16,6 @@ class GetPlanningsUseCase @Inject constructor(
 
     operator fun invoke(): Flow<List<PlanningModel>> {
         return planningRepository.allPlannings.map {
-            Log.d("plannings", "invoke: $it")
             val plannings = it.map { planning ->
                 val newItem = planning.toModel()
 
@@ -33,21 +31,25 @@ class GetPlanningsUseCase @Inject constructor(
             }
 
             val actualDate = Date()
-            val dayOfWeek = actualDate.day
+            val dayOfWeek = actualDate.day - 1
             val today = actualDate.date
-            val rangeOfDates = -dayOfWeek + today..14 - dayOfWeek + today
+            val rangeOfDates = -dayOfWeek + today..13 - dayOfWeek + today
             val addedValues = mutableListOf<PlanningModel>()
 
             for (i in rangeOfDates) {
                 if (plannings.none { planning -> planning.date.date == i }) {
                     addedValues += PlanningModel(
                         id = 0,
-                        date = Date(actualDate.year, if(i>0)actualDate.month else actualDate.month-1, if(i>0)i else i+30)
+                        date = Date(
+                            actualDate.year,
+                            if (i > 0) actualDate.month else actualDate.month - 1,
+                            if (i > 0) i else i + 30
+                        )
                     )
                 }
             }
-            Log.d("plannings", "invoke: $addedValues")
-            plannings+addedValues
+
+            (plannings + addedValues).sortedBy { it.date }
 
         }
     }

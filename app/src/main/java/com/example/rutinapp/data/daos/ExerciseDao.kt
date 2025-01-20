@@ -20,9 +20,7 @@ class ExerciseEntity(
     var exerciseName: String = "",
     var exerciseDescription: String = "",
     var targetedBodyPart: String = "",
-){
-
-}
+)
 
 @Entity(
     primaryKeys = ["exercise1Id", "exercise2Id"],
@@ -56,15 +54,15 @@ interface ExerciseDao {
     suspend fun getById(id: Int): ExerciseEntity
 
     @Insert
-    suspend fun insert(item : ExerciseEntity)
+    suspend fun insert(item: ExerciseEntity)
 
     @Update
-    suspend fun update(item : ExerciseEntity)
+    suspend fun update(item: ExerciseEntity)
 
 }
 
 @Dao
-interface ExerciseToExerciseDao{
+interface ExerciseToExerciseDao {
 
     @Query("SELECT * FROM ExerciseToExerciseEntity")
     fun getAll(): Flow<List<ExerciseToExerciseEntity>>
@@ -73,9 +71,9 @@ interface ExerciseToExerciseDao{
     suspend fun getRelatedExercises(exerciseId: Int): List<ExerciseToExerciseEntity>
 
     @Insert
-    suspend fun insert(item : ExerciseToExerciseEntity)
+    suspend fun insert(item: ExerciseToExerciseEntity)
 
     @Delete
-    suspend fun delete(item : ExerciseToExerciseEntity)
+    suspend fun delete(item: ExerciseToExerciseEntity)
 
 }

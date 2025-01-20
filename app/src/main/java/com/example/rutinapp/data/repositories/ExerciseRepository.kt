@@ -1,13 +1,11 @@
 package com.example.rutinapp.data.repositories
 
-import android.util.Log
 import com.example.rutinapp.data.daos.ExerciseDao
 import com.example.rutinapp.data.daos.ExerciseEntity
 import com.example.rutinapp.data.daos.ExerciseToExerciseDao
 import com.example.rutinapp.data.daos.ExerciseToExerciseEntity
 import com.example.rutinapp.data.models.ExerciseModel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
 
@@ -38,7 +36,8 @@ class ExerciseRepository @Inject constructor(
         val result = mutableListOf<ExerciseEntity>()
 
         if (relatedOnes.isNotEmpty()) {
-            val ids = relatedOnes.map { if (it.exercise1Id == id.toInt()) it.exercise2Id else it.exercise1Id }
+            val ids =
+                relatedOnes.map { if (it.exercise1Id == id.toInt()) it.exercise2Id else it.exercise1Id }
             ids.distinct().forEach { result.add(exerciseDao.getById(it)) }
         }
 
@@ -51,17 +50,30 @@ class ExerciseRepository @Inject constructor(
 
     suspend fun addExercise(exercise: ExerciseEntity) {
         exerciseDao.insert(
-            ExerciseEntity(exerciseName = exercise.exerciseName, exerciseDescription =  exercise.exerciseDescription, targetedBodyPart =  exercise.targetedBodyPart
+            ExerciseEntity(
+                exerciseName = exercise.exerciseName,
+                exerciseDescription = exercise.exerciseDescription,
+                targetedBodyPart = exercise.targetedBodyPart
             )
         )
     }
 
-    suspend fun relateExercises(exercise1 : ExerciseEntity, exercise2 : ExerciseEntity){
-        exerciseToExerciseDao.insert(ExerciseToExerciseEntity(exercise1Id = exercise1.exerciseId, exercise2Id = exercise2.exerciseId))
+    suspend fun relateExercises(exercise1: ExerciseEntity, exercise2: ExerciseEntity) {
+        exerciseToExerciseDao.insert(
+            ExerciseToExerciseEntity(
+                exercise1Id = exercise1.exerciseId,
+                exercise2Id = exercise2.exerciseId
+            )
+        )
     }
 
     suspend fun unRelateExercises(exercise1: ExerciseEntity, exercise2: ExerciseEntity) {
-        exerciseToExerciseDao.delete(ExerciseToExerciseEntity(exercise1Id = exercise1.exerciseId, exercise2Id = exercise2.exerciseId))
+        exerciseToExerciseDao.delete(
+            ExerciseToExerciseEntity(
+                exercise1Id = exercise1.exerciseId,
+                exercise2Id = exercise2.exerciseId
+            )
+        )
     }
 
     suspend fun updateExercise(exerciseToUpdate: ExerciseEntity) {

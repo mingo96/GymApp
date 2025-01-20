@@ -2,11 +2,10 @@ package com.example.rutinapp.data.repositories
 
 import com.example.rutinapp.data.daos.PlanningDao
 import com.example.rutinapp.data.daos.PlanningEntity
-import com.example.rutinapp.data.models.PlanningModel
 import javax.inject.Inject
 
 class PlanningRepository @Inject constructor(
-    private val planningDao : PlanningDao
+    private val planningDao: PlanningDao
 ) {
 
     val allPlannings = planningDao.getPlannings()

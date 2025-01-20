@@ -27,11 +27,12 @@ class GetRoutinesUseCase @Inject constructor(
                             exerciseRepository.getRelatedExercises(it.id).map { it.toModel() }
                     }
 
-                    val orderOfIds = routinesRepository.getExercisesOrder(routineEntity.routineId.toLong())
+                    val orderOfIds =
+                        routinesRepository.getExercisesOrder(routineEntity.routineId.toLong())
 
-                    exercises.forEach {exercise ->
+                    exercises.forEach { exercise ->
                         val relation = orderOfIds.find { it.first == exercise.id.toInt() }!!
-                        exercise.setsAndReps =relation.second
+                        exercise.setsAndReps = relation.second
                         exercise.observations = relation.third
                     }
                 }

@@ -1,6 +1,6 @@
 package com.example.rutinapp.data.models
 
-data class RoutineModel (
+data class RoutineModel(
     var id: Int = 0,
     var name: String,
     var targetedBodyPart: String,

@@ -1,7 +1,6 @@
 package com.example.rutinapp.data.daos
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -26,7 +25,10 @@ import kotlinx.coroutines.flow.Flow
     indices = [Index("routineId"), Index("exerciseId")]
 )
 data class RoutineExerciseEntity(
-    val routineId: Int, val exerciseId: Int, var statedSetsAndReps: String="0x0", var observations: String=""
+    val routineId: Int,
+    val exerciseId: Int,
+    var statedSetsAndReps: String = "0x0",
+    var observations: String = ""
 )
 
 @Dao

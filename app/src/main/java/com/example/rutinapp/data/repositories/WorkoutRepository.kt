@@ -1,12 +1,10 @@
 package com.example.rutinapp.data.repositories
 
-import android.util.Log
 import com.example.rutinapp.data.daos.ExerciseDao
 import com.example.rutinapp.data.daos.ExerciseEntity
 import com.example.rutinapp.data.daos.RoutineDao
 import com.example.rutinapp.data.daos.RoutineEntity
 import com.example.rutinapp.data.daos.SetDao
-import com.example.rutinapp.data.daos.SetEntity
 import com.example.rutinapp.data.daos.WorkOutDao
 import com.example.rutinapp.data.daos.WorkOutEntity
 import com.example.rutinapp.data.daos.WorkOutWithSets
@@ -19,13 +17,16 @@ import javax.inject.Inject
 
 fun WorkOutEntity.toModel(): WorkoutModel {
     return WorkoutModel(
-        id = this.workOutId, date = Date(this.date), title = this.title
+        id = this.workOutId,
+        date = Date(this.date),
+        title = this.title,
+        isFinished = this.isFinished
     )
 }
 
 fun WorkoutModel.toEntity(): WorkOutEntity {
     return WorkOutEntity(
-        workOutId = this.id, date = this.date.time, title = this.title
+        workOutId = this.id, date = this.date.time, title = this.title, isFinished = isFinished
     )
 }
 
@@ -39,14 +40,22 @@ class WorkoutRepository @Inject constructor(
 
     val workOuts: Flow<List<WorkOutWithSets>> = workoutDao.get10MoreRecent()
 
-    suspend fun addWorkout(workOutEntity: WorkOutEntity):Int {
+    suspend fun addWorkout(workOutEntity: WorkOutEntity): Int {
         return workoutDao.addWorkOut(workOutEntity).toInt()
     }
 
-    suspend fun addWorkoutRoutineRelation(workOutEntity: WorkOutEntity, routineEntity: RoutineEntity){
+    suspend fun addWorkoutRoutineRelation(
+        workOutEntity: WorkOutEntity,
+        routineEntity: RoutineEntity
+    ) {
         val workout = workoutDao.getByDate(workOutEntity.date)
 
-        workoutRoutinesDao.insert(WorkoutRoutineEntity(workoutId = workout.workOutId, routineId = routineEntity.routineId))
+        workoutRoutinesDao.insert(
+            WorkoutRoutineEntity(
+                workoutId = workout.workOutId,
+                routineId = routineEntity.routineId
+            )
+        )
     }
 
     suspend fun getWorkoutsRoutine(id: Int): RoutineEntity? {
@@ -54,7 +63,7 @@ class WorkoutRepository @Inject constructor(
         return routineDao.getFromId(relation.routineId)
     }
 
-    suspend fun getExercisesOfWorkout(id: Int):List<ExerciseEntity>{
+    suspend fun getExercisesOfWorkout(id: Int): List<ExerciseEntity> {
         val sets = setDao.getByWorkoutId(id).map { it.exerciseDoneId }.distinct()
 
         return sets.map {
@@ -68,6 +77,10 @@ class WorkoutRepository @Inject constructor(
 
     suspend fun deleteWorkout(workout: WorkOutEntity) {
         workoutDao.delete(workout)
+    }
+
+    suspend fun updateWorkout(workOut: WorkOutEntity) {
+        workoutDao.update(workOut)
     }
 
 }

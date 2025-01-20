@@ -19,6 +19,7 @@ import com.example.rutinapp.domain.getUseCases.GetRoutinesUseCase
 import com.example.rutinapp.domain.getUseCases.GetWorkoutIdByDateUseCase
 import com.example.rutinapp.domain.getUseCases.GetWorkoutsUseCase
 import com.example.rutinapp.domain.updateUseCases.UpdateSetUseCase
+import com.example.rutinapp.domain.updateUseCases.UpdateWorkoutUseCase
 import com.example.rutinapp.ui.screenStates.SetState
 import com.example.rutinapp.ui.screenStates.WorkoutsScreenState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -47,7 +48,8 @@ class WorkoutsViewModel @Inject constructor(
     private val updateSetUseCase: UpdateSetUseCase,
     private val deleteSetUseCase: DeleteSetUseCase,
     private val getWorkoutIdByDateUseCase: GetWorkoutIdByDateUseCase,
-    private val deleteWorkoutUseCase: DeleteWorkoutUseCase
+    private val deleteWorkoutUseCase: DeleteWorkoutUseCase,
+    private val updateWorkoutUseCase: UpdateWorkoutUseCase
 ) : ViewModel() {
 
     lateinit var exercisesViewModel: ExercisesViewModel
@@ -432,11 +434,14 @@ class WorkoutsViewModel @Inject constructor(
                 .filter { it.name.contains(name) || it.targetedBodyPart.contains(name) }
                 .toMutableList()
 
-            newListOfExercises = newListOfExercises.filter { it.id !in actualState.workout.exercisesAndSets.map { it.first.id } }
-                .toMutableList()
+            newListOfExercises =
+                newListOfExercises.filter { it.id !in actualState.workout.exercisesAndSets.map { it.first.id } }
+                    .toMutableList()
 
             if (actualState.workout.baseRoutine != null) {
-                newListOfExercises = newListOfExercises.filter { it.id !in actualState.workout.baseRoutine!!.exercises.map { it.id } }.toMutableList()
+                newListOfExercises =
+                    newListOfExercises.filter { it.id !in actualState.workout.baseRoutine!!.exercises.map { it.id } }
+                        .toMutableList()
             }
 
             _workoutScreenStates.postValue(
@@ -444,6 +449,16 @@ class WorkoutsViewModel @Inject constructor(
             )
         }
 
+    }
+
+    fun finishTraining() {
+
+        val actualState = _workoutScreenStates.value as WorkoutsScreenState.WorkoutStarted
+
+        viewModelScope.launch(Dispatchers.IO) {
+            updateWorkoutUseCase(actualState.workout.copy(isFinished = true))
+            backToObserve()
+        }
 
     }
 

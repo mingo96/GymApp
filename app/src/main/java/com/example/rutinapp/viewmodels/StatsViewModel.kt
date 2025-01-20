@@ -11,9 +11,9 @@ import com.example.rutinapp.domain.getUseCases.GetExercisesUseCase
 import com.example.rutinapp.domain.getUseCases.GetRoutinesUseCase
 import com.example.rutinapp.domain.getUseCases.GetSetsOfExerciseUseCase
 import com.example.rutinapp.ui.screenStates.StatsScreenState
-import com.example.rutinapp.ui.screens.dayOfWeekString
-import com.example.rutinapp.ui.screens.dateString
-import com.example.rutinapp.ui.screens.timeString
+import com.example.rutinapp.utils.dateString
+import com.example.rutinapp.utils.dayOfWeekString
+import com.example.rutinapp.utils.timeString
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
@@ -23,7 +23,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import kotlin.math.truncate
 
 @HiltViewModel
 class StatsViewModel @Inject constructor(
@@ -72,7 +71,8 @@ class StatsViewModel @Inject constructor(
                 val daysDone = setsDone.map { it.date.dayOfWeekString() }.distinct()
 
                 val daysToTimesDone = daysDone.associateWith { day ->
-                    (setsDone.filter { it.date.dayOfWeekString() == day }.count()/setsDone.size.toDouble())*100
+                    (setsDone.filter { it.date.dayOfWeekString() == day }
+                        .count() / setsDone.size.toDouble()) * 100
                 }.toList()
 
                 val newState = StatsScreenState.StatsOfExercise(
@@ -95,7 +95,9 @@ class StatsViewModel @Inject constructor(
 
     fun searchExercise(name: String) {
         if (_uiState.value is StatsScreenState.Observation) {
-            val newList = exercisesState.value.filter { it.name.contains(name)||it.targetedBodyPart.contains(name) }
+            val newList = exercisesState.value.filter {
+                it.name.contains(name) || it.targetedBodyPart.contains(name)
+            }
             _uiState.postValue(StatsScreenState.Observation(newList))
         }
     }

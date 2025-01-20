@@ -1,6 +1,6 @@
 package com.example.rutinapp.ui.screenStates
 
-sealed interface SettingsScreenState{
+sealed interface SettingsScreenState {
     data object Start : SettingsScreenState
 
 }

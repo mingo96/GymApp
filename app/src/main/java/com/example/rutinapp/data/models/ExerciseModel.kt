@@ -6,8 +6,6 @@ data class ExerciseModel(
     var description: String,
     var targetedBodyPart: String,
     var equivalentExercises: List<ExerciseModel> = emptyList(),
-    var setsAndReps : String = "",
-    var observations : String = ""
-) {
-
-}
+    var setsAndReps: String = "",
+    var observations: String = ""
+)

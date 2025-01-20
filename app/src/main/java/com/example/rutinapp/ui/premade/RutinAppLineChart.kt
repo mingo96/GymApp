@@ -22,7 +22,7 @@ import ir.ehsannarmani.compose_charts.models.LabelHelperProperties
 import ir.ehsannarmani.compose_charts.models.Line
 
 @Composable
-fun RutinAppLineChart(value : List<Double>){
+fun RutinAppLineChart(value: List<Double>) {
 
     LineChart(modifier = Modifier
         .height(200.dp)

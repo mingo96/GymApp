@@ -5,9 +5,9 @@ import com.example.rutinapp.data.repositories.RoutineRepository
 import com.example.rutinapp.data.repositories.toEntity
 import javax.inject.Inject
 
-class AddRoutineUseCase @Inject constructor(private val routineRepository: RoutineRepository){
+class AddRoutineUseCase @Inject constructor(private val routineRepository: RoutineRepository) {
 
-    suspend operator fun invoke(routine : RoutineModel):Int{
+    suspend operator fun invoke(routine: RoutineModel): Int {
         return routineRepository.addRoutine(routine.toEntity())
     }
 

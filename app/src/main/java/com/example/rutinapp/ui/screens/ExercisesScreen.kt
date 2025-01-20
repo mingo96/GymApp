@@ -149,7 +149,10 @@ fun ExercisesScreen(viewModel: ExercisesViewModel, navController: NavHostControl
 
 @Composable
 fun SearchTextField(
-    value: String, onValueChange: (String) -> Unit, onSearch: () -> Unit, modifier: Modifier=Modifier
+    value: String,
+    onValueChange: (String) -> Unit,
+    onSearch: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     TextField(value = value,
         textStyle = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold),

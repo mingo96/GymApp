@@ -20,7 +20,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navDeepLink
 import com.example.rutinapp.ui.screens.ExercisesScreen
 import com.example.rutinapp.ui.screens.MainScreen
 import com.example.rutinapp.ui.screens.RoutinesScreen
@@ -84,7 +83,10 @@ class MainActivity : ComponentActivity() {
                         composable("start",
                             enterTransition = { onEnter },
                             exitTransition = { onExit }) {
-                            MainScreen(navController = navController, mainScreenViewModel = mainScreenViewModel)
+                            MainScreen(
+                                navController = navController,
+                                mainScreenViewModel = mainScreenViewModel
+                            )
                         }
 
                         composable("exercises",

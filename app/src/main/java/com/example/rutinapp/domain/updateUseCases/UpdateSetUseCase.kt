@@ -1,6 +1,5 @@
 package com.example.rutinapp.domain.updateUseCases
 
-import com.example.rutinapp.data.daos.SetEntity
 import com.example.rutinapp.data.models.SetModel
 import com.example.rutinapp.data.repositories.SetRepository
 import javax.inject.Inject

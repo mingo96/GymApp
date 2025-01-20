@@ -64,7 +64,8 @@ class DatabaseModule {
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext appContext: Context): RutinAppDatabase {
-        return Room.databaseBuilder(appContext, RutinAppDatabase::class.java, "RutinAppDatabase.db").fallbackToDestructiveMigration()
+        return Room.databaseBuilder(appContext, RutinAppDatabase::class.java, "RutinAppDatabase.db")
+            .fallbackToDestructiveMigration()
             .build()
     }
 

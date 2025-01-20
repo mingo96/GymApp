@@ -1,9 +1,6 @@
 package com.example.rutinapp.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
@@ -15,8 +12,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -34,7 +29,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -53,13 +47,12 @@ import com.example.rutinapp.ui.theme.ContentColor
 import com.example.rutinapp.ui.theme.ScreenContainer
 import com.example.rutinapp.ui.theme.SecondaryColor
 import com.example.rutinapp.ui.theme.TextFieldColor
+import com.example.rutinapp.utils.dateString
+import com.example.rutinapp.utils.timeString
 import com.example.rutinapp.utils.truncatedToNDecimals
 import com.example.rutinapp.viewmodels.StatsViewModel
-import ir.ehsannarmani.compose_charts.PieChart
-import ir.ehsannarmani.compose_charts.models.Pie
 import kotlinx.coroutines.delay
 import java.util.Date
-import kotlin.random.Random
 
 @Composable
 fun StatsScreen(navController: NavHostController, statsViewModel: StatsViewModel) {
@@ -152,7 +145,8 @@ fun ExerciseStats(uiState: StatsScreenState.StatsOfExercise, onExit: () -> Unit)
     if (uiState.hasBeenDone) {
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
-            verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom =8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(bottom = 8.dp)
         ) {
 
             item(span = { GridItemSpan(2) }) {
@@ -180,7 +174,8 @@ fun ExerciseStats(uiState: StatsScreenState.StatsOfExercise, onExit: () -> Unit)
             item {
 
                 TextContainer(
-                    text = uiState.averageWeight.truncatedToNDecimals(2) + " kg", title = "Peso promedio"
+                    text = uiState.averageWeight.truncatedToNDecimals(2) + " kg",
+                    title = "Peso promedio"
                 )
             }
             item {
@@ -199,7 +194,7 @@ fun ExerciseStats(uiState: StatsScreenState.StatsOfExercise, onExit: () -> Unit)
 }
 
 @Composable
-fun TextContainer(modifier: Modifier = Modifier,text: String? = null, title: String) {
+fun TextContainer(modifier: Modifier = Modifier, text: String? = null, title: String) {
 
     Column(modifier) {
         Column(modifier = Modifier.padding(8.dp)) {

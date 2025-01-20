@@ -24,7 +24,7 @@ class DataStoreManager(val context: Context) {
         val ISDARKTHEME = booleanPreferencesKey("isDarkTheme")
     }
 
-    suspend fun saveData(userDetails: UserDetails){
+    suspend fun saveData(userDetails: UserDetails) {
         context.dataStore.edit {
             it[EMAIL] = userDetails.email
             it[PASSWORD] = userDetails.password

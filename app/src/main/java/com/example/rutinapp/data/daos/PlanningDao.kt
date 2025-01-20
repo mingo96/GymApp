@@ -31,7 +31,7 @@ data class PlanningEntity(
 }
 
 @Dao
-interface PlanningDao{
+interface PlanningDao {
 
     @Query("SELECT * FROM PlanningEntity")
     fun getPlannings(): Flow<List<PlanningEntity>>

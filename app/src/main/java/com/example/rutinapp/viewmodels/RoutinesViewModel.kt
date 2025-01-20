@@ -33,7 +33,7 @@ class RoutinesViewModel @Inject constructor(
     private val updateRoutineExerciseRelationUseCase: UpdateRoutineExerciseRelationUseCase
 ) : ViewModel() {
 
-    val routines: StateFlow<List<RoutineModel>> = getRoutinesUseCase().catch {Error(it)}
+    val routines: StateFlow<List<RoutineModel>> = getRoutinesUseCase().catch { Error(it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val exercisesState: StateFlow<List<ExerciseModel>> =
@@ -70,7 +70,13 @@ class RoutinesViewModel @Inject constructor(
             )
             createdRoutine.id = createRoutineUseCase(createdRoutine)
 
-            _uiState.postValue(RoutinesScreenState.Editing(createdRoutine, availableExercises = relatedExercisesByBodyPart(createdRoutine), positionOfScreen = false))
+            _uiState.postValue(
+                RoutinesScreenState.Editing(
+                    createdRoutine,
+                    availableExercises = relatedExercisesByBodyPart(createdRoutine),
+                    positionOfScreen = false
+                )
+            )
 
         }
 
@@ -97,14 +103,14 @@ class RoutinesViewModel @Inject constructor(
 
     }
 
-    fun toggleEditingState(comesFromExercises : Boolean = false) {
+    fun toggleEditingState(comesFromExercises: Boolean = false) {
         val actualState = _uiState.value as RoutinesScreenState.Editing
         _uiState.postValue(
             RoutinesScreenState.Editing(
                 actualState.routine,
                 positionOfScreen = !actualState.positionOfScreen,
                 availableExercises = relatedExercisesByBodyPart(actualState.routine).filter { it.id !in actualState.routine.exercises.map { it.id } },
-                selectedExercise = if(comesFromExercises) actualState.selectedExercise else null
+                selectedExercise = if (comesFromExercises) actualState.selectedExercise else null
             )
         )
     }

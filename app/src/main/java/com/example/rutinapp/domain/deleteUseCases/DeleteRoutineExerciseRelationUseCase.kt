@@ -3,7 +3,6 @@ package com.example.rutinapp.domain.deleteUseCases
 import com.example.rutinapp.data.models.ExerciseModel
 import com.example.rutinapp.data.models.RoutineModel
 import com.example.rutinapp.data.repositories.RoutineRepository
-import com.example.rutinapp.data.repositories.toEntity
 import javax.inject.Inject
 
 class DeleteRoutineExerciseRelationUseCase @Inject constructor(private val routineRepository: RoutineRepository) {

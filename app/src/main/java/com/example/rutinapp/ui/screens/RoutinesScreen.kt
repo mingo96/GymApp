@@ -117,10 +117,16 @@ fun RoutinesScreen(viewModel: RoutinesViewModel, navController: NavHostControlle
         buttonText = "Crear nueva rutina"
     ) {
         LazyColumn(modifier = Modifier.padding(it)) {
-            items(routines.map { it.targetedBodyPart.capitalize(Locale.ROOT) }
+            items(routines.map {
+                it.targetedBodyPart.replaceFirstChar {
+                    if (it.isLowerCase()) it.titlecase(
+                        Locale.ROOT
+                    ) else it.toString()
+                }
+            }
                 .distinct()) { thisBodyPart ->
 
-                Column() {
+                Column {
                     Text(
                         text = thisBodyPart,
                         fontWeight = FontWeight.Bold,
@@ -128,7 +134,13 @@ fun RoutinesScreen(viewModel: RoutinesViewModel, navController: NavHostControlle
                         textDecoration = TextDecoration.Underline
                     )
                     LazyRow {
-                        items(routines.filter { it.targetedBodyPart.capitalize(Locale.ROOT) == thisBodyPart }) {
+                        items(routines.filter {
+                            it.targetedBodyPart.replaceFirstChar {
+                                if (it.isLowerCase()) it.titlecase(
+                                    Locale.ROOT
+                                ) else it.toString()
+                            } == thisBodyPart
+                        }) {
                             RoutineCard(
                                 routine = it, modifier = Modifier.combinedClickable(onClick = {
                                     viewModel.clickObserveRoutine(it)
@@ -309,7 +321,7 @@ fun EditRoutineExercises(uiState: RoutinesScreenState.Editing, viewModel: Routin
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(text = "Ejercicios")
-        if (uiState.selectedExercise != null) Row() {
+        if (uiState.selectedExercise != null) Row {
 
             IconButton(onClick = {
                 viewModel.changeExercisePresenceOnRoutine()
@@ -652,7 +664,7 @@ fun SimpleExerciseItem(
 ) {
 
     Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Column() {
+        Column {
             Text(
                 text = item.name,
                 fontWeight = FontWeight.Bold,

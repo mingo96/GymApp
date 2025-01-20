@@ -25,7 +25,7 @@ fun ScreenContainer(
     title: String,
     onExit: (() -> Unit)? = null,
     bottomButtonAction: (() -> Unit)? = null,
-    buttonText: String="",
+    buttonText: String = "",
     floatingActionButton: @Composable () -> Unit = {},
     content: @Composable (PaddingValues) -> Unit
 ) {

@@ -8,6 +8,7 @@ import androidx.room.Insert
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Relation
+import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
 
@@ -16,6 +17,7 @@ data class WorkOutEntity(
     @PrimaryKey(autoGenerate = true) val workOutId: Int,
     val date: Long,
     var title: String,
+    var isFinished: Boolean
 )
 
 data class WorkOutWithSets(
@@ -34,12 +36,15 @@ interface WorkOutDao {
     fun get10MoreRecent(): Flow<List<WorkOutWithSets>>
 
     @Insert
-    suspend fun addWorkOut(training: WorkOutEntity):Long
+    suspend fun addWorkOut(training: WorkOutEntity): Long
 
     @Query("SELECT * FROM WorkOutEntity WHERE date = :date")
     suspend fun getByDate(date: Long): WorkOutEntity
 
     @Delete
     suspend fun delete(workout: WorkOutEntity)
+
+    @Update
+    suspend fun update(workOut: WorkOutEntity)
 
 }
