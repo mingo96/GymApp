@@ -73,4 +73,8 @@ class RoutineRepository @Inject constructor(
         return routineDao.getFromId(routineId)
     }
 
+    suspend fun updateRoutine(entity: RoutineEntity) {
+        routineDao.updateRoutine(entity)
+    }
+
 }

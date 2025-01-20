@@ -39,6 +39,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -49,6 +50,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -57,11 +59,13 @@ import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.example.rutinapp.R
 import com.example.rutinapp.data.models.ExerciseModel
 import com.example.rutinapp.data.models.RoutineModel
 import com.example.rutinapp.ui.screenStates.RoutinesScreenState
 import com.example.rutinapp.ui.theme.PrimaryColor
 import com.example.rutinapp.ui.theme.ScreenContainer
+import com.example.rutinapp.ui.theme.SecondaryColor
 import com.example.rutinapp.ui.theme.TextFieldColor
 import com.example.rutinapp.ui.theme.rutinAppButtonsColours
 import com.example.rutinapp.ui.theme.rutinappCardColors
@@ -123,8 +127,7 @@ fun RoutinesScreen(viewModel: RoutinesViewModel, navController: NavHostControlle
                         Locale.ROOT
                     ) else it.toString()
                 }
-            }
-                .distinct()) { thisBodyPart ->
+            }.distinct()) { thisBodyPart ->
 
                 Column {
                     Text(
@@ -203,8 +206,7 @@ fun EditRoutineExerciseRelation(
     )
 
     if (manualEdition) {
-        TextFieldWithTitle(
-            title = "Series y repeticiones",
+        TextFieldWithTitle(title = "Series y repeticiones",
             text = setsAndReps,
             onWrite = { setsAndReps = it })
     } else {
@@ -257,7 +259,8 @@ fun EditRoutineExerciseRelation(
         }
     }
 
-    TextFieldWithTitle(title = "Observaciones",
+    TextFieldWithTitle(
+        title = "Observaciones",
         text = observations,
         onWrite = { observations = it })
 
@@ -408,7 +411,22 @@ fun EditRoutineContent(uiState: RoutinesScreenState.Editing, viewModel: Routines
     var name by rememberSaveable { mutableStateOf(uiState.routine.name) }
     var targetedBodyPart by rememberSaveable { mutableStateOf(uiState.routine.targetedBodyPart) }
 
-    Text(text = uiState.routine.name, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+    Row(
+        Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(text = uiState.routine.name, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+
+        IconButton(
+            onClick = { viewModel.editRoutine(name, targetedBodyPart) },
+            colors = IconButtonDefaults.iconButtonColors(containerColor = SecondaryColor)
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.save), contentDescription = "Save changes"
+            )
+        }
+    }
 
     TextFieldWithTitle(title = "Nombre", text = name, onWrite = { name = it })
     TextFieldWithTitle(title = "Parte del cuerpo que entrena",

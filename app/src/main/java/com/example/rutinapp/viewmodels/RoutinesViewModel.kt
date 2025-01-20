@@ -12,6 +12,7 @@ import com.example.rutinapp.domain.deleteUseCases.DeleteRoutineExerciseRelationU
 import com.example.rutinapp.domain.getUseCases.GetExercisesUseCase
 import com.example.rutinapp.domain.getUseCases.GetRoutinesUseCase
 import com.example.rutinapp.domain.updateUseCases.UpdateRoutineExerciseRelationUseCase
+import com.example.rutinapp.domain.updateUseCases.UpdateRoutineUseCase
 import com.example.rutinapp.ui.screenStates.RoutinesScreenState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -30,7 +31,8 @@ class RoutinesViewModel @Inject constructor(
     getExercisesUseCase: GetExercisesUseCase,
     private val addRoutineExerciseRelationUseCase: AddRoutineExerciseRelationUseCase,
     private val deleteRoutineExerciseRelationUseCase: DeleteRoutineExerciseRelationUseCase,
-    private val updateRoutineExerciseRelationUseCase: UpdateRoutineExerciseRelationUseCase
+    private val updateRoutineExerciseRelationUseCase: UpdateRoutineExerciseRelationUseCase,
+    private val updateRoutineUseCase: UpdateRoutineUseCase
 ) : ViewModel() {
 
     val routines: StateFlow<List<RoutineModel>> = getRoutinesUseCase().catch { Error(it) }
@@ -179,6 +181,15 @@ class RoutinesViewModel @Inject constructor(
             )
         )
         toggleEditingState(true)
+    }
+
+    fun editRoutine(name: String, targetedBodyPart: String) {
+        val actualState = _uiState.value as RoutinesScreenState.Editing
+        viewModelScope.launch(Dispatchers.IO) {
+            updateRoutineUseCase(
+                actualState.routine.copy(targetedBodyPart = targetedBodyPart, name = name)
+            )
+        }
     }
 
 }
