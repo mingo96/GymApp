@@ -7,6 +7,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.rutinapp.data.models.ExerciseModel
+import com.example.rutinapp.data.models.PlanningModel
 import com.example.rutinapp.data.models.RoutineModel
 import com.example.rutinapp.data.models.SetModel
 import com.example.rutinapp.data.models.WorkoutModel
@@ -15,7 +16,9 @@ import com.example.rutinapp.domain.addUseCases.AddWorkoutUseCase
 import com.example.rutinapp.domain.deleteUseCases.DeleteSetUseCase
 import com.example.rutinapp.domain.deleteUseCases.DeleteWorkoutUseCase
 import com.example.rutinapp.domain.getUseCases.GetExercisesUseCase
+import com.example.rutinapp.domain.getUseCases.GetRelatedExercisesByBodyPartUseCase
 import com.example.rutinapp.domain.getUseCases.GetRoutinesUseCase
+import com.example.rutinapp.domain.getUseCases.GetTodaysPlanningUseCase
 import com.example.rutinapp.domain.getUseCases.GetWorkoutIdByDateUseCase
 import com.example.rutinapp.domain.getUseCases.GetWorkoutsUseCase
 import com.example.rutinapp.domain.updateUseCases.UpdateSetUseCase
@@ -43,16 +46,22 @@ class WorkoutsViewModel @Inject constructor(
     getWorkoutsUseCase: GetWorkoutsUseCase,
     getRoutinesUseCase: GetRoutinesUseCase,
     getExercisesUseCase: GetExercisesUseCase,
+    getTodaysPlanning: GetTodaysPlanningUseCase,
     private val addWorkoutUseCase: AddWorkoutUseCase,
     private val addSetUseCase: AddSetUseCase,
     private val updateSetUseCase: UpdateSetUseCase,
     private val deleteSetUseCase: DeleteSetUseCase,
-    private val getWorkoutIdByDateUseCase: GetWorkoutIdByDateUseCase,
     private val deleteWorkoutUseCase: DeleteWorkoutUseCase,
-    private val updateWorkoutUseCase: UpdateWorkoutUseCase
+    private val updateWorkoutUseCase: UpdateWorkoutUseCase,
+    private val getRelatedExercisesByBodyPartUseCase : GetRelatedExercisesByBodyPartUseCase,
 ) : ViewModel() {
 
     lateinit var exercisesViewModel: ExercisesViewModel
+
+    private val todaysPlanning: StateFlow<PlanningModel?> = getTodaysPlanning().map {
+        refreshPlanning(it)
+        it
+    }.catch { Error(it) }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     val workouts: StateFlow<List<WorkoutModel>> = getWorkoutsUseCase().catch { Error(it) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
@@ -87,7 +96,7 @@ class WorkoutsViewModel @Inject constructor(
     }.catch { Error(it) }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     private val _workoutScreenStates: MutableLiveData<WorkoutsScreenState> =
-        MutableLiveData(WorkoutsScreenState.Observe)
+        MutableLiveData(WorkoutsScreenState.Observe(todaysPlanning.value))
 
     val workoutScreenStates: LiveData<WorkoutsScreenState> = _workoutScreenStates
 
@@ -140,7 +149,6 @@ class WorkoutsViewModel @Inject constructor(
             )
 
             val availableExercises = exercises.first()
-
 
             newWorkout.id = addWorkoutUseCase(workout = newWorkout)
 
@@ -331,7 +339,8 @@ class WorkoutsViewModel @Inject constructor(
             //state is not WorkoutStarted
         }
 
-        _workoutScreenStates.postValue(WorkoutsScreenState.Observe)
+        _workoutScreenStates.postValue(WorkoutsScreenState.Observe())
+        refreshPlanning()
     }
 
     fun moveExercise(first: ExerciseModel, upOrDown: Boolean) {
@@ -431,7 +440,7 @@ class WorkoutsViewModel @Inject constructor(
         viewModelScope.launch {
 
             var newListOfExercises = exercises.first()
-                .filter { it.name.contains(name) || it.targetedBodyPart.contains(name) }
+                .filter { it.name.contains(name, true) || it.targetedBodyPart.contains(name, true) }
                 .toMutableList()
 
             newListOfExercises =
@@ -458,8 +467,73 @@ class WorkoutsViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             updateWorkoutUseCase(actualState.workout.copy(isFinished = true))
             backToObserve()
+            refreshPlanning()
         }
 
+    }
+
+    fun refreshPlanning(planning: PlanningModel? = null) {
+
+        try {
+
+            if (planning != null) {
+                _workoutScreenStates.value as WorkoutsScreenState.Observe
+                _workoutScreenStates.value = WorkoutsScreenState.Observe(planning)
+            } else {
+                viewModelScope.launch {
+                    val newPlanning = todaysPlanning.first()
+                    println(newPlanning)
+
+                    _workoutScreenStates.value as WorkoutsScreenState.Observe
+                    _workoutScreenStates.value = WorkoutsScreenState.Observe(newPlanning)
+                }
+            }
+        } catch (_: ClassCastException) {
+
+        }
+    }
+
+    fun startFromStatedBodyPart() {
+        try {
+
+            val momentOfCreation = Date.from(Instant.now())
+
+            val actualState = _workoutScreenStates.value as WorkoutsScreenState.Observe
+
+            val statedBodyPart = actualState.planning!!.statedBodyPart!!
+
+            viewModelScope.launch {
+
+                val selectedExercises = getRelatedExercisesByBodyPartUseCase(statedBodyPart)
+
+                println(selectedExercises.size)
+
+                val newWorkout = WorkoutModel(
+                    date = momentOfCreation,
+                    title = "Entreno del " + momentOfCreation.toInstant().toString().substring(0, 10),
+                    baseRoutine = null,
+                    exercisesAndSets = selectedExercises.map {
+                        Pair<ExerciseModel, MutableList<SetModel>>(
+                            it, mutableListOf()
+                        )
+                    }.toMutableList()
+                )
+
+                val availableExercises = exercises.first().filter { it.id !in selectedExercises.map { it.id } }
+
+                newWorkout.id = addWorkoutUseCase(workout = newWorkout)
+
+                _workoutScreenStates.postValue(
+                    WorkoutsScreenState.WorkoutStarted(
+                        workout = newWorkout, otherExercises = availableExercises
+                    )
+                )
+
+            }
+
+        } catch (e: Exception) {
+
+        }
     }
 
 }

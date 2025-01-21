@@ -25,4 +25,8 @@ class SetRepository @Inject constructor(private val setDao: SetDao) {
         setDao.updateSet(set)
     }
 
+    suspend fun numberOfSetsOfExercise(id:Int): Int {
+        return setDao.numberOfSetsOfExercise(id)
+    }
+
 }

@@ -72,4 +72,7 @@ interface SetDao {
     @Query("SELECT * FROM SetEntity WHERE setId = :id")
     suspend fun getById(id: Int): SetEntity
 
+    @Query("SELECT COUNT(*) FROM SetEntity WHERE exerciseDoneId = :id")
+    suspend fun numberOfSetsOfExercise(id: Int): Int
+
 }

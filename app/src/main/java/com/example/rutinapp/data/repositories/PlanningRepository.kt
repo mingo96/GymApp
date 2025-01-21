@@ -2,6 +2,10 @@ package com.example.rutinapp.data.repositories
 
 import com.example.rutinapp.data.daos.PlanningDao
 import com.example.rutinapp.data.daos.PlanningEntity
+import com.example.rutinapp.utils.toSimpleDate
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import java.util.Date
 import javax.inject.Inject
 
 class PlanningRepository @Inject constructor(
@@ -22,5 +26,7 @@ class PlanningRepository @Inject constructor(
         planningDao.updatePlanning(planning)
     }
 
-
+    fun getTodaysPlanning(): Flow<PlanningEntity?> {
+        return allPlannings.map { it.first { Date(it.date).toSimpleDate() == Date().toSimpleDate() } }
+    }
 }

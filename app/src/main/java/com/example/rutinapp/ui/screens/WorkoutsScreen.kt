@@ -38,6 +38,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
@@ -78,12 +79,21 @@ import java.util.Date
 @Composable
 fun WorkoutsScreen(viewModel: WorkoutsViewModel, navController: NavHostController) {
 
-    val workoutScreenState by viewModel.workoutScreenStates.observeAsState(WorkoutsScreenState.Observe)
+    val workoutScreenState by viewModel.workoutScreenStates.observeAsState(WorkoutsScreenState.Observe())
 
-    val bottomButtonAction = {
-        if (workoutScreenState is WorkoutsScreenState.WorkoutStarted) {
-            viewModel.finishTraining()
-        } else viewModel.startFromEmpty()
+    val bottomButtonAction =
+        if (workoutScreenState is WorkoutsScreenState.WorkoutStarted && (workoutScreenState as WorkoutsScreenState.WorkoutStarted).workout.isFinished) {
+            null
+        } else {
+            {
+                if (workoutScreenState is WorkoutsScreenState.WorkoutStarted) {
+                    viewModel.finishTraining()
+                } else viewModel.startFromEmpty()
+            }
+        }
+
+    LaunchedEffect(key1 = viewModel) {
+        viewModel.refreshPlanning()
     }
 
     ScreenContainer(
@@ -95,7 +105,7 @@ fun WorkoutsScreen(viewModel: WorkoutsViewModel, navController: NavHostControlle
                 navController.navigateUp()
             }
         },
-        bottomButtonAction = if (workoutScreenState is WorkoutsScreenState.WorkoutStarted && !(workoutScreenState as WorkoutsScreenState.WorkoutStarted).workout.isFinished) bottomButtonAction else null,
+        bottomButtonAction = bottomButtonAction,
         title = if (workoutScreenState is WorkoutsScreenState.WorkoutStarted) "Progreso de entrenamiento" else "Entrenamientos",
         buttonText = if (workoutScreenState is WorkoutsScreenState.WorkoutStarted) {
             "Finalizar entrenamiento"
@@ -103,9 +113,12 @@ fun WorkoutsScreen(viewModel: WorkoutsViewModel, navController: NavHostControlle
     ) {
         Column(modifier = Modifier.padding(it)) {
             when (workoutScreenState) {
-                WorkoutsScreenState.Observe -> {
+                is WorkoutsScreenState.Observe -> {
 
-                    ObservationContent(viewModel = viewModel)
+                    ObservationContent(
+                        viewModel = viewModel,
+                        state = workoutScreenState as WorkoutsScreenState.Observe
+                    )
 
                 }
 
@@ -131,7 +144,7 @@ fun WorkoutsScreen(viewModel: WorkoutsViewModel, navController: NavHostControlle
 }
 
 @Composable
-fun ObservationContent(viewModel: WorkoutsViewModel) {
+fun ObservationContent(viewModel: WorkoutsViewModel, state: WorkoutsScreenState.Observe) {
 
     val lifecycle = LocalLifecycleOwner.current.lifecycle
 
@@ -175,6 +188,38 @@ fun ObservationContent(viewModel: WorkoutsViewModel) {
         items(routines) {
             RoutineItem(routine = it, modifier = Modifier.padding(16.dp)) {
                 viewModel.startFromRoutine(it)
+            }
+        }
+    }
+
+    if (state.planning != null) {
+        Text(text = "Lo planificado", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+
+        if (state.planning.statedRoutine != null) {
+            RoutineItem(
+                routine = state.planning.statedRoutine!!, modifier = Modifier.padding(16.dp)
+            ) {
+                viewModel.startFromRoutine(state.planning.statedRoutine!!)
+            }
+        } else if (state.planning.statedBodyPart != null) {
+            Row(
+                modifier = Modifier
+                    .padding(8.dp)
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Hacer " + state.planning.statedBodyPart,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                IconButton(onClick = { viewModel.startFromStatedBodyPart() }) {
+                    Icon(
+                        imageVector = Icons.TwoTone.ArrowForward,
+                        contentDescription = "start from scheduled bodypart"
+                    )
+                }
             }
         }
     }
@@ -274,7 +319,8 @@ fun WorkoutProgression(
                     mutableStateOf(false)
                 }
 
-                ExerciseInfo(it,
+                ExerciseInfo(
+                    it,
                     uiState,
                     setsOpened,
                     { setsOpened = !setsOpened }) { viewModel.startSwappingExercise(it.first) }
@@ -546,7 +592,8 @@ fun SetEditionDialog(viewModel: WorkoutsViewModel, set: SetModel) {
                     }
                 }, typeOfKeyBoard = KeyboardType.Number
             )
-            TextFieldWithTitle(title = "Observaciones",
+            TextFieldWithTitle(
+                title = "Observaciones",
                 text = observations,
                 onWrite = { observations = it })
             Row(
@@ -561,7 +608,8 @@ fun SetEditionDialog(viewModel: WorkoutsViewModel, set: SetModel) {
                 }) {
                     Text(text = "Guardar")
                 }
-                Button(colors = rutinAppButtonsColours(),
+                Button(
+                    colors = rutinAppButtonsColours(),
                     onClick = { viewModel.cancelSetEditing() }) {
                     Text(text = "Cancelar")
                 }
@@ -709,8 +757,7 @@ fun WorkoutItem(item: WorkoutModel, onClick: () -> Unit) {
 
             Text(text = item.title)
             Text(text = "Inicio : " + item.date.completeHourString())
-            if (item.isFinished)
-                Text(text = "Terminado", color = Color.Green)
+            if (item.isFinished) Text(text = "Terminado", color = Color.Green)
         }
     }
 }
