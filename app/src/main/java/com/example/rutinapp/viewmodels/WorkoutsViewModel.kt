@@ -484,8 +484,12 @@ class WorkoutsViewModel @Inject constructor(
                     val newPlanning = todaysPlanning.first()
                     println(newPlanning)
 
-                    _workoutScreenStates.value as WorkoutsScreenState.Observe
-                    _workoutScreenStates.value = WorkoutsScreenState.Observe(newPlanning)
+                    try {
+                        _workoutScreenStates.value as WorkoutsScreenState.Observe
+                        _workoutScreenStates.postValue( WorkoutsScreenState.Observe(newPlanning))
+                    }catch (_:Exception){
+
+                    }
                 }
             }
         } catch (_: ClassCastException) {
