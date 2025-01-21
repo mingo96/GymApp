@@ -6,6 +6,7 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.snapping.SnapPosition
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -74,6 +76,7 @@ import com.example.rutinapp.ui.theme.TextFieldColor
 import com.example.rutinapp.ui.theme.rutinAppButtonsColours
 import com.example.rutinapp.utils.completeHourString
 import com.example.rutinapp.viewmodels.WorkoutsViewModel
+import kotlinx.coroutines.delay
 import java.util.Date
 
 @Composable
@@ -91,10 +94,6 @@ fun WorkoutsScreen(viewModel: WorkoutsViewModel, navController: NavHostControlle
                 } else viewModel.startFromEmpty()
             }
         }
-
-    LaunchedEffect(key1 = viewModel) {
-        viewModel.refreshPlanning()
-    }
 
     ScreenContainer(
         onExit = {
@@ -124,6 +123,10 @@ fun WorkoutsScreen(viewModel: WorkoutsViewModel, navController: NavHostControlle
 
                 is WorkoutsScreenState.WorkoutStarted -> {
 
+                    DigitalWatch(
+                        uiState = workoutScreenState as WorkoutsScreenState.WorkoutStarted,
+                        viewModel = viewModel
+                    )
                     LazyColumn {
 
                         item {
@@ -156,6 +159,10 @@ fun ObservationContent(viewModel: WorkoutsViewModel, state: WorkoutsScreenState.
         lifecycle = lifecycle, initialValue = emptyList()
     )
 
+    LaunchedEffect(key1 = viewModel) {
+        viewModel.refreshPlanning()
+    }
+
     Text(text = "Entrenamientos recientes", fontSize = 20.sp, fontWeight = FontWeight.Bold)
 
     LazyRow(
@@ -185,6 +192,13 @@ fun ObservationContent(viewModel: WorkoutsViewModel, state: WorkoutsScreenState.
             .padding(vertical = 16.dp)
             .background(TextFieldColor, RoundedCornerShape(15.dp))
     ) {
+        if (routines.isEmpty()) item {
+            Text(
+                text = "No hay rutinas",
+                fontSize = 16.sp,
+                color = Color.Red,
+                modifier = Modifier.padding(16.dp))
+        }
         items(routines) {
             RoutineItem(routine = it, modifier = Modifier.padding(16.dp)) {
                 viewModel.startFromRoutine(it)
@@ -234,7 +248,6 @@ fun WorkoutProgression(
     navController: NavHostController
 ) {
 
-
     if (uiState.setBeingCreated != null) {
         if (uiState.setBeingCreated is SetState.CreatingSet) {
             SetEditionDialog(viewModel = viewModel, set = uiState.setBeingCreated.set)
@@ -243,34 +256,6 @@ fun WorkoutProgression(
         }
     } else if (uiState.exerciseBeingSwapped != null) {
         ExerciseSwapDialog(viewModel = viewModel, exercise = uiState.exerciseBeingSwapped)
-    }
-
-    Row(
-        modifier = Modifier
-            .padding(bottom = 16.dp)
-            .fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        if (uiState.workout.exercisesAndSets.isNotEmpty() && uiState.workout.exercisesAndSets.first().second.isNotEmpty()) {
-            val lastSet = uiState.workout.exercisesAndSets.maxOf {
-                if (it.second.isEmpty()) Date(0) else it.second.maxOf { it.date }
-            }
-            Text(
-                text = "Último hecho " + lastSet.completeHourString(),
-                fontSize = 18.sp,
-                modifier = Modifier.padding(8.dp)
-            )
-        }
-        if (!uiState.workout.isFinished) {
-            val actualDate by viewModel.currentDate.collectAsStateWithLifecycle(initialValue = System.currentTimeMillis())
-
-            Text(
-                text = Date(actualDate).completeHourString(),
-                fontSize = 18.sp,
-                modifier = Modifier.padding(8.dp)
-            )
-        }
     }
 
     if (!uiState.workout.isFinished) BoxWithConstraints {
@@ -306,30 +291,49 @@ fun WorkoutProgression(
         fontWeight = FontWeight.Bold
     )
 
+    var maxIndex by rememberSaveable { mutableIntStateOf(0) }
+
+    LaunchedEffect(key1 = maxIndex) {
+        while (maxIndex < uiState.workout.exercisesAndSets.size) {
+            delay(100)
+            maxIndex++
+        }
+    }
+
     LazyColumn(
         Modifier
             .fillMaxWidth()
             .heightIn(max = 500.dp)
             .padding(top = 16.dp),
     ) {
-        items(uiState.workout.exercisesAndSets, key = { it.first.id }) {
-            Column(modifier = Modifier.animateItem(placementSpec = spring(stiffness = Spring.StiffnessHigh))) {
+        items(uiState.workout.exercisesAndSets.take(maxIndex), key = { it.first.id }) {
 
-                var setsOpened by rememberSaveable {
-                    mutableStateOf(false)
+            var shown by rememberSaveable { mutableStateOf(false) }
+            LaunchedEffect(key1 = shown) {
+                delay(50)
+                shown = true
+            }
+
+            AnimatedVisibility(shown, enter = slideInHorizontally()) {
+
+                Column(modifier = Modifier.animateItem(placementSpec = spring(stiffness = Spring.StiffnessHigh))) {
+
+                    var setsOpened by rememberSaveable {
+                        mutableStateOf(false)
+                    }
+
+                    ExerciseInfo(
+                        it,
+                        uiState,
+                        setsOpened,
+                        { setsOpened = !setsOpened }) { viewModel.startSwappingExercise(it.first) }
+
+                    ExerciseSets(it, viewModel, setsOpened, uiState)
+
+                    if (!uiState.workout.isFinished) ExerciseActions(
+                        viewModel = viewModel, exerciseAndSets = it, uiState = uiState
+                    )
                 }
-
-                ExerciseInfo(
-                    it,
-                    uiState,
-                    setsOpened,
-                    { setsOpened = !setsOpened }) { viewModel.startSwappingExercise(it.first) }
-
-                ExerciseSets(it, viewModel, setsOpened, uiState)
-
-                if (!uiState.workout.isFinished) ExerciseActions(
-                    viewModel = viewModel, exerciseAndSets = it, uiState = uiState
-                )
             }
 
         }
@@ -676,9 +680,9 @@ fun OtherExercises(
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalAlignment = Alignment.Start
             ) {
                 Text(
                     text = "Ejercicios disponibles", fontSize = 20.sp, fontWeight = FontWeight.Bold
@@ -692,12 +696,21 @@ fun OtherExercises(
                 )
             }
 
+            var maxIndex by rememberSaveable { mutableIntStateOf(0) }
+
+            LaunchedEffect(key1 = uiState) {
+                while (maxIndex < uiState.otherExercises.size) {
+                    delay(100)
+                    maxIndex++
+                }
+            }
+
             LazyColumn(
                 Modifier
                     .widthIn(150.dp, maxWidth)
-                    .heightIn(max = 300.dp)
+                    .heightIn(50.dp,300.dp)
                     .background(PrimaryColor, RoundedCornerShape(15.dp))
-                    .padding(16.dp),
+                    .padding(16.dp)
             ) {
                 if (uiState.otherExercises.isEmpty()) {
                     item {
@@ -709,24 +722,36 @@ fun OtherExercises(
                         )
                     }
                 }
-                items(uiState.otherExercises) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
+                items(uiState.otherExercises.take(maxIndex), key = { it.id }) {
+                    var shown by rememberSaveable { mutableStateOf(false) }
+                    LaunchedEffect(key1 = shown) {
+                        delay(50)
+                        shown = true
+                    }
+                    AnimatedVisibility(shown, enter = slideInHorizontally()) {
 
-                        Text(
-                            text = it.name, fontSize = 15.sp, modifier = Modifier.fillMaxWidth(0.8f)
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .animateItem()
+                        ) {
 
-                        IconButton(onClick = {
-                            viewModel.addExerciseToWorkout(it)
-                        }) {
-                            Icon(
-                                imageVector = Icons.TwoTone.Add,
-                                contentDescription = "add exercise to workout"
+                            Text(
+                                text = it.name,
+                                fontSize = 15.sp,
+                                modifier = Modifier.fillMaxWidth(0.8f)
                             )
+
+                            IconButton(onClick = {
+                                viewModel.addExerciseToWorkout(it)
+                            }) {
+                                Icon(
+                                    imageVector = Icons.TwoTone.Add,
+                                    contentDescription = "add exercise to workout"
+                                )
+                            }
                         }
                     }
                 }
@@ -781,6 +806,38 @@ fun RoutineItem(routine: RoutineModel, modifier: Modifier, onPress: () -> Unit) 
         }
         IconButton(onClick = { onPress() }, modifier = Modifier.padding(end = 16.dp, top = 16.dp)) {
             Icon(imageVector = Icons.TwoTone.ArrowForward, contentDescription = null)
+        }
+    }
+}
+
+@Composable
+fun DigitalWatch(uiState: WorkoutsScreenState.WorkoutStarted, viewModel: WorkoutsViewModel) {
+
+    Row(
+        modifier = Modifier
+            .padding(bottom = 8.dp)
+            .fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        if (uiState.workout.exercisesAndSets.isNotEmpty() && uiState.workout.exercisesAndSets.first().second.isNotEmpty()) {
+            val lastSet = uiState.workout.exercisesAndSets.maxOf {
+                if (it.second.isEmpty()) Date(0) else it.second.maxOf { it.date }
+            }
+            Text(
+                text = "Último hecho " + lastSet.completeHourString(),
+                fontSize = 18.sp,
+                modifier = Modifier.padding(8.dp)
+            )
+        }
+        if (!uiState.workout.isFinished) {
+            val actualDate by viewModel.currentDate.collectAsStateWithLifecycle(initialValue = System.currentTimeMillis())
+
+            Text(
+                text = Date(actualDate).completeHourString(),
+                fontSize = 18.sp,
+                modifier = Modifier.padding(8.dp)
+            )
         }
     }
 }
