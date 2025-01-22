@@ -153,7 +153,7 @@ fun ExercisesScreen(viewModel: ExercisesViewModel, navController: NavHostControl
                 )
                 else exercises.take(maxIndex)
             ) { exercise ->
-                AnimatedItem(enterAnimation = slideInHorizontally(), delay = 50) {
+                AnimatedItem(enterAnimation = slideInHorizontally{+it}, delay = 50) {
 
                     ExerciseItem(item = exercise,
                         onEditClick = { viewModel.clickToEdit(exercise) },

@@ -1,6 +1,8 @@
 package com.example.rutinapp.ui.screens
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -22,12 +24,10 @@ import androidx.compose.material.icons.twotone.KeyboardArrowDown
 import androidx.compose.material.icons.twotone.KeyboardArrowUp
 import androidx.compose.material.icons.twotone.Settings
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -44,6 +44,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavHostController
 import com.example.rutinapp.R
 import com.example.rutinapp.data.models.RoutineModel
+import com.example.rutinapp.ui.premade.AnimatedItem
 import com.example.rutinapp.ui.premade.RutinAppCalendar
 import com.example.rutinapp.ui.screenStates.FieldBeingEdited
 import com.example.rutinapp.ui.screenStates.MainScreenState
@@ -91,40 +92,54 @@ fun MainScreen(navController: NavHostController, mainScreenViewModel: MainScreen
         ) {
 
             item {
+                AnimatedItem(enterAnimation = slideInHorizontally { -it }, delay = 200) {
+                    Button(
+                        onClick = { navController.navigate("exercises") },
+                        colors = rutinAppButtonsColours(),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(text = "Ejercicios", fontSize = 20.sp)
+                    }
+                }
 
-                Button(
-                    onClick = { navController.navigate("exercises") },
-                    colors = rutinAppButtonsColours(),
-                    shape = RoundedCornerShape(10.dp)
-                ) {
-                    Text(text = "Ejercicios", fontSize = 20.sp)
+
+            }
+            item {
+
+                AnimatedItem(enterAnimation = slideInHorizontally { it }, delay = 200) {
+                    Button(
+                        onClick = { navController.navigate("routines") },
+                        colors = rutinAppButtonsColours(),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(text = "Rutinas", fontSize = 20.sp)
+                    }
                 }
             }
             item {
-                Button(
-                    onClick = { navController.navigate("routines") },
-                    colors = rutinAppButtonsColours(),
-                    shape = RoundedCornerShape(10.dp)
-                ) {
-                    Text(text = "Rutinas", fontSize = 20.sp)
+                AnimatedItem(enterAnimation = slideInHorizontally { -it }, delay = 200) {
+                    Button(
+                        onClick = { navController.navigate("workouts") },
+                        colors = rutinAppButtonsColours(),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(text = "Entrenamientos", fontSize = 20.sp)
+                    }
                 }
             }
             item {
-                Button(
-                    onClick = { navController.navigate("workouts") },
-                    colors = rutinAppButtonsColours(),
-                    shape = RoundedCornerShape(10.dp)
-                ) {
-                    Text(text = "Entrenamientos", fontSize = 20.sp)
-                }
-            }
-            item {
-                Button(
-                    onClick = { navController.navigate("stats") },
-                    colors = rutinAppButtonsColours(),
-                    shape = RoundedCornerShape(15.dp)
-                ) {
-                    Text(text = "Estadisticas", fontSize = 20.sp)
+                AnimatedItem(enterAnimation = slideInHorizontally { it }, delay = 200) {
+                    Button(
+                        onClick = { navController.navigate("stats") },
+                        colors = rutinAppButtonsColours(),
+                        shape = RoundedCornerShape(15.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(text = "Estadisticas", fontSize = 20.sp)
+                    }
                 }
             }
 
@@ -164,9 +179,11 @@ fun PlanningEditionDialog(
                 }
 
                 FieldBeingEdited.ROUTINE -> {
-                    RoutineSelectedContent(uistate = uistate, onSelect = { viewModel.saveRoutine(it) }, onBack = {
-                        viewModel.backToSelection()
-                    })
+                    RoutineSelectedContent(uistate = uistate,
+                        onSelect = { viewModel.saveRoutine(it) },
+                        onBack = {
+                            viewModel.backToSelection()
+                        })
                 }
             }
 
@@ -243,9 +260,18 @@ fun RoutineSelectedContent(
 
     Text(text = "Rutinas disponibles", fontSize = 25.sp)
 
-    LazyColumn(Modifier.background(TextFieldColor, RoundedCornerShape(15.dp)).heightIn(0.dp, 300.dp)) {
+    LazyColumn(
+        Modifier
+            .background(TextFieldColor, RoundedCornerShape(15.dp))
+            .heightIn(0.dp, 300.dp)
+    ) {
         if (uistate.availableRoutines.isEmpty()) item {
-            Text(text = "No hay rutinas disponibles", fontSize = 20.sp, modifier = Modifier.padding(16.dp), color = Color.Red)
+            Text(
+                text = "No hay rutinas disponibles",
+                fontSize = 20.sp,
+                modifier = Modifier.padding(16.dp),
+                color = Color.Red
+            )
         }
         items(uistate.availableRoutines) {
             Column(

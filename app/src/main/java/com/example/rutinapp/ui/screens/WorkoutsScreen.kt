@@ -2,6 +2,7 @@ package com.example.rutinapp.ui.screens
 
 import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.expandVertically
@@ -125,10 +126,12 @@ fun WorkoutsScreen(viewModel: WorkoutsViewModel, navController: NavHostControlle
 
                 is WorkoutsScreenState.WorkoutStarted -> {
 
-                    DigitalWatch(
-                        uiState = workoutScreenState as WorkoutsScreenState.WorkoutStarted,
-                        viewModel = viewModel
-                    )
+                    AnimatedItem(enterAnimation = slideInHorizontally { +it }, delay = 10) {
+                        DigitalWatch(
+                            uiState = workoutScreenState as WorkoutsScreenState.WorkoutStarted,
+                            viewModel = viewModel
+                        )
+                    }
                     LazyColumn {
 
                         item {
@@ -194,7 +197,8 @@ fun ObservationContent(viewModel: WorkoutsViewModel, state: WorkoutsScreenState.
             Modifier
                 .fillMaxWidth()
                 .padding(vertical = 16.dp)
-                .background(TextFieldColor, RoundedCornerShape(15.dp)),
+                .background(TextFieldColor, RoundedCornerShape(15.dp))
+                .animateContentSize(),
         ) {
             if (workouts.isEmpty()) {
                 item {

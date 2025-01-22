@@ -84,18 +84,21 @@ fun StatsScreen(navController: NavHostController, statsViewModel: StatsViewModel
             when (uiState) {
                 is StatsScreenState.Observation -> {
 
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Text(text = "Ejercicios", fontSize = 30.sp)
+                    AnimatedItem(enterAnimation = slideInHorizontally{it}, delay = 100) {
 
-                        var name by rememberSaveable { mutableStateOf("") }
-                        SearchTextField(value = name,
-                            onValueChange = { name = it },
-                            onSearch = { statsViewModel.searchExercise(name) },
-                            modifier = Modifier
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Text(text = "Ejercicios", fontSize = 30.sp)
+
+                            var name by rememberSaveable { mutableStateOf("") }
+                            SearchTextField(value = name,
+                                onValueChange = { name = it },
+                                onSearch = { statsViewModel.searchExercise(name) },
+                                modifier = Modifier
+                            )
+                        }
                     }
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
 
