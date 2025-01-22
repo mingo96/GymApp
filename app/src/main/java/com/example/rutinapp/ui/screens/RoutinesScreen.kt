@@ -42,8 +42,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -62,6 +64,7 @@ import androidx.navigation.NavHostController
 import com.example.rutinapp.R
 import com.example.rutinapp.data.models.ExerciseModel
 import com.example.rutinapp.data.models.RoutineModel
+import com.example.rutinapp.ui.premade.AnimatedItem
 import com.example.rutinapp.ui.screenStates.RoutinesScreenState
 import com.example.rutinapp.ui.theme.PrimaryColor
 import com.example.rutinapp.ui.theme.ScreenContainer
@@ -70,6 +73,7 @@ import com.example.rutinapp.ui.theme.TextFieldColor
 import com.example.rutinapp.ui.theme.rutinAppButtonsColours
 import com.example.rutinapp.ui.theme.rutinappCardColors
 import com.example.rutinapp.viewmodels.RoutinesViewModel
+import kotlinx.coroutines.delay
 import java.util.Locale
 import kotlin.math.max
 
@@ -83,16 +87,18 @@ fun RoutinesScreen(viewModel: RoutinesViewModel, navController: NavHostControlle
         lifecycle = lifecycle
     )
 
-    //val flo = flow {
-    //    while (true){
-    //        emit(routines.size)
-    //        Log.d("RoutinesScreen", "RoutinesScreen: ${routines.size}")
-    //    }
-    //}
-//
-    //flo.collectAsStateWithLifecycle(initialValue = 0, lifecycle = lifecycle)
-
     val uiState by viewModel.uiState.observeAsState()
+
+
+    var maxIndex by rememberSaveable { mutableIntStateOf(0) }
+
+    LaunchedEffect(routines) {
+        while (true){
+            delay(100)
+            if (maxIndex < routines.size)
+            maxIndex++
+        }
+    }
 
     when (uiState) {
         is RoutinesScreenState.Creating -> {
@@ -127,31 +133,34 @@ fun RoutinesScreen(viewModel: RoutinesViewModel, navController: NavHostControlle
                         Locale.ROOT
                     ) else it.toString()
                 }
-            }.distinct()) { thisBodyPart ->
-
-                Column {
-                    Text(
-                        text = thisBodyPart,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp,
-                        textDecoration = TextDecoration.Underline
-                    )
-                    LazyRow {
-                        items(routines.filter {
-                            it.targetedBodyPart.replaceFirstChar {
-                                if (it.isLowerCase()) it.titlecase(
-                                    Locale.ROOT
-                                ) else it.toString()
-                            } == thisBodyPart
-                        }) {
-                            RoutineCard(
-                                routine = it, modifier = Modifier.combinedClickable(onClick = {
-                                    viewModel.clickObserveRoutine(it)
-                                }, onLongClick = { viewModel.clickEditRoutine(it) })
-                            )
+            }.distinct().take(maxIndex)) { thisBodyPart ->
+                AnimatedItem(enterAnimation = slideInHorizontally(), delay = 100) {
+                    Column {
+                        Text(
+                            text = thisBodyPart,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp,
+                            textDecoration = TextDecoration.Underline
+                        )
+                        LazyRow {
+                            items(routines.filter {
+                                it.targetedBodyPart.replaceFirstChar {
+                                    if (it.isLowerCase()) it.titlecase(
+                                        Locale.ROOT
+                                    ) else it.toString()
+                                } == thisBodyPart
+                            }) {
+                                RoutineCard(
+                                    routine = it, modifier = Modifier.combinedClickable(onClick = {
+                                        viewModel.clickObserveRoutine(it)
+                                    }, onLongClick = { viewModel.clickEditRoutine(it) })
+                                )
+                            }
                         }
                     }
                 }
+
+
             }
         }
     }

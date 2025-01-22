@@ -7,6 +7,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.snapping.SnapPosition
@@ -17,7 +18,6 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -68,6 +68,7 @@ import com.example.rutinapp.data.models.ExerciseModel
 import com.example.rutinapp.data.models.RoutineModel
 import com.example.rutinapp.data.models.SetModel
 import com.example.rutinapp.data.models.WorkoutModel
+import com.example.rutinapp.ui.premade.AnimatedItem
 import com.example.rutinapp.ui.screenStates.SetState
 import com.example.rutinapp.ui.screenStates.WorkoutsScreenState
 import com.example.rutinapp.ui.theme.PrimaryColor
@@ -159,85 +160,121 @@ fun ObservationContent(viewModel: WorkoutsViewModel, state: WorkoutsScreenState.
         lifecycle = lifecycle, initialValue = emptyList()
     )
 
+    var maxIndexOfWorkouts by rememberSaveable { mutableIntStateOf(0) }
+
+    var maxIndexOfRoutines by rememberSaveable { mutableIntStateOf(0) }
+
+    LaunchedEffect(key1 = workouts) {
+        delay(200)
+        while (true) {
+            delay(100)
+            if (maxIndexOfWorkouts < workouts.size)
+                maxIndexOfWorkouts++
+        }
+    }
+
+    LaunchedEffect(key1 = routines) {
+        delay(200)
+        while (true) {
+            delay(100)
+            if (maxIndexOfRoutines < routines.size)
+                maxIndexOfRoutines++
+
+        }
+    }
+
     LaunchedEffect(key1 = viewModel) {
         viewModel.refreshPlanning()
     }
 
-    Text(text = "Entrenamientos recientes", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+    AnimatedItem(enterAnimation = slideInHorizontally(), delay = 100) {
 
-    LazyRow(
-        Modifier
-            .fillMaxWidth()
-            .padding(vertical = 16.dp)
-            .background(TextFieldColor, RoundedCornerShape(15.dp)),
-    ) {
-        if (workouts.isEmpty()) {
-            item {
-                Text(
-                    text = "No hay entrenamientos recientes",
-                    fontSize = 16.sp,
-                    color = Color.Red,
-                    modifier = Modifier.padding(16.dp)
-                )
-            }
-        }
-        items(workouts) {
-            WorkoutItem(item = it, onClick = { viewModel.continueWorkout(it) })
-        }
-    }
-    Text(text = "Rutinas", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-    LazyRow(
-        Modifier
-            .fillMaxWidth()
-            .padding(vertical = 16.dp)
-            .background(TextFieldColor, RoundedCornerShape(15.dp))
-    ) {
-        if (routines.isEmpty()) item {
-            Text(
-                text = "No hay rutinas",
-                fontSize = 16.sp,
-                color = Color.Red,
-                modifier = Modifier.padding(16.dp))
-        }
-        items(routines) {
-            RoutineItem(routine = it, modifier = Modifier.padding(16.dp)) {
-                viewModel.startFromRoutine(it)
-            }
-        }
-    }
+        Text(text = "Entrenamientos recientes", fontSize = 20.sp, fontWeight = FontWeight.Bold)
 
-    if (state.planning != null) {
-        Text(text = "Lo planificado", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-
-        if (state.planning.statedRoutine != null) {
-            RoutineItem(
-                routine = state.planning.statedRoutine!!, modifier = Modifier.padding(16.dp)
-            ) {
-                viewModel.startFromRoutine(state.planning.statedRoutine!!)
-            }
-        } else if (state.planning.statedBodyPart != null) {
-            Row(
-                modifier = Modifier
-                    .padding(8.dp)
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Hacer " + state.planning.statedBodyPart,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                IconButton(onClick = { viewModel.startFromStatedBodyPart() }) {
-                    Icon(
-                        imageVector = Icons.TwoTone.ArrowForward,
-                        contentDescription = "start from scheduled bodypart"
+        LazyRow(
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp)
+                .background(TextFieldColor, RoundedCornerShape(15.dp)),
+        ) {
+            if (workouts.isEmpty()) {
+                item {
+                    Text(
+                        text = "No hay entrenamientos recientes",
+                        fontSize = 16.sp,
+                        color = Color.Red,
+                        modifier = Modifier.padding(16.dp)
                     )
+                }
+            }
+            items(workouts.take(maxIndexOfWorkouts)) {
+                AnimatedItem(delay = 100, enterAnimation = slideInVertically()) {
+                    WorkoutItem(item = it, onClick = { viewModel.continueWorkout(it) })
                 }
             }
         }
     }
 
+    AnimatedItem(enterAnimation = slideInHorizontally { +it }, delay = 100) {
+
+        Text(text = "Rutinas", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+        LazyRow(
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp)
+                .background(TextFieldColor, RoundedCornerShape(15.dp))
+        ) {
+            if (routines.isEmpty()) item {
+                Text(
+                    text = "No hay rutinas",
+                    fontSize = 16.sp,
+                    color = Color.Red,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+            items(routines.take(maxIndexOfRoutines)) {
+                AnimatedItem(delay = 100, enterAnimation = slideInVertically()) {
+                    RoutineItem(routine = it, modifier = Modifier.padding(16.dp)) {
+                        viewModel.startFromRoutine(it)
+                    }
+                }
+            }
+        }
+    }
+
+    AnimatedItem(enterAnimation = slideInHorizontally(), delay = 100) {
+        if (state.planning != null) {
+            Text(text = "Lo planificado", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+
+            if (state.planning.statedRoutine != null) {
+                RoutineItem(
+                    routine = state.planning.statedRoutine!!, modifier = Modifier.padding(16.dp)
+                ) {
+                    viewModel.startFromRoutine(state.planning.statedRoutine!!)
+                }
+            } else if (state.planning.statedBodyPart != null) {
+                Row(
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Hacer " + state.planning.statedBodyPart,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    IconButton(onClick = { viewModel.startFromStatedBodyPart() }) {
+                        Icon(
+                            imageVector = Icons.TwoTone.ArrowForward,
+                            contentDescription = "start from scheduled bodypart"
+                        )
+                    }
+                }
+            }
+        }
+    }
 }
 
 @SuppressLint("SimpleDateFormat")
@@ -294,8 +331,9 @@ fun WorkoutProgression(
     var maxIndex by rememberSaveable { mutableIntStateOf(0) }
 
     LaunchedEffect(key1 = maxIndex) {
-        while (maxIndex < uiState.workout.exercisesAndSets.size) {
+        while (true) {
             delay(100)
+            if(maxIndex < uiState.workout.exercisesAndSets.size)
             maxIndex++
         }
     }
@@ -306,15 +344,10 @@ fun WorkoutProgression(
             .heightIn(max = 500.dp)
             .padding(top = 16.dp),
     ) {
-        items(uiState.workout.exercisesAndSets.take(maxIndex), key = { it.first.id }) {
 
-            var shown by rememberSaveable { mutableStateOf(false) }
-            LaunchedEffect(key1 = shown) {
-                delay(50)
-                shown = true
-            }
+        items(uiState.workout.exercisesAndSets.take(maxIndex)) {
 
-            AnimatedVisibility(shown, enter = slideInHorizontally()) {
+            AnimatedItem(delay = 50, enterAnimation = slideInHorizontally()) {
 
                 Column(modifier = Modifier.animateItem(placementSpec = spring(stiffness = Spring.StiffnessHigh))) {
 
@@ -322,8 +355,7 @@ fun WorkoutProgression(
                         mutableStateOf(false)
                     }
 
-                    ExerciseInfo(
-                        it,
+                    ExerciseInfo(it,
                         uiState,
                         setsOpened,
                         { setsOpened = !setsOpened }) { viewModel.startSwappingExercise(it.first) }
@@ -596,8 +628,7 @@ fun SetEditionDialog(viewModel: WorkoutsViewModel, set: SetModel) {
                     }
                 }, typeOfKeyBoard = KeyboardType.Number
             )
-            TextFieldWithTitle(
-                title = "Observaciones",
+            TextFieldWithTitle(title = "Observaciones",
                 text = observations,
                 onWrite = { observations = it })
             Row(
@@ -612,8 +643,7 @@ fun SetEditionDialog(viewModel: WorkoutsViewModel, set: SetModel) {
                 }) {
                     Text(text = "Guardar")
                 }
-                Button(
-                    colors = rutinAppButtonsColours(),
+                Button(colors = rutinAppButtonsColours(),
                     onClick = { viewModel.cancelSetEditing() }) {
                     Text(text = "Cancelar")
                 }
@@ -699,8 +729,9 @@ fun OtherExercises(
             var maxIndex by rememberSaveable { mutableIntStateOf(0) }
 
             LaunchedEffect(key1 = uiState) {
-                while (maxIndex < uiState.otherExercises.size) {
+                while (true) {
                     delay(100)
+                    if (maxIndex < uiState.otherExercises.size)
                     maxIndex++
                 }
             }
@@ -708,7 +739,7 @@ fun OtherExercises(
             LazyColumn(
                 Modifier
                     .widthIn(150.dp, maxWidth)
-                    .heightIn(50.dp,300.dp)
+                    .heightIn(50.dp, 300.dp)
                     .background(PrimaryColor, RoundedCornerShape(15.dp))
                     .padding(16.dp)
             ) {
@@ -723,12 +754,8 @@ fun OtherExercises(
                     }
                 }
                 items(uiState.otherExercises.take(maxIndex), key = { it.id }) {
-                    var shown by rememberSaveable { mutableStateOf(false) }
-                    LaunchedEffect(key1 = shown) {
-                        delay(50)
-                        shown = true
-                    }
-                    AnimatedVisibility(shown, enter = slideInHorizontally()) {
+
+                    AnimatedItem(delay = 50, enterAnimation = slideInHorizontally()) {
 
                         Row(
                             verticalAlignment = Alignment.CenterVertically,

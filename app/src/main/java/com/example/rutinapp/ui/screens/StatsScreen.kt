@@ -2,6 +2,7 @@ package com.example.rutinapp.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -28,6 +29,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -40,6 +42,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.example.rutinapp.data.models.ExerciseModel
+import com.example.rutinapp.ui.premade.AnimatedItem
 import com.example.rutinapp.ui.premade.RutinAppLineChart
 import com.example.rutinapp.ui.premade.RutinAppPieChart
 import com.example.rutinapp.ui.screenStates.StatsScreenState
@@ -65,6 +68,14 @@ fun StatsScreen(navController: NavHostController, statsViewModel: StatsViewModel
 
     val uiState by statsViewModel.uiState.observeAsState(StatsScreenState.Observation())
 
+    var maxIndex by rememberSaveable { mutableIntStateOf(0) }
+
+    LaunchedEffect(uiState) {
+        while (true) {
+            delay(100)
+            if (maxIndex < exercises.size) maxIndex++
+        }
+    }
 
     ScreenContainer(title = "Tus estadisticas", onExit = { navController.navigateUp() }) {
 
@@ -80,8 +91,7 @@ fun StatsScreen(navController: NavHostController, statsViewModel: StatsViewModel
                         Text(text = "Ejercicios", fontSize = 30.sp)
 
                         var name by rememberSaveable { mutableStateOf("") }
-                        SearchTextField(
-                            value = name,
+                        SearchTextField(value = name,
                             onValueChange = { name = it },
                             onSearch = { statsViewModel.searchExercise(name) },
                             modifier = Modifier
@@ -89,9 +99,12 @@ fun StatsScreen(navController: NavHostController, statsViewModel: StatsViewModel
                     }
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
 
-                        items(if (uiState is StatsScreenState.Observation) (uiState as StatsScreenState.Observation).exercises else exercises) {
-                            ExerciseItem(exercise = it) {
-                                statsViewModel.selectExerciseForStats(it)
+                        items(exercises.take(maxIndex)) {
+                            AnimatedItem(enterAnimation = slideInVertically(), delay = 50) {
+
+                                ExerciseItem(exercise = it) {
+                                    statsViewModel.selectExerciseForStats(it)
+                                }
                             }
                         }
 

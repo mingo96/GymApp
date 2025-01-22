@@ -1,5 +1,6 @@
 package com.example.rutinapp.ui.screens
 
+import androidx.compose.animation.slideInHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -31,14 +32,15 @@ import androidx.compose.material.icons.twotone.Delete
 import androidx.compose.material.icons.twotone.Edit
 import androidx.compose.material.icons.twotone.Search
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -63,6 +65,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.example.rutinapp.data.models.ExerciseModel
+import com.example.rutinapp.ui.premade.AnimatedItem
 import com.example.rutinapp.ui.screenStates.ExercisesState
 import com.example.rutinapp.ui.theme.PrimaryColor
 import com.example.rutinapp.ui.theme.ScreenContainer
@@ -71,8 +74,9 @@ import com.example.rutinapp.ui.theme.TextFieldColor
 import com.example.rutinapp.ui.theme.rutinAppButtonsColours
 import com.example.rutinapp.ui.theme.rutinAppTextFieldColors
 import com.example.rutinapp.viewmodels.ExercisesViewModel
+import kotlinx.coroutines.delay
 
-@OptIn(ExperimentalMaterial3Api::class)
+
 @Composable
 fun ExercisesScreen(viewModel: ExercisesViewModel, navController: NavHostController) {
 
@@ -83,6 +87,15 @@ fun ExercisesScreen(viewModel: ExercisesViewModel, navController: NavHostControl
     )
 
     val uiState by viewModel.uiState.observeAsState()
+
+    var maxIndex by rememberSaveable { mutableIntStateOf(0) }
+
+    LaunchedEffect(maxIndex) {
+        while (true) {
+            delay(100)
+            if (maxIndex < exercises.size) maxIndex++
+        }
+    }
 
     when (uiState) {
         is ExercisesState.Modifying -> {
@@ -135,12 +148,17 @@ fun ExercisesScreen(viewModel: ExercisesViewModel, navController: NavHostControl
             ), verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             items(
-                if (uiState is ExercisesState.SearchingForExercise) (uiState as ExercisesState.SearchingForExercise).possibleValues
-                else exercises
+                if (uiState is ExercisesState.SearchingForExercise) (uiState as ExercisesState.SearchingForExercise).possibleValues.take(
+                    maxIndex
+                )
+                else exercises.take(maxIndex)
             ) { exercise ->
-                ExerciseItem(item = exercise,
-                    onEditClick = { viewModel.clickToEdit(exercise) },
-                    onClick = { viewModel.clickToObserve(exercise) })
+                AnimatedItem(enterAnimation = slideInHorizontally(), delay = 50) {
+
+                    ExerciseItem(item = exercise,
+                        onEditClick = { viewModel.clickToEdit(exercise) },
+                        onClick = { viewModel.clickToObserve(exercise) })
+                }
             }
         }
     }

@@ -27,6 +27,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -35,6 +36,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -51,7 +53,6 @@ import com.example.rutinapp.ui.theme.rutinAppButtonsColours
 import com.example.rutinapp.utils.simpleDateString
 import com.example.rutinapp.viewmodels.MainScreenViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(navController: NavHostController, mainScreenViewModel: MainScreenViewModel) {
 
@@ -243,6 +244,9 @@ fun RoutineSelectedContent(
     Text(text = "Rutinas disponibles", fontSize = 25.sp)
 
     LazyColumn(Modifier.background(TextFieldColor, RoundedCornerShape(15.dp)).heightIn(0.dp, 300.dp)) {
+        if (uistate.availableRoutines.isEmpty()) item {
+            Text(text = "No hay rutinas disponibles", fontSize = 20.sp, modifier = Modifier.padding(16.dp), color = Color.Red)
+        }
         items(uistate.availableRoutines) {
             Column(
                 Modifier
