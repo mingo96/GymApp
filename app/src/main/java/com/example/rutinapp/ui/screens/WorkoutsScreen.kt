@@ -76,6 +76,7 @@ import com.example.rutinapp.ui.theme.ScreenContainer
 import com.example.rutinapp.ui.theme.TextFieldColor
 import com.example.rutinapp.ui.theme.rutinAppButtonsColours
 import com.example.rutinapp.utils.completeHourString
+import com.example.rutinapp.utils.isValidAsNumber
 import com.example.rutinapp.viewmodels.WorkoutsViewModel
 import kotlinx.coroutines.delay
 import java.util.Date
@@ -168,8 +169,7 @@ fun ObservationContent(viewModel: WorkoutsViewModel, state: WorkoutsScreenState.
         delay(200)
         while (true) {
             delay(100)
-            if (maxIndexOfWorkouts < workouts.size)
-                maxIndexOfWorkouts++
+            if (maxIndexOfWorkouts < workouts.size) maxIndexOfWorkouts++
         }
     }
 
@@ -177,8 +177,7 @@ fun ObservationContent(viewModel: WorkoutsViewModel, state: WorkoutsScreenState.
         delay(200)
         while (true) {
             delay(100)
-            if (maxIndexOfRoutines < routines.size)
-                maxIndexOfRoutines++
+            if (maxIndexOfRoutines < routines.size) maxIndexOfRoutines++
 
         }
     }
@@ -333,8 +332,7 @@ fun WorkoutProgression(
     LaunchedEffect(key1 = maxIndex) {
         while (true) {
             delay(100)
-            if(maxIndex < uiState.workout.exercisesAndSets.size)
-            maxIndex++
+            if (maxIndex < uiState.workout.exercisesAndSets.size) maxIndex++
         }
     }
 
@@ -593,7 +591,7 @@ fun SetEditionDialog(viewModel: WorkoutsViewModel, set: SetModel) {
     Dialog(onDismissRequest = { viewModel.cancelSetEditing() }) {
 
         var reps by rememberSaveable { mutableIntStateOf(set.reps) }
-        var weight by rememberSaveable { mutableStateOf(set.weight.toString()) }
+        var weight by rememberSaveable { mutableStateOf("") }
         var observations by rememberSaveable { mutableStateOf(set.observations) }
 
         DialogContainer {
@@ -620,11 +618,8 @@ fun SetEditionDialog(viewModel: WorkoutsViewModel, set: SetModel) {
             }
             TextFieldWithTitle(
                 title = "Peso", text = weight, onWrite = {
-                    try {
-                        it.toDouble()
+                    if (it.isValidAsNumber()) {
                         weight = it
-                    } catch (_: Exception) {
-
                     }
                 }, typeOfKeyBoard = KeyboardType.Number
             )
@@ -638,7 +633,9 @@ fun SetEditionDialog(viewModel: WorkoutsViewModel, set: SetModel) {
             ) {
                 Button(colors = rutinAppButtonsColours(), onClick = {
                     viewModel.saveSet(
-                        weight = weight.toDouble(), reps = reps, observations = observations
+                        weight = if (weight.isValidAsNumber() && weight.isNotEmpty()) weight.toDouble() else 0.0,
+                        reps = reps,
+                        observations = observations
                     )
                 }) {
                     Text(text = "Guardar")
@@ -718,8 +715,7 @@ fun OtherExercises(
                     text = "Ejercicios disponibles", fontSize = 20.sp, fontWeight = FontWeight.Bold
                 )
                 var name by rememberSaveable { mutableStateOf("") }
-                SearchTextField(
-                    value = name,
+                SearchTextField(value = name,
                     onValueChange = { name = it },
                     onSearch = { viewModel.searchExercise(name) },
                     modifier = Modifier
@@ -731,8 +727,7 @@ fun OtherExercises(
             LaunchedEffect(key1 = uiState) {
                 while (true) {
                     delay(100)
-                    if (maxIndex < uiState.otherExercises.size)
-                    maxIndex++
+                    if (maxIndex < uiState.otherExercises.size) maxIndex++
                 }
             }
 
