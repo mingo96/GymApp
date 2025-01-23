@@ -147,7 +147,11 @@ fun ExercisesScreen(viewModel: ExercisesViewModel, navController: NavHostControl
                 bottom = it.calculateBottomPadding()
             ), verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            items(exercises.take(maxIndex)
+            items(
+                if (uiState is ExercisesState.SearchingForExercise) (uiState as ExercisesState.SearchingForExercise).possibleValues.take(
+                    maxIndex
+                )
+                else exercises.take(maxIndex)
             ) { exercise ->
                 AnimatedItem(enterAnimation = slideInHorizontally { +it }, delay = 50) {
 
