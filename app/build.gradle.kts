@@ -7,15 +7,15 @@ plugins {
 }
 
 android {
-    namespace = "com.example.rutinapp"
+    namespace = "com.mintocode.rutinapp"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.rutinapp"
+        applicationId = "com.mintocode.rutinapp"
         minSdk = 33
         targetSdk = 33
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

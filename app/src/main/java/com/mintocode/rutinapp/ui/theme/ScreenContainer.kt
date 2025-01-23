@@ -1,0 +1,68 @@
+package com.mintocode.rutinapp.ui.theme
+
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.material3.Button
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.mintocode.rutinapp.ui.screens.TopBar
+
+
+@Composable
+fun ScreenContainer(
+    title: String,
+    onExit: (() -> Unit)? = null,
+    bottomButtonAction: (() -> Unit)? = null,
+    buttonText: String = "",
+    floatingActionButton: @Composable () -> Unit = {},
+    content: @Composable (PaddingValues) -> Unit
+) {
+
+    Scaffold(modifier = Modifier.fillMaxWidth(),
+        containerColor = PrimaryColor,
+        topBar = { TopBar(onExit, title) },
+        bottomBar = {
+            if (bottomButtonAction != null) Button(
+                onClick = { bottomButtonAction() },
+                colors = rutinAppButtonsColours(),
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = buttonText,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .wrapContentWidth(Alignment.CenterHorizontally),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
+            }
+        },
+        floatingActionButton = floatingActionButton,
+        content = {
+            val padding = PaddingValues(
+                start = it.calculateStartPadding(LocalLayoutDirection.current) + 16.dp,
+                top = it.calculateTopPadding() + 16.dp,
+                end = it.calculateEndPadding(
+                    LocalLayoutDirection.current
+                ) + 16.dp,
+                bottom = it.calculateBottomPadding()
+            )
+
+            Column {
+                content(padding)
+            }
+        })
+
+}
