@@ -19,7 +19,6 @@ import com.example.rutinapp.domain.getUseCases.GetExercisesUseCase
 import com.example.rutinapp.domain.getUseCases.GetRelatedExercisesByBodyPartUseCase
 import com.example.rutinapp.domain.getUseCases.GetRoutinesUseCase
 import com.example.rutinapp.domain.getUseCases.GetTodaysPlanningUseCase
-import com.example.rutinapp.domain.getUseCases.GetWorkoutIdByDateUseCase
 import com.example.rutinapp.domain.getUseCases.GetWorkoutsUseCase
 import com.example.rutinapp.domain.updateUseCases.UpdateSetUseCase
 import com.example.rutinapp.domain.updateUseCases.UpdateWorkoutUseCase
@@ -57,6 +56,8 @@ class WorkoutsViewModel @Inject constructor(
 ) : ViewModel() {
 
     lateinit var exercisesViewModel: ExercisesViewModel
+
+    private lateinit var adsViewModel: AdViewModel
 
     private val todaysPlanning: StateFlow<PlanningModel?> = getTodaysPlanning().map {
         refreshPlanning(it)
@@ -108,9 +109,15 @@ class WorkoutsViewModel @Inject constructor(
 
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), Date().time)
 
+    fun provideAdsViewModel(adViewModel: AdViewModel) {
+        adsViewModel = adViewModel
+    }
+
     fun startFromRoutine(routine: RoutineModel) {
 
         viewModelScope.launch(Dispatchers.IO) {
+
+            adsViewModel.callRandomAd()
 
             val momentOfCreation = Date.from(Instant.now())
 
@@ -141,6 +148,9 @@ class WorkoutsViewModel @Inject constructor(
 
     fun startFromEmpty() {
         viewModelScope.launch(Dispatchers.IO) {
+
+            adsViewModel.callRandomAd()
+
             val momentOfCreation = Date.from(Instant.now())
             val newWorkout = WorkoutModel(
                 date = momentOfCreation,
@@ -301,6 +311,8 @@ class WorkoutsViewModel @Inject constructor(
     fun continueWorkout(workout: WorkoutModel) {
         viewModelScope.launch(Dispatchers.IO) {
 
+            adsViewModel.callRandomAd()
+
             val routine = routines.value.find { it.id == workout.baseRoutine?.id }
 
             workout.baseRoutine = routine
@@ -327,6 +339,8 @@ class WorkoutsViewModel @Inject constructor(
 
     fun backToObserve() {
         try {
+
+            adsViewModel
 
             val actualState = _workoutScreenStates.value as WorkoutsScreenState.WorkoutStarted
 
@@ -462,6 +476,8 @@ class WorkoutsViewModel @Inject constructor(
 
     fun finishTraining() {
 
+        adsViewModel.callRandomAd()
+
         val actualState = _workoutScreenStates.value as WorkoutsScreenState.WorkoutStarted
 
         viewModelScope.launch(Dispatchers.IO) {
@@ -499,6 +515,8 @@ class WorkoutsViewModel @Inject constructor(
 
     fun startFromStatedBodyPart() {
         try {
+
+            adsViewModel.callRandomAd()
 
             val momentOfCreation = Date.from(Instant.now())
 

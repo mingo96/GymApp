@@ -52,7 +52,6 @@ class MainActivity : ComponentActivity() {
     private val statsViewModel: StatsViewModel by viewModels()
     private val settingsViewModel: SettingsViewModel by viewModels()
     private val mainScreenViewModel: MainScreenViewModel by viewModels()
-
     private val adViewModel : AdViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -83,8 +82,7 @@ class MainActivity : ComponentActivity() {
                             exitTransition = { onExit }) {
                             MainScreen(
                                 navController = navController,
-                                mainScreenViewModel = mainScreenViewModel,
-                                onCallAd = {callAnAd()}
+                                mainScreenViewModel = mainScreenViewModel
                             )
                         }
 
@@ -136,11 +134,15 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun start() {
-        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
 
         val context = this.baseContext
 
         settingsViewModel.initiateDataStore(DataStoreManager(context))
+
+        workoutsViewModel.provideAdsViewModel(adViewModel)
+
+        statsViewModel.provideAdsViewModel(adViewModel)
 
         workoutsViewModel.exercisesViewModel = exercisesViewModel
 
@@ -152,10 +154,6 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-    }
-
-    private fun callAnAd(){
-        adViewModel.callRandomAd()
     }
 
 }

@@ -38,6 +38,8 @@ class StatsViewModel @Inject constructor(
         it
     }.catch { Error(it) }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    private lateinit var adsViewModel: AdViewModel
+
     val routinesState: StateFlow<List<RoutineModel>> = getRoutinesUseCase().catch { Error(it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -45,6 +47,10 @@ class StatsViewModel @Inject constructor(
         MutableLiveData(StatsScreenState.Observation(exercisesState.value))
 
     val uiState: LiveData<StatsScreenState> = _uiState
+
+    fun provideAdsViewModel(adViewModel: AdViewModel) {
+        adsViewModel = adViewModel
+    }
 
     fun backToObservation() {
         _uiState.postValue(StatsScreenState.Observation(exercisesState.value))
@@ -54,6 +60,8 @@ class StatsViewModel @Inject constructor(
     fun selectExerciseForStats(exerciseModel: ExerciseModel) {
 
         viewModelScope.launch(Dispatchers.IO) {
+
+            adsViewModel.callRandomAd()
 
             val setsDone = getSetsUseCase(exerciseModel)
 

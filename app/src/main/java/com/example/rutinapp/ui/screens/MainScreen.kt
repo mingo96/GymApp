@@ -54,8 +54,7 @@ import com.example.rutinapp.viewmodels.MainScreenViewModel
 @Composable
 fun MainScreen(
     navController: NavHostController,
-    mainScreenViewModel: MainScreenViewModel,
-    onCallAd: () -> Unit
+    mainScreenViewModel: MainScreenViewModel
 ) {
 
     val plannings by mainScreenViewModel.plannings.collectAsState()
@@ -96,7 +95,6 @@ fun MainScreen(
 
                 Button(
                     onClick = {
-                        onCallAd()
                         navController.navigate("exercises")
                               },
                     colors = rutinAppButtonsColours(),
@@ -111,7 +109,6 @@ fun MainScreen(
 
                 Button(
                     onClick = {
-                        onCallAd()
                         navController.navigate("routines") },
                     colors = rutinAppButtonsColours(),
                     shape = RoundedCornerShape(10.dp),
@@ -125,7 +122,6 @@ fun MainScreen(
 
                 Button(
                     onClick = {
-                        onCallAd()
                         navController.navigate("workouts") },
                     colors = rutinAppButtonsColours(),
                     shape = RoundedCornerShape(10.dp),
@@ -140,7 +136,6 @@ fun MainScreen(
 
                 Button(
                     onClick = {
-                        onCallAd()
                         navController.navigate("stats") },
                     colors = rutinAppButtonsColours(),
                     shape = RoundedCornerShape(15.dp),
