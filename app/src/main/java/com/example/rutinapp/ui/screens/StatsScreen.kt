@@ -1,5 +1,6 @@
 package com.example.rutinapp.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
@@ -68,50 +69,17 @@ fun StatsScreen(navController: NavHostController, statsViewModel: StatsViewModel
 
     val uiState by statsViewModel.uiState.observeAsState(StatsScreenState.Observation())
 
-    var maxIndex by rememberSaveable { mutableIntStateOf(0) }
-
-    LaunchedEffect(uiState) {
-        while (true) {
-            delay(100)
-            if (maxIndex < exercises.size) maxIndex++
-        }
-    }
-
-    ScreenContainer(title = "Tus estadisticas", onExit = { navController.navigateUp() }) {
+    ScreenContainer(title = "Tus estadisticas", onExit = {
+        if(uiState is StatsScreenState.StatsOfExercise) statsViewModel.backToObservation() else
+        navController.navigateUp()
+    }) {
 
         Column(Modifier.padding(it), verticalArrangement = Arrangement.spacedBy(16.dp)) {
 
             when (uiState) {
                 is StatsScreenState.Observation -> {
 
-                    AnimatedItem(enterAnimation = slideInHorizontally{it}, delay = 100) {
-
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            Text(text = "Ejercicios", fontSize = 30.sp)
-
-                            var name by rememberSaveable { mutableStateOf("") }
-                            SearchTextField(value = name,
-                                onValueChange = { name = it },
-                                onSearch = { statsViewModel.searchExercise(name) },
-                                modifier = Modifier
-                            )
-                        }
-                    }
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-
-                        items(exercises.take(maxIndex)) {
-                            AnimatedItem(enterAnimation = slideInVertically(), delay = 50) {
-
-                                ExerciseItem(exercise = it) {
-                                    statsViewModel.selectExerciseForStats(it)
-                                }
-                            }
-                        }
-
-                    }
+                    ObservationContent(statsViewModel,exercises)
 
                 }
 
@@ -119,11 +87,55 @@ fun StatsScreen(navController: NavHostController, statsViewModel: StatsViewModel
                     ExerciseStats(uiState = uiState as StatsScreenState.StatsOfExercise,
                         onExit = { statsViewModel.backToObservation() })
                 }
+
             }
         }
 
     }
 
+}
+
+@Composable
+fun ObservationContent(statsViewModel: StatsViewModel, exercises: List<ExerciseModel>){
+
+    var maxIndex by rememberSaveable { mutableIntStateOf(0) }
+
+    LaunchedEffect(exercises) {
+        while (true) {
+            delay(100)
+            if (maxIndex < exercises.size) maxIndex++
+        }
+    }
+
+    AnimatedItem(enterAnimation = slideInHorizontally { it }, delay = 100) {
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text(text = "Ejercicios", fontSize = 30.sp)
+
+            var name by rememberSaveable { mutableStateOf("") }
+            SearchTextField(
+                value = name,
+                onValueChange = { name = it },
+                onSearch = { statsViewModel.searchExercise(name) },
+                modifier = Modifier
+            )
+        }
+    }
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+
+        items(exercises.take(maxIndex)) {
+            AnimatedItem(enterAnimation = slideInVertically(), delay = 50) {
+
+                ExerciseItem(exercise = it) {
+                    statsViewModel.selectExerciseForStats(it)
+                }
+            }
+        }
+
+    }
 }
 
 @Composable
@@ -147,6 +159,8 @@ fun ExerciseItem(exercise: ExerciseModel, onClick: () -> Unit) {
 @Composable
 fun ExerciseStats(uiState: StatsScreenState.StatsOfExercise, onExit: () -> Unit) {
 
+    BackHandler(onBack = onExit)
+
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
             text = if (!uiState.hasBeenDone) "Aún no has hecho este ejercicio" else "Estadisticas de " + uiState.exercise.name,
@@ -154,9 +168,6 @@ fun ExerciseStats(uiState: StatsScreenState.StatsOfExercise, onExit: () -> Unit)
             modifier = Modifier.fillMaxWidth(0.8f),
             color = if (!uiState.hasBeenDone) Color.Red else ContentColor,
         )
-        IconButton(onClick = onExit) {
-            Icon(imageVector = Icons.TwoTone.ArrowBack, contentDescription = "go back")
-        }
     }
     if (uiState.hasBeenDone) {
         LazyVerticalGrid(

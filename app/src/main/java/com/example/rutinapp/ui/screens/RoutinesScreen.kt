@@ -93,10 +93,10 @@ fun RoutinesScreen(viewModel: RoutinesViewModel, navController: NavHostControlle
     var maxIndex by rememberSaveable { mutableIntStateOf(0) }
 
     LaunchedEffect(routines) {
-        while (true){
+        while (true) {
             delay(100)
             if (maxIndex < routines.size)
-            maxIndex++
+                maxIndex++
         }
     }
 

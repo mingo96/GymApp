@@ -2,7 +2,6 @@ package com.example.rutinapp.ui.screens
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -92,55 +91,53 @@ fun MainScreen(navController: NavHostController, mainScreenViewModel: MainScreen
         ) {
 
             item {
-                AnimatedItem(enterAnimation = slideInHorizontally { -it }, delay = 200) {
-                    Button(
-                        onClick = { navController.navigate("exercises") },
-                        colors = rutinAppButtonsColours(),
-                        shape = RoundedCornerShape(10.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(text = "Ejercicios", fontSize = 20.sp)
-                    }
+
+                Button(
+                    onClick = { navController.navigate("exercises") },
+                    colors = rutinAppButtonsColours(),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(text = "Ejercicios", fontSize = 20.sp)
+                }
+
+            }
+            item {
+
+                Button(
+                    onClick = { navController.navigate("routines") },
+                    colors = rutinAppButtonsColours(),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(text = "Rutinas", fontSize = 20.sp)
+                }
+
+            }
+            item {
+
+                Button(
+                    onClick = { navController.navigate("workouts") },
+                    colors = rutinAppButtonsColours(),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(text = "Entrenamientos", fontSize = 20.sp)
                 }
 
 
             }
             item {
 
-                AnimatedItem(enterAnimation = slideInHorizontally { it }, delay = 200) {
-                    Button(
-                        onClick = { navController.navigate("routines") },
-                        colors = rutinAppButtonsColours(),
-                        shape = RoundedCornerShape(10.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(text = "Rutinas", fontSize = 20.sp)
-                    }
+                Button(
+                    onClick = { navController.navigate("stats") },
+                    colors = rutinAppButtonsColours(),
+                    shape = RoundedCornerShape(15.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(text = "Estadisticas", fontSize = 20.sp)
                 }
-            }
-            item {
-                AnimatedItem(enterAnimation = slideInHorizontally { -it }, delay = 200) {
-                    Button(
-                        onClick = { navController.navigate("workouts") },
-                        colors = rutinAppButtonsColours(),
-                        shape = RoundedCornerShape(10.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(text = "Entrenamientos", fontSize = 20.sp)
-                    }
-                }
-            }
-            item {
-                AnimatedItem(enterAnimation = slideInHorizontally { it }, delay = 200) {
-                    Button(
-                        onClick = { navController.navigate("stats") },
-                        colors = rutinAppButtonsColours(),
-                        shape = RoundedCornerShape(15.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(text = "Estadisticas", fontSize = 20.sp)
-                    }
-                }
+
             }
 
             item(span = { GridItemSpan(2) }) {

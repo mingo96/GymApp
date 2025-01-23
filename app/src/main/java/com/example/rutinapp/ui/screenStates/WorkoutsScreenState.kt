@@ -6,7 +6,7 @@ import com.example.rutinapp.data.models.WorkoutModel
 
 sealed interface WorkoutsScreenState {
 
-    data class Observe(val planning : PlanningModel? = null) : WorkoutsScreenState
+    data class Observe(val planning: PlanningModel? = null) : WorkoutsScreenState
 
     data class WorkoutStarted(
         val workout: WorkoutModel,

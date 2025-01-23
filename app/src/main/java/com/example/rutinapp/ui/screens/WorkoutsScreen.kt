@@ -719,7 +719,8 @@ fun OtherExercises(
                     text = "Ejercicios disponibles", fontSize = 20.sp, fontWeight = FontWeight.Bold
                 )
                 var name by rememberSaveable { mutableStateOf("") }
-                SearchTextField(value = name,
+                SearchTextField(
+                    value = name,
                     onValueChange = { name = it },
                     onSearch = { viewModel.searchExercise(name) },
                     modifier = Modifier

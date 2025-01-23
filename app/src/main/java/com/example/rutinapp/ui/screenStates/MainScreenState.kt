@@ -10,7 +10,7 @@ sealed interface MainScreenState {
     data class PlanningOnMainFocus(
         val planningModel: PlanningModel,
         val fieldBeingEdited: FieldBeingEdited = FieldBeingEdited.NONE,
-        val availableRoutines : List<RoutineModel> = listOf()
+        val availableRoutines: List<RoutineModel> = listOf()
     ) : MainScreenState
 
 }
