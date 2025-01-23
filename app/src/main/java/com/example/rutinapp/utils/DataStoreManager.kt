@@ -18,25 +18,22 @@ val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = SET
 class DataStoreManager(val context: Context) {
 
     companion object {
-        val EMAIL = stringPreferencesKey("email")
-        val PASSWORD = stringPreferencesKey("password")
         val NAME = stringPreferencesKey("name")
+        val CODE = stringPreferencesKey("code")
         val ISDARKTHEME = booleanPreferencesKey("isDarkTheme")
     }
 
     suspend fun saveData(userDetails: UserDetails) {
         context.dataStore.edit {
-            it[EMAIL] = userDetails.email
-            it[PASSWORD] = userDetails.password
             it[NAME] = userDetails.name
+            it[CODE] = userDetails.code
             it[ISDARKTHEME] = userDetails.isDarkTheme
         }
     }
 
     fun getData() = context.dataStore.data.map {
         UserDetails(
-            email = it[EMAIL] ?: "",
-            password = it[PASSWORD] ?: "",
+            code = it[CODE]?:"",
             name = it[NAME] ?: "",
             isDarkTheme = it[ISDARKTHEME] ?: true
         )

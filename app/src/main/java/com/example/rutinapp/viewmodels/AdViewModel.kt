@@ -4,9 +4,12 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.util.Log
+import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.rutinapp.MainActivity
+import com.example.rutinapp.data.SECRET_CODE
+import com.example.rutinapp.utils.DataStoreManager
 import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.FullScreenContentCallback
@@ -17,9 +20,14 @@ import com.google.android.gms.ads.rewarded.RewardedAd
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class AdViewModel() : ViewModel() {
+
+    private var isInitiated = false
+    get() = field
+        private set
 
     private var mInterstitialAd: InterstitialAd? = null
     private var isInterSitialLoading = false
@@ -32,11 +40,22 @@ class AdViewModel() : ViewModel() {
     @SuppressLint("StaticFieldLeak")
     private lateinit var activity: Activity
 
-    fun initiateObjects(mainActivity: MainActivity) {
+    fun initiateObjects(mainActivity: MainActivity, dataStoreManager: DataStoreManager) {
         activity = mainActivity
 
-        initiateInterstitialAd(activity.baseContext)
-        initiateRewardedAd(activity.baseContext)
+        viewModelScope.launch(Dispatchers.Main) {
+
+            if (dataStoreManager.getData().first().code != SECRET_CODE) {
+
+                initiateInterstitialAd(activity.baseContext)
+                initiateRewardedAd(activity.baseContext)
+                isInitiated = true
+
+            }else{
+                Toast.makeText(mainActivity.baseContext, "Bienvenido Maestro", Toast.LENGTH_SHORT).show()
+            }
+        }
+
     }
 
     private fun callmInterstitialAd() {
@@ -203,6 +222,7 @@ class AdViewModel() : ViewModel() {
     }
 
     fun callRandomAd() {
+        if (isInitiated)
         if ((0..1).random() == 0) {
             callmInterstitialAd()
         } else {

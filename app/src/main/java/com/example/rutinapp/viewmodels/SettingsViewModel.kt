@@ -52,12 +52,11 @@ class SettingsViewModel : ViewModel() {
 
     fun updateUserDetails(
         name: String,
-        email: String,
-        password: String,
+        code: String,
         isDarkTheme: Boolean = _data.value!!.isDarkTheme
     ) {
         val newData = UserDetails(
-            name, email, password, isDarkTheme
+            code, name, isDarkTheme
         )
         viewModelScope.launch(Dispatchers.IO) {
 
@@ -83,7 +82,7 @@ class SettingsViewModel : ViewModel() {
         ContentColor = Color.Black
         TextFieldColor = Color(40, 40, 58).copy(0.3f)
 
-        updateUserDetails(data.value!!.name, data.value!!.email, data.value!!.password, false)
+        updateUserDetails(code = data.value!!.code, name = data.value!!.name, isDarkTheme =  false)
     }
 
     private fun changeToDarkTheme() {
@@ -92,7 +91,7 @@ class SettingsViewModel : ViewModel() {
         ContentColor = Color.White
         TextFieldColor = Color(40, 40, 58).copy(0.5f)
 
-        updateUserDetails(data.value!!.name, data.value!!.email, data.value!!.password, true)
+        updateUserDetails(code = data.value!!.code ,name = data.value!!.name, isDarkTheme =  true)
     }
 
 }

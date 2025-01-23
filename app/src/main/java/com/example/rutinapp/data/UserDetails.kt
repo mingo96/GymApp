@@ -1,8 +1,7 @@
 package com.example.rutinapp.data
 
 data class UserDetails(
+    val code : String = "",
     val name: String = "",
-    val email: String = "",
-    val password: String = "",
     val isDarkTheme: Boolean = true,
 )

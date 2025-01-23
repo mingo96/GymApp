@@ -54,23 +54,17 @@ fun SettinsScreen(navController: NavController, settingsViewModel: SettingsViewM
 fun TextFields(settingsViewModel: SettingsViewModel, data: UserDetails) {
 
     var name by rememberSaveable { mutableStateOf(data.name) }
-    var email by rememberSaveable { mutableStateOf(data.email) }
-    var password by rememberSaveable { mutableStateOf(data.password) }
+
+    var code by rememberSaveable { mutableStateOf(data.code) }
 
     TextFieldWithTitle(title = "Nombre", text = name, onWrite = { name = it })
-    TextFieldWithTitle(title = "Correo", text = email, onWrite = { email = it })
-    TextFieldWithTitle(
-        title = "Contraseña",
-        text = password,
-        onWrite = { password = it },
-        typeOfKeyBoard = KeyboardType.Password
-    )
+    TextFieldWithTitle(title = "Código secreto", text = code, onWrite = { code = it })
 
     Row(
         modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         Button(
-            onClick = { settingsViewModel.updateUserDetails(name, email, password) },
+            onClick = { settingsViewModel.updateUserDetails(name, code) },
             colors = rutinAppButtonsColours()
         ) {
             Text(text = "Guardar")

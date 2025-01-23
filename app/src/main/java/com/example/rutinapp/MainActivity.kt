@@ -1,10 +1,8 @@
 package com.example.rutinapp
 
 import android.app.Application
-import android.content.Context
 import android.content.pm.ActivityInfo
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -35,15 +33,7 @@ import com.example.rutinapp.viewmodels.RoutinesViewModel
 import com.example.rutinapp.viewmodels.SettingsViewModel
 import com.example.rutinapp.viewmodels.StatsViewModel
 import com.example.rutinapp.viewmodels.WorkoutsViewModel
-import com.google.android.gms.ads.AdError
-import com.google.android.gms.ads.AdRequest
-import com.google.android.gms.ads.FullScreenContentCallback
-import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.MobileAds
-import com.google.android.gms.ads.interstitial.InterstitialAd
-import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
-import com.google.android.gms.ads.rewarded.RewardedAd
-import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
@@ -148,7 +138,9 @@ class MainActivity : ComponentActivity() {
     private fun start() {
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 
-        settingsViewModel.initiateDataStore(DataStoreManager(this))
+        val context = this.baseContext
+
+        settingsViewModel.initiateDataStore(DataStoreManager(context))
 
         workoutsViewModel.exercisesViewModel = exercisesViewModel
 
@@ -156,7 +148,7 @@ class MainActivity : ComponentActivity() {
         backgroundScope.launch {
             // Initialize the Google Mobile Ads SDK on a background thread.
             MobileAds.initialize(this@MainActivity) {
-                adViewModel.initiateObjects(this@MainActivity)
+                adViewModel.initiateObjects(this@MainActivity, DataStoreManager(context))
             }
         }
 
