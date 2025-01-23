@@ -90,6 +90,9 @@ dependencies {
     //To use Kotlin annotation processing tool (kapt)
     kapt("androidx.room:room-compiler:2.6.1")
 
+    //ads
+    implementation("com.google.android.gms:play-services-ads:23.6.0")
+
 }
 
 kapt {

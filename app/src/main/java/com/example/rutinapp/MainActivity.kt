@@ -1,9 +1,10 @@
 package com.example.rutinapp
 
-import android.annotation.SuppressLint
 import android.app.Application
+import android.content.Context
 import android.content.pm.ActivityInfo
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -13,10 +14,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -30,14 +28,27 @@ import com.example.rutinapp.ui.theme.ContentColor
 import com.example.rutinapp.ui.theme.PrimaryColor
 import com.example.rutinapp.ui.theme.RutinAppTheme
 import com.example.rutinapp.utils.DataStoreManager
+import com.example.rutinapp.viewmodels.AdViewModel
 import com.example.rutinapp.viewmodels.ExercisesViewModel
 import com.example.rutinapp.viewmodels.MainScreenViewModel
 import com.example.rutinapp.viewmodels.RoutinesViewModel
 import com.example.rutinapp.viewmodels.SettingsViewModel
 import com.example.rutinapp.viewmodels.StatsViewModel
 import com.example.rutinapp.viewmodels.WorkoutsViewModel
+import com.google.android.gms.ads.AdError
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.FullScreenContentCallback
+import com.google.android.gms.ads.LoadAdError
+import com.google.android.gms.ads.MobileAds
+import com.google.android.gms.ads.interstitial.InterstitialAd
+import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
+import com.google.android.gms.ads.rewarded.RewardedAd
+import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.HiltAndroidApp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @HiltAndroidApp
 class RutinAppApplication : Application()
@@ -52,15 +63,12 @@ class MainActivity : ComponentActivity() {
     private val settingsViewModel: SettingsViewModel by viewModels()
     private val mainScreenViewModel: MainScreenViewModel by viewModels()
 
-    @SuppressLint("SourceLockedOrientationActivity")
+    private val adViewModel : AdViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-
-        settingsViewModel.initiateDataStore(DataStoreManager(this))
-
-        workoutsViewModel.exercisesViewModel = exercisesViewModel
+        start()
 
         // Screen transitions
         val onEnter = slideInHorizontally { -it } + scaleIn()
@@ -85,7 +93,8 @@ class MainActivity : ComponentActivity() {
                             exitTransition = { onExit }) {
                             MainScreen(
                                 navController = navController,
-                                mainScreenViewModel = mainScreenViewModel
+                                mainScreenViewModel = mainScreenViewModel,
+                                onCallAd = {callAnAd()}
                             )
                         }
 
@@ -135,19 +144,26 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-}
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!", modifier = modifier
-    )
-}
+    private fun start() {
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    RutinAppTheme {
-        Greeting("Android")
+        settingsViewModel.initiateDataStore(DataStoreManager(this))
+
+        workoutsViewModel.exercisesViewModel = exercisesViewModel
+
+        val backgroundScope = CoroutineScope(Dispatchers.IO)
+        backgroundScope.launch {
+            // Initialize the Google Mobile Ads SDK on a background thread.
+            MobileAds.initialize(this@MainActivity) {
+                adViewModel.initiateObjects(this@MainActivity)
+            }
+        }
+
     }
+
+    private fun callAnAd(){
+        adViewModel.callRandomAd()
+    }
+
 }

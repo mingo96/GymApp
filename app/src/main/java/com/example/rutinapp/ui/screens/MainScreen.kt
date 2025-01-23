@@ -1,7 +1,6 @@
 package com.example.rutinapp.ui.screens
 
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.slideInHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -43,7 +42,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavHostController
 import com.example.rutinapp.R
 import com.example.rutinapp.data.models.RoutineModel
-import com.example.rutinapp.ui.premade.AnimatedItem
 import com.example.rutinapp.ui.premade.RutinAppCalendar
 import com.example.rutinapp.ui.screenStates.FieldBeingEdited
 import com.example.rutinapp.ui.screenStates.MainScreenState
@@ -54,7 +52,11 @@ import com.example.rutinapp.utils.simpleDateString
 import com.example.rutinapp.viewmodels.MainScreenViewModel
 
 @Composable
-fun MainScreen(navController: NavHostController, mainScreenViewModel: MainScreenViewModel) {
+fun MainScreen(
+    navController: NavHostController,
+    mainScreenViewModel: MainScreenViewModel,
+    onCallAd: () -> Unit
+) {
 
     val plannings by mainScreenViewModel.plannings.collectAsState()
 
@@ -93,7 +95,10 @@ fun MainScreen(navController: NavHostController, mainScreenViewModel: MainScreen
             item {
 
                 Button(
-                    onClick = { navController.navigate("exercises") },
+                    onClick = {
+                        onCallAd()
+                        navController.navigate("exercises")
+                              },
                     colors = rutinAppButtonsColours(),
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth()
@@ -105,7 +110,9 @@ fun MainScreen(navController: NavHostController, mainScreenViewModel: MainScreen
             item {
 
                 Button(
-                    onClick = { navController.navigate("routines") },
+                    onClick = {
+                        onCallAd()
+                        navController.navigate("routines") },
                     colors = rutinAppButtonsColours(),
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth()
@@ -117,7 +124,9 @@ fun MainScreen(navController: NavHostController, mainScreenViewModel: MainScreen
             item {
 
                 Button(
-                    onClick = { navController.navigate("workouts") },
+                    onClick = {
+                        onCallAd()
+                        navController.navigate("workouts") },
                     colors = rutinAppButtonsColours(),
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth()
@@ -130,7 +139,9 @@ fun MainScreen(navController: NavHostController, mainScreenViewModel: MainScreen
             item {
 
                 Button(
-                    onClick = { navController.navigate("stats") },
+                    onClick = {
+                        onCallAd()
+                        navController.navigate("stats") },
                     colors = rutinAppButtonsColours(),
                     shape = RoundedCornerShape(15.dp),
                     modifier = Modifier.fillMaxWidth()

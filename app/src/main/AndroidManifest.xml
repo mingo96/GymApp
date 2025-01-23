@@ -13,6 +13,9 @@
         android:roundIcon="@drawable/icon_for_a_notes_app_for_gym__name_is_rutinapp__3_"
         android:supportsRtl="true"
         android:theme="@style/Theme.RutinApp">
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-1851550849005219~3101030424"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"
