@@ -45,4 +45,7 @@ interface PlanningDao {
     @Insert
     suspend fun insertPlanning(planning: PlanningEntity)
 
+    @Query("SELECT * FROM PlanningEntity WHERE date = :date")
+    fun getPlanningOf(date: Long): Flow<PlanningEntity?>
+
 }

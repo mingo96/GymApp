@@ -27,6 +27,6 @@ class PlanningRepository @Inject constructor(
     }
 
     fun getTodaysPlanning(): Flow<PlanningEntity?> {
-        return allPlannings.map { it.first { Date(it.date).toSimpleDate() == Date().toSimpleDate() } }
+        return planningDao.getPlanningOf(Date().toSimpleDate().time)
     }
 }
