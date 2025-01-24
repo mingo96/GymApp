@@ -9,6 +9,7 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.isUnspecified
+import com.mintocode.rutinapp.utils.MainScreenStyle
 
 @Composable
 fun AdjustableText(
@@ -17,9 +18,6 @@ fun AdjustableText(
     modifier: Modifier = Modifier,
     color: Color = style.color
 ) {
-    var resizedTextStyle by remember {
-        mutableStateOf(style)
-    }
     var shouldDraw by remember {
         mutableStateOf(false)
     }
@@ -35,16 +33,16 @@ fun AdjustableText(
             }
         },
         softWrap = false,
-        style = resizedTextStyle,
+        style = MainScreenStyle.value,
         onTextLayout = { result ->
             if (result.didOverflowWidth) {
                 if (style.fontSize.isUnspecified) {
-                    resizedTextStyle = resizedTextStyle.copy(
+                    MainScreenStyle.value = MainScreenStyle.value.copy(
                         fontSize = defaultFontSize
                     )
                 }
-                resizedTextStyle = resizedTextStyle.copy(
-                    fontSize = resizedTextStyle.fontSize * 0.95
+                MainScreenStyle.value = MainScreenStyle.value.copy(
+                    fontSize = MainScreenStyle.value.fontSize * 0.95
                 )
             } else {
                 shouldDraw = true

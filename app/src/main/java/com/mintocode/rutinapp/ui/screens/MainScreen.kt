@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -101,7 +102,7 @@ fun MainScreen(
                 Box(
                     modifier = Modifier.clickable {
                         navController.navigate("exercises") }
-                        .fillMaxWidth().background(SecondaryColor, RoundedCornerShape(15.dp)),
+                        .fillMaxWidth().background(SecondaryColor, RoundedCornerShape(10.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     AdjustableText(modifier = Modifier.padding(8.dp), text = "Ejercicios", style = TextStyle(fontSize = 20.sp))
@@ -113,7 +114,7 @@ fun MainScreen(
                 Box(
                     modifier = Modifier.clickable {
                         navController.navigate("routines") }
-                        .fillMaxWidth().background(SecondaryColor, RoundedCornerShape(15.dp)),
+                        .fillMaxWidth().background(SecondaryColor, RoundedCornerShape(10.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     AdjustableText(modifier = Modifier.padding(8.dp), text = "Rutinas", style = TextStyle(fontSize = 20.sp))
@@ -125,7 +126,7 @@ fun MainScreen(
                 Box(
                     modifier = Modifier.clickable {
                         navController.navigate("workouts") }
-                        .fillMaxWidth().background(SecondaryColor, RoundedCornerShape(15.dp)),
+                        .fillMaxWidth().background(SecondaryColor, RoundedCornerShape(10.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     AdjustableText(modifier = Modifier.padding(8.dp), text = "Entrenamientos", style = TextStyle(fontSize = 20.sp))
@@ -138,7 +139,7 @@ fun MainScreen(
                 Box(
                     modifier = Modifier.clickable {
                         navController.navigate("stats") }
-                        .fillMaxWidth().background(SecondaryColor, RoundedCornerShape(15.dp)),
+                        .fillMaxWidth().background(SecondaryColor, RoundedCornerShape(10.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     AdjustableText(modifier = Modifier.padding(8.dp), text = "Estadisticas", style = TextStyle(fontSize = 20.sp))
