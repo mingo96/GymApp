@@ -386,7 +386,7 @@ fun ModifyExerciseDialog(viewModel: ExercisesViewModel, uiState: ExercisesState.
                 text = name,
                 sendFunction = {
                     viewModel.updateExercise(
-                        name, description, targetedBodyPart
+                        name, description, targetedBodyPart, context
                     )
                 })
             TextFieldWithTitle(title = "Descripción",
@@ -394,7 +394,7 @@ fun ModifyExerciseDialog(viewModel: ExercisesViewModel, uiState: ExercisesState.
                 text = description,
                 sendFunction = {
                     viewModel.updateExercise(
-                        name, description, targetedBodyPart
+                        name, description, targetedBodyPart, context
                     )
                 })
             TextFieldWithTitle(title = "Parte del cuerpo",
@@ -402,7 +402,7 @@ fun ModifyExerciseDialog(viewModel: ExercisesViewModel, uiState: ExercisesState.
                 text = targetedBodyPart,
                 sendFunction = {
                     viewModel.updateExercise(
-                        name, description, targetedBodyPart
+                        name, description, targetedBodyPart, context
                     )
                 })
 
@@ -453,7 +453,7 @@ fun ModifyExerciseDialog(viewModel: ExercisesViewModel, uiState: ExercisesState.
             ) {
                 Button(onClick = {
                     viewModel.updateExercise(
-                        name, description, targetedBodyPart
+                        name, description, targetedBodyPart, context
                     )
                 }, colors = rutinAppButtonsColours()) {
                     Text(text = "Guardar")
@@ -473,6 +473,7 @@ fun ModifyExerciseDialog(viewModel: ExercisesViewModel, uiState: ExercisesState.
 @Composable
 fun CreateExerciseDialog(viewModel: ExercisesViewModel, onExit: (() -> Unit)? = null) {
 
+    val context = LocalContext.current
     var name by rememberSaveable { mutableStateOf("") }
     var description by rememberSaveable { mutableStateOf("") }
     var targetedBodyPart by rememberSaveable { mutableStateOf("") }
@@ -486,11 +487,11 @@ fun CreateExerciseDialog(viewModel: ExercisesViewModel, onExit: (() -> Unit)? = 
             TextFieldWithTitle(title = "Parte del cuerpo",
                 onWrite = { targetedBodyPart = it },
                 text = targetedBodyPart,
-                sendFunction = { viewModel.addExercise(name, description, targetedBodyPart) })
+                sendFunction = { viewModel.addExercise(name, description, targetedBodyPart, context) })
             Button(
                 onClick = {
                     viewModel.addExercise(
-                        name, description, targetedBodyPart
+                        name, description, targetedBodyPart, context
                     )
                     if (onExit != null) onExit()
                 },

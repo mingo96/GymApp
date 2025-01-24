@@ -101,7 +101,7 @@ fun MainScreen(
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(text = "Ejercicios", fontSize = 20.sp)
+                    Text(text = "Ejercicios", fontSize = 20.sp, maxLines = 1)
                 }
 
             }
@@ -114,7 +114,7 @@ fun MainScreen(
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(text = "Rutinas", fontSize = 20.sp)
+                    Text(text = "Rutinas", fontSize = 20.sp, maxLines = 1)
                 }
 
             }
@@ -127,7 +127,7 @@ fun MainScreen(
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(text = "Entrenamientos", fontSize = 20.sp)
+                    Text(text = "Entrenamientos", fontSize = 20.sp, maxLines = 1)
                 }
 
 
@@ -141,7 +141,7 @@ fun MainScreen(
                     shape = RoundedCornerShape(15.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(text = "Estadisticas", fontSize = 20.sp)
+                    Text(text = "Estadisticas", fontSize = 20.sp, maxLines = 1)
                 }
 
             }

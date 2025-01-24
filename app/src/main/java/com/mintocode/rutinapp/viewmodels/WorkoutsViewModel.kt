@@ -52,7 +52,7 @@ class WorkoutsViewModel @Inject constructor(
     private val deleteSetUseCase: DeleteSetUseCase,
     private val deleteWorkoutUseCase: DeleteWorkoutUseCase,
     private val updateWorkoutUseCase: UpdateWorkoutUseCase,
-    private val getRelatedExercisesByBodyPartUseCase : GetRelatedExercisesByBodyPartUseCase,
+    private val getRelatedExercisesByBodyPartUseCase: GetRelatedExercisesByBodyPartUseCase,
 ) : ViewModel() {
 
     lateinit var exercisesViewModel: ExercisesViewModel
@@ -67,8 +67,9 @@ class WorkoutsViewModel @Inject constructor(
     val workouts: StateFlow<List<WorkoutModel>> = getWorkoutsUseCase().catch { Error(it) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
-    val routines: StateFlow<List<RoutineModel>> = getRoutinesUseCase().catch { Error(it) }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    val routines: StateFlow<List<RoutineModel>> =
+        getRoutinesUseCase().map { it.filter { it.exercises.isNotEmpty() } }.catch { Error(it) }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     private val exercises: Flow<List<ExerciseModel>> = getExercisesUseCase().map {
         try {
@@ -502,8 +503,8 @@ class WorkoutsViewModel @Inject constructor(
 
                     try {
                         _workoutScreenStates.value as WorkoutsScreenState.Observe
-                        _workoutScreenStates.postValue( WorkoutsScreenState.Observe(newPlanning))
-                    }catch (_:Exception){
+                        _workoutScreenStates.postValue(WorkoutsScreenState.Observe(newPlanning))
+                    } catch (_: Exception) {
 
                     }
                 }
@@ -532,7 +533,8 @@ class WorkoutsViewModel @Inject constructor(
 
                 val newWorkout = WorkoutModel(
                     date = momentOfCreation,
-                    title = "Entreno del " + momentOfCreation.toInstant().toString().substring(0, 10),
+                    title = "Entreno del " + momentOfCreation.toInstant().toString()
+                        .substring(0, 10),
                     baseRoutine = null,
                     exercisesAndSets = selectedExercises.map {
                         Pair<ExerciseModel, MutableList<SetModel>>(
@@ -541,7 +543,8 @@ class WorkoutsViewModel @Inject constructor(
                     }.toMutableList()
                 )
 
-                val availableExercises = exercises.first().filter { it.id !in selectedExercises.map { it.id } }
+                val availableExercises =
+                    exercises.first().filter { it.id !in selectedExercises.map { it.id } }
 
                 newWorkout.id = addWorkoutUseCase(workout = newWorkout)
 

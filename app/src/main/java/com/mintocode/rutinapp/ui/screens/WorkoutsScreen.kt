@@ -732,7 +732,7 @@ fun OtherExercises(
             LaunchedEffect(key1 = uiState) {
                 while (true) {
                     delay(100)
-                    if (maxIndex < uiState.otherExercises.size) maxIndex++
+                    if (maxIndex < uiState.workout.exercisesAndSets.size) maxIndex++
                 }
             }
 
@@ -854,7 +854,7 @@ fun DigitalWatch(uiState: WorkoutsScreenState.WorkoutStarted, viewModel: Workout
             Text(
                 text = "Último hecho " + lastSet.completeHourString(),
                 fontSize = 18.sp,
-                modifier = Modifier.padding(8.dp)
+                modifier = Modifier.padding(8.dp).fillMaxWidth(0.7f)
             )
         }
         if (!uiState.workout.isFinished) {
@@ -863,7 +863,7 @@ fun DigitalWatch(uiState: WorkoutsScreenState.WorkoutStarted, viewModel: Workout
             Text(
                 text = Date(actualDate).completeHourString(),
                 fontSize = 18.sp,
-                modifier = Modifier.padding(8.dp)
+                modifier = Modifier.padding(8.dp).fillMaxWidth()
             )
         }
     }

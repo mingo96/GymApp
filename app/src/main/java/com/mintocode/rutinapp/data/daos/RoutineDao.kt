@@ -2,11 +2,13 @@ package com.mintocode.rutinapp.data.daos
 
 import androidx.room.Dao
 import androidx.room.Delete
+import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.Insert
 import androidx.room.PrimaryKey
 import androidx.room.Query
+import androidx.room.Relation
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
@@ -20,11 +22,24 @@ data class RoutineEntity(
     var targetedBodyPart: String,
 )
 
+
+data class RoutineWithExercises(
+    @Embedded val routine: RoutineEntity,
+    @Relation(
+        parentColumn = "routineId",
+        entityColumn = "routineId"
+    )
+    val exerciseRelations: List<RoutineExerciseEntity>
+)
+
 @Dao
 interface RoutineDao {
 
     @Query("SELECT * FROM RoutineEntity")
     fun getAllAsFlow(): Flow<List<RoutineEntity>>
+
+    @Query("SELECT * FROM RoutineEntity")
+    fun allWithRelations(): Flow<List<RoutineWithExercises>>
 
     @Query("SELECT * FROM RoutineEntity WHERE routineId = :routineId")
     suspend fun getFromId(routineId: Int): RoutineEntity

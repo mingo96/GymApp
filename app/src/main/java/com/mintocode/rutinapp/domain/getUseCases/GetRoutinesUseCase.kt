@@ -15,12 +15,13 @@ class GetRoutinesUseCase @Inject constructor(
 ) {
     operator fun invoke(): Flow<List<RoutineModel>> {
         return routinesRepository.routines.map { items ->
-            val result = items.map { routineEntity ->
-                routineEntity.toModel().apply {
+            val result = items.map { routineWithExercises ->
+                val routine = routineWithExercises.routine.toModel()
+
+                routine.apply {
 
                     exercises =
-                        routinesRepository.getExercisesForRoutine(routineEntity.routineId.toLong())
-                            .map { it.toModel() }.toMutableList()
+                        routineWithExercises.exerciseRelations.map { exerciseRepository.getExercise(it.exerciseId.toString()).toModel() }.toMutableList()
 
                     exercises.forEach {
                         it.equivalentExercises =
@@ -28,7 +29,7 @@ class GetRoutinesUseCase @Inject constructor(
                     }
 
                     val orderOfIds =
-                        routinesRepository.getExercisesOrder(routineEntity.routineId.toLong())
+                        routinesRepository.getExercisesOrder(routine.id.toLong())
 
                     exercises.forEach { exercise ->
                         val relation = orderOfIds.find { it.first == exercise.id.toInt() }!!

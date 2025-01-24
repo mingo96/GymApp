@@ -5,6 +5,7 @@ import com.mintocode.rutinapp.data.daos.RoutineDao
 import com.mintocode.rutinapp.data.daos.RoutineEntity
 import com.mintocode.rutinapp.data.daos.RoutineExerciseDao
 import com.mintocode.rutinapp.data.daos.RoutineExerciseEntity
+import com.mintocode.rutinapp.data.daos.RoutineWithExercises
 import com.mintocode.rutinapp.data.models.RoutineModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -31,7 +32,7 @@ class RoutineRepository @Inject constructor(
     private val exerciseRepository: ExerciseRepository
 ) {
 
-    val routines: Flow<List<RoutineEntity>> = routineDao.getAllAsFlow()
+    val routines: Flow<List<RoutineWithExercises>> = routineDao.allWithRelations()
 
     suspend fun getExercisesForRoutine(routineId: Long): List<ExerciseEntity> {
         val relatedExercises = routineExerciseDao.getRoutineExercisesByRoutineId(routineId).first()

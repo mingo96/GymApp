@@ -1,5 +1,7 @@
 package com.mintocode.rutinapp.viewmodels
 
+import android.content.Context
+import android.widget.Toast
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -64,7 +66,16 @@ class RoutinesViewModel @Inject constructor(
         _uiState.postValue(RoutinesScreenState.Overview)
     }
 
-    fun createRoutine(name: String, targetedBodyPart: String) {
+    fun createRoutine(name: String, targetedBodyPart: String, context: Context) {
+
+        if (name.isEmpty() || targetedBodyPart.isEmpty()) {
+            Toast.makeText(
+                context,
+                "Rellene todos los campos",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
 
         viewModelScope.launch(Dispatchers.IO) {
             val createdRoutine = RoutineModel(
@@ -183,12 +194,16 @@ class RoutinesViewModel @Inject constructor(
         toggleEditingState(true)
     }
 
-    fun editRoutine(name: String, targetedBodyPart: String) {
-        val actualState = _uiState.value as RoutinesScreenState.Editing
-        viewModelScope.launch(Dispatchers.IO) {
-            updateRoutineUseCase(
-                actualState.routine.copy(targetedBodyPart = targetedBodyPart, name = name)
-            )
+    fun editRoutine(name: String, targetedBodyPart: String, context: Context) {
+        if (name.isNotEmpty() && targetedBodyPart.isNotEmpty()) {
+            val actualState = _uiState.value as RoutinesScreenState.Editing
+            viewModelScope.launch(Dispatchers.IO) {
+                updateRoutineUseCase(
+                    actualState.routine.copy(targetedBodyPart = targetedBodyPart, name = name)
+                )
+            }
+        }else{
+            Toast.makeText(context, "Rellene todos los campos", Toast.LENGTH_SHORT).show()
         }
     }
 

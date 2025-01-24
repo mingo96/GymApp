@@ -51,8 +51,10 @@ class ExercisesViewModel @Inject constructor(
 
     }
 
-    fun addExercise(name: String, description: String, targetedBodyPart: String) {
-        viewModelScope.launch(context = Dispatchers.IO) {
+    fun addExercise(name: String, description: String, targetedBodyPart: String, context: Context) {
+        if (name.isNotEmpty() && description.isNotEmpty() && targetedBodyPart.isNotEmpty()) viewModelScope.launch(
+            context = Dispatchers.IO
+        ) {
             addExerciseUseCase(
                 ExerciseModel(
                     name = name, description = description, targetedBodyPart = targetedBodyPart
@@ -60,6 +62,7 @@ class ExercisesViewModel @Inject constructor(
             )
             _uiState.postValue(ExercisesState.Observe())
         }
+        else Toast.makeText(context, "Faltan campos por rellenar", Toast.LENGTH_SHORT).show()
     }
 
     fun toggleExercisesRelation(exercise: ExerciseModel) {
@@ -120,20 +123,26 @@ class ExercisesViewModel @Inject constructor(
         _uiState.value = ExercisesState.Observe()
     }
 
-    fun updateExercise(name: String, description: String, targetedBodyPart: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                assert(_uiState.value is ExercisesState.Modifying)
-                val selected = (_uiState.value as ExercisesState.Modifying).exerciseModel
-                selected.name = name
-                selected.description = description
-                selected.targetedBodyPart = targetedBodyPart
-                updateExerciseUseCase(selected)
-                _uiState.postValue(ExercisesState.Observe(selected))
-            } catch (error: AssertionError) {
-                //i dont know how would this happen
+    fun updateExercise(
+        name: String, description: String, targetedBodyPart: String, context: Context
+    ) {
+        if (name.isNotEmpty() && description.isNotEmpty() && targetedBodyPart.isNotEmpty())
+
+            viewModelScope.launch(Dispatchers.IO) {
+                try {
+                    assert(_uiState.value is ExercisesState.Modifying)
+                    val selected = (_uiState.value as ExercisesState.Modifying).exerciseModel
+                    selected.name = name
+                    selected.description = description
+                    selected.targetedBodyPart = targetedBodyPart
+                    updateExerciseUseCase(selected)
+                    _uiState.postValue(ExercisesState.Observe(selected))
+                } catch (error: AssertionError) {
+                    //i dont know how would this happen
+                }
             }
-        }
+        else
+            Toast.makeText(context, "Faltan campos por rellenar", Toast.LENGTH_SHORT).show()
     }
 
     fun clickToCreate() {

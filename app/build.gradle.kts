@@ -12,10 +12,10 @@ android {
 
     defaultConfig {
         applicationId = "com.mintocode.rutinapp"
-        minSdk = 33
-        targetSdk = 33
-        versionCode = 1
-        versionName = "1.1"
+        minSdk = 29
+        targetSdk = 29
+        versionCode = 2
+        versionName = "0.0.1-beta"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

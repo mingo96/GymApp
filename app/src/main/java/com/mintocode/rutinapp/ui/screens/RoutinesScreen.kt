@@ -52,6 +52,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -95,8 +96,7 @@ fun RoutinesScreen(viewModel: RoutinesViewModel, navController: NavHostControlle
     LaunchedEffect(routines) {
         while (true) {
             delay(100)
-            if (maxIndex < routines.size)
-                maxIndex++
+            if (maxIndex < routines.size) maxIndex++
         }
     }
 
@@ -117,11 +117,10 @@ fun RoutinesScreen(viewModel: RoutinesViewModel, navController: NavHostControlle
         RoutinesScreenState.Overview -> {}
     }
 
-    ScreenContainer(
-        onExit = {
-            viewModel.backToObserve()
-            navController.navigateUp()
-        },
+    ScreenContainer(onExit = {
+        viewModel.backToObserve()
+        navController.navigateUp()
+    },
         bottomButtonAction = { viewModel.clickCreateRoutine() },
         title = "Rutinas",
         buttonText = "Crear nueva rutina"
@@ -204,7 +203,7 @@ fun EditRoutineExerciseRelation(
 
     var setsAndReps by rememberSaveable { mutableStateOf(uiState.selectedExercise!!.setsAndReps) }
 
-    var manualEdition by rememberSaveable { mutableStateOf(!setsAndReps.isSetsAndReps()) }
+    var manualEdition by rememberSaveable { mutableStateOf(uiState.selectedExercise!!.setsAndReps == "" || uiState.selectedExercise.setsAndReps.isSetsAndReps()) }
 
     var observations by rememberSaveable { mutableStateOf(uiState.selectedExercise!!.observations) }
 
@@ -294,7 +293,7 @@ fun EditRoutineExerciseRelation(
                 setsAndReps = "0x0"
             }
         }, colors = rutinAppButtonsColours()) {
-            Text(text = "Cambiar modo de escritura")
+            Text(text = "Cambiar contador", modifier = Modifier.fillMaxWidth(0.7f))
         }
     }
 
@@ -417,6 +416,7 @@ fun ListOfExercises(
 @Composable
 fun EditRoutineContent(uiState: RoutinesScreenState.Editing, viewModel: RoutinesViewModel) {
 
+    val context = LocalContext.current
     var name by rememberSaveable { mutableStateOf(uiState.routine.name) }
     var targetedBodyPart by rememberSaveable { mutableStateOf(uiState.routine.targetedBodyPart) }
 
@@ -428,7 +428,7 @@ fun EditRoutineContent(uiState: RoutinesScreenState.Editing, viewModel: Routines
         Text(text = uiState.routine.name, fontWeight = FontWeight.Bold, fontSize = 20.sp)
 
         IconButton(
-            onClick = { viewModel.editRoutine(name, targetedBodyPart) },
+            onClick = { viewModel.editRoutine(name, targetedBodyPart, context) },
             colors = IconButtonDefaults.iconButtonColors(containerColor = SecondaryColor)
         ) {
             Icon(
@@ -519,11 +519,13 @@ fun ObserveRoutineDialog(uiState: RoutinesScreenState.Observe, viewModel: Routin
 @Composable
 fun CreateRoutineDialog(viewModel: RoutinesViewModel) {
 
+    val context = LocalContext.current
+
     Dialog(onDismissRequest = { viewModel.backToObserve() }) {
         DialogContainer {
             RoutineCreationPhase(onDismissRequest = { viewModel.backToObserve() },
                 onNextPhase = { name, targetedBodyPart ->
-                    viewModel.createRoutine(name, targetedBodyPart)
+                    viewModel.createRoutine(name, targetedBodyPart, context)
                 })
 
         }
