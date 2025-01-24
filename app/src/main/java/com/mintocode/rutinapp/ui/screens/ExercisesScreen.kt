@@ -47,6 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
@@ -358,12 +359,12 @@ fun TextFieldWithTitle(
 }
 
 @Composable
-fun DialogContainer(content: @Composable ColumnScope.() -> Unit) {
+fun DialogContainer(backGroundIsOn : Boolean = true, content: @Composable ColumnScope.() -> Unit) {
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(PrimaryColor, RoundedCornerShape(15.dp))
+            .background(if(backGroundIsOn)PrimaryColor else Color.Transparent, RoundedCornerShape(15.dp))
             .padding(16.dp), verticalArrangement = Arrangement.spacedBy(
             16.dp, Alignment.CenterVertically
         ), horizontalAlignment = Alignment.Start, content = content

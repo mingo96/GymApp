@@ -21,3 +21,6 @@ fun Date.simpleDateString(): String = SimpleDateFormat("dd/MM/yyyy").format(this
 @SuppressLint("SimpleDateFormat")
 fun Date.dayOfWeekString() = SimpleDateFormat("EEEE").format(this)
     .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+
+@SuppressLint("SimpleDateFormat")
+fun Date.dayAndMonthString() = SimpleDateFormat("dd/MMM").format(this)

@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -39,13 +38,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavHostController
 import com.mintocode.rutinapp.R
 import com.mintocode.rutinapp.data.models.RoutineModel
+import com.mintocode.rutinapp.ui.premade.AdjustableCollectivetext
 import com.mintocode.rutinapp.ui.premade.AdjustableText
 import com.mintocode.rutinapp.ui.premade.RutinAppCalendar
 import com.mintocode.rutinapp.ui.screenStates.FieldBeingEdited
@@ -59,8 +58,7 @@ import com.mintocode.rutinapp.viewmodels.MainScreenViewModel
 
 @Composable
 fun MainScreen(
-    navController: NavHostController,
-    mainScreenViewModel: MainScreenViewModel
+    navController: NavHostController, mainScreenViewModel: MainScreenViewModel
 ) {
 
     val plannings by mainScreenViewModel.plannings.collectAsState()
@@ -90,8 +88,7 @@ fun MainScreen(
     }) {
         LazyVerticalGrid(
             modifier = Modifier
-                .padding(it)
-                .fillMaxSize(),
+                .padding(it),
             columns = GridCells.Fixed(2),
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -99,62 +96,79 @@ fun MainScreen(
 
             item {
 
-                Box(
-                    modifier = Modifier.clickable {
-                        navController.navigate("exercises") }
-                        .fillMaxWidth().background(SecondaryColor, RoundedCornerShape(10.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    AdjustableText(modifier = Modifier.padding(8.dp), text = "Ejercicios", style = TextStyle(fontSize = 20.sp))
+                Box(modifier = Modifier
+                    .clickable {
+                        navController.navigate("exercises")
+                    }
+                    .fillMaxWidth()
+                    .background(SecondaryColor, RoundedCornerShape(10.dp)),
+                    contentAlignment = Alignment.Center) {
+                    AdjustableCollectivetext(
+                        modifier = Modifier.padding(8.dp),
+                        text = "Ejercicios",
+                        style = TextStyle(fontSize = 20.sp)
+                    )
                 }
 
             }
             item {
 
-                Box(
-                    modifier = Modifier.clickable {
-                        navController.navigate("routines") }
-                        .fillMaxWidth().background(SecondaryColor, RoundedCornerShape(10.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    AdjustableText(modifier = Modifier.padding(8.dp), text = "Rutinas", style = TextStyle(fontSize = 20.sp))
+                Box(modifier = Modifier
+                    .clickable {
+                        navController.navigate("routines")
+                    }
+                    .fillMaxWidth()
+                    .background(SecondaryColor, RoundedCornerShape(10.dp)),
+                    contentAlignment = Alignment.Center) {
+                    AdjustableCollectivetext(
+                        modifier = Modifier.padding(8.dp),
+                        text = "Rutinas",
+                        style = TextStyle(fontSize = 20.sp)
+                    )
                 }
 
             }
             item {
 
-                Box(
-                    modifier = Modifier.clickable {
-                        navController.navigate("workouts") }
-                        .fillMaxWidth().background(SecondaryColor, RoundedCornerShape(10.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    AdjustableText(modifier = Modifier.padding(8.dp), text = "Entrenamientos", style = TextStyle(fontSize = 20.sp))
+                Box(modifier = Modifier
+                    .clickable {
+                        navController.navigate("workouts")
+                    }
+                    .fillMaxWidth()
+                    .background(SecondaryColor, RoundedCornerShape(10.dp)),
+                    contentAlignment = Alignment.Center) {
+                    AdjustableCollectivetext(
+                        modifier = Modifier.padding(8.dp),
+                        text = "Entrenamientos",
+                        style = TextStyle(fontSize = 20.sp)
+                    )
                 }
 
 
             }
             item {
 
-                Box(
-                    modifier = Modifier.clickable {
-                        navController.navigate("stats") }
-                        .fillMaxWidth().background(SecondaryColor, RoundedCornerShape(10.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    AdjustableText(modifier = Modifier.padding(8.dp), text = "Estadisticas", style = TextStyle(fontSize = 20.sp))
+                Box(modifier = Modifier
+                    .clickable {
+                        navController.navigate("stats")
+                    }
+                    .fillMaxWidth()
+                    .background(SecondaryColor, RoundedCornerShape(10.dp)),
+                    contentAlignment = Alignment.Center) {
+                    AdjustableCollectivetext(
+                        modifier = Modifier.padding(8.dp),
+                        text = "Estadisticas",
+                        style = TextStyle(fontSize = 20.sp)
+                    )
                 }
 
             }
 
-            item(span = { GridItemSpan(2) }) {
 
-                RutinAppCalendar(plannings) {
-                    mainScreenViewModel.planningClicked(it)
-                }
-
-            }
         }
+        RutinAppCalendar(plannings, {
+            mainScreenViewModel.planningClicked(it)
+        })
     }
 
 }
@@ -165,7 +179,7 @@ fun PlanningEditionDialog(
 ) {
 
     Dialog(onDismissRequest = { viewModel.backToObservation() }) {
-        DialogContainer {
+        DialogContainer (){
             Text(
                 text = "Objetivo el " + uistate.planningModel.date.simpleDateString(),
                 fontSize = 25.sp
