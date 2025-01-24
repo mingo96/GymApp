@@ -23,6 +23,9 @@ class SettingsViewModel : ViewModel() {
 
     val data: LiveData<UserDetails> = _data
 
+    var hasLoaded = false
+        private set
+
     private val _uiState: MutableLiveData<SettingsScreenState> =
         MutableLiveData(SettingsScreenState.Start)
 
@@ -48,6 +51,7 @@ class SettingsViewModel : ViewModel() {
                 changeToClearTheme()
             }
         }
+        hasLoaded = true
     }
 
     fun updateUserDetails(

@@ -12,11 +12,14 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.google.android.gms.ads.MobileAds
 import com.mintocode.rutinapp.ui.screens.ExercisesScreen
+import com.mintocode.rutinapp.ui.screens.LoadingScreen
 import com.mintocode.rutinapp.ui.screens.MainScreen
 import com.mintocode.rutinapp.ui.screens.RoutinesScreen
 import com.mintocode.rutinapp.ui.screens.SettinsScreen
@@ -33,11 +36,11 @@ import com.mintocode.rutinapp.viewmodels.RoutinesViewModel
 import com.mintocode.rutinapp.viewmodels.SettingsViewModel
 import com.mintocode.rutinapp.viewmodels.StatsViewModel
 import com.mintocode.rutinapp.viewmodels.WorkoutsViewModel
-import com.google.android.gms.ads.MobileAds
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @HiltAndroidApp
@@ -52,7 +55,7 @@ class MainActivity : ComponentActivity() {
     private val statsViewModel: StatsViewModel by viewModels()
     private val settingsViewModel: SettingsViewModel by viewModels()
     private val mainScreenViewModel: MainScreenViewModel by viewModels()
-    private val adViewModel : AdViewModel by viewModels()
+    private val adViewModel: AdViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -75,7 +78,18 @@ class MainActivity : ComponentActivity() {
 
                     val navController = rememberNavController()
 
-                    NavHost(navController = navController, startDestination = "start") {
+                    NavHost(navController = navController, startDestination = "loadingScreen") {
+
+                        composable("loadingScreen", exitTransition = { onExit }) {
+                            LaunchedEffect(true) {
+                                while (!settingsViewModel.hasLoaded) {
+                                    delay(100)
+                                }
+                                navController.navigate("start")
+                            }
+
+                            LoadingScreen()
+                        }
 
                         composable("start",
                             enterTransition = { onEnter },

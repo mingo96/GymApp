@@ -128,7 +128,7 @@ fun ExercisesScreen(viewModel: ExercisesViewModel, navController: NavHostControl
         viewModel.backToObserve()
     },
         buttonText = "Crear un ejercicio",
-        title = "Entrenamientos",
+        title = "Ejercicios",
         bottomButtonAction = { viewModel.clickToCreate() }) { it ->
 
         var name by rememberSaveable { mutableStateOf("") }

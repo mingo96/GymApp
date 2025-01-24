@@ -357,7 +357,8 @@ fun WorkoutProgression(
                         mutableStateOf(false)
                     }
 
-                    ExerciseInfo(it,
+                    ExerciseInfo(
+                        it,
                         uiState,
                         setsOpened,
                         { setsOpened = !setsOpened }) { viewModel.startSwappingExercise(it.first) }
@@ -627,7 +628,8 @@ fun SetEditionDialog(viewModel: WorkoutsViewModel, set: SetModel) {
                     }
                 }, typeOfKeyBoard = KeyboardType.Number
             )
-            TextFieldWithTitle(title = "Observaciones",
+            TextFieldWithTitle(
+                title = "Observaciones",
                 text = observations,
                 onWrite = { observations = it })
             Row(
@@ -644,7 +646,8 @@ fun SetEditionDialog(viewModel: WorkoutsViewModel, set: SetModel) {
                 }) {
                     Text(text = "Guardar")
                 }
-                Button(colors = rutinAppButtonsColours(),
+                Button(
+                    colors = rutinAppButtonsColours(),
                     onClick = { viewModel.cancelSetEditing() }) {
                     Text(text = "Cancelar")
                 }
@@ -732,7 +735,7 @@ fun OtherExercises(
             LaunchedEffect(key1 = uiState) {
                 while (true) {
                     delay(100)
-                    if (maxIndex < uiState.workout.exercisesAndSets.size) maxIndex++
+                    if (maxIndex < uiState.otherExercises.size) maxIndex++
                 }
             }
 
@@ -854,7 +857,9 @@ fun DigitalWatch(uiState: WorkoutsScreenState.WorkoutStarted, viewModel: Workout
             Text(
                 text = "Último hecho " + lastSet.completeHourString(),
                 fontSize = 18.sp,
-                modifier = Modifier.padding(8.dp).fillMaxWidth(0.7f)
+                modifier = Modifier
+                    .padding(8.dp)
+                    .fillMaxWidth(0.7f)
             )
         }
         if (!uiState.workout.isFinished) {
@@ -863,7 +868,9 @@ fun DigitalWatch(uiState: WorkoutsScreenState.WorkoutStarted, viewModel: Workout
             Text(
                 text = Date(actualDate).completeHourString(),
                 fontSize = 18.sp,
-                modifier = Modifier.padding(8.dp).fillMaxWidth()
+                modifier = Modifier
+                    .padding(8.dp)
+                    .fillMaxWidth()
             )
         }
     }

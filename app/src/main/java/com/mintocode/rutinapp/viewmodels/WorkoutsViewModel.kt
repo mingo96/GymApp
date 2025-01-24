@@ -95,7 +95,7 @@ class WorkoutsViewModel @Inject constructor(
 
         }
         it
-    }.catch { Error(it) }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+    }.catch { Error(it) }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     private val _workoutScreenStates: MutableLiveData<WorkoutsScreenState> =
         MutableLiveData(WorkoutsScreenState.Observe(todaysPlanning.value))
@@ -162,7 +162,6 @@ class WorkoutsViewModel @Inject constructor(
             val availableExercises = exercises.first()
 
             newWorkout.id = addWorkoutUseCase(workout = newWorkout)
-
 
             _workoutScreenStates.postValue(
                 WorkoutsScreenState.WorkoutStarted(
@@ -393,10 +392,6 @@ class WorkoutsViewModel @Inject constructor(
                 actualState.workout, actualState.otherExercises, setState
             )
         )
-    }
-
-    fun clickEditSet(set: SetModel) {
-
     }
 
     fun deleteSet(set: SetModel) {
