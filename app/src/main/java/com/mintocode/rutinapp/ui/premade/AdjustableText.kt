@@ -33,16 +33,16 @@ fun AdjustableText(
             }
         },
         softWrap = false,
-        style = MainScreenStyle.value,
+        style = MainScreenStyle,
         onTextLayout = { result ->
             if (result.didOverflowWidth) {
                 if (style.fontSize.isUnspecified) {
-                    MainScreenStyle.value = MainScreenStyle.value.copy(
+                    MainScreenStyle = MainScreenStyle.copy(
                         fontSize = defaultFontSize
                     )
                 }
-                MainScreenStyle.value = MainScreenStyle.value.copy(
-                    fontSize = MainScreenStyle.value.fontSize * 0.95
+                MainScreenStyle = MainScreenStyle.copy(
+                    fontSize = MainScreenStyle.fontSize * 0.95
                 )
             } else {
                 shouldDraw = true
