@@ -147,7 +147,8 @@ class RoutinesViewModel @Inject constructor(
                 _uiState.postValue(
                     RoutinesScreenState.Editing(routine = actualState.routine,
                         positionOfScreen = false,
-                        availableExercises = relatedExercisesByBodyPart(actualState.routine).filter { it.id !in actualState.routine.exercises.map { it.id } })
+                        availableExercises = relatedExercisesByBodyPart(actualState.routine).filter { it.id !in actualState.routine.exercises.map { it.id } },
+                        selectedExercise = actualState.selectedExercise)
                 )
 
             }

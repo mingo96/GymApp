@@ -2,7 +2,9 @@ package com.mintocode.rutinapp.ui.screens
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,16 +38,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavHostController
 import com.mintocode.rutinapp.R
 import com.mintocode.rutinapp.data.models.RoutineModel
+import com.mintocode.rutinapp.ui.premade.AdjustableText
 import com.mintocode.rutinapp.ui.premade.RutinAppCalendar
 import com.mintocode.rutinapp.ui.screenStates.FieldBeingEdited
 import com.mintocode.rutinapp.ui.screenStates.MainScreenState
 import com.mintocode.rutinapp.ui.theme.ScreenContainer
+import com.mintocode.rutinapp.ui.theme.SecondaryColor
 import com.mintocode.rutinapp.ui.theme.TextFieldColor
 import com.mintocode.rutinapp.ui.theme.rutinAppButtonsColours
 import com.mintocode.rutinapp.utils.simpleDateString
@@ -93,55 +98,50 @@ fun MainScreen(
 
             item {
 
-                Button(
-                    onClick = {
-                        navController.navigate("exercises")
-                              },
-                    colors = rutinAppButtonsColours(),
-                    shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier.fillMaxWidth()
+                Box(
+                    modifier = Modifier.clickable {
+                        navController.navigate("exercises") }
+                        .fillMaxWidth().background(SecondaryColor, RoundedCornerShape(15.dp)),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(text = "Ejercicios", fontSize = 20.sp, maxLines = 1)
+                    AdjustableText(modifier = Modifier.padding(8.dp), text = "Ejercicios", style = TextStyle(fontSize = 20.sp))
                 }
 
             }
             item {
 
-                Button(
-                    onClick = {
-                        navController.navigate("routines") },
-                    colors = rutinAppButtonsColours(),
-                    shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier.fillMaxWidth()
+                Box(
+                    modifier = Modifier.clickable {
+                        navController.navigate("routines") }
+                        .fillMaxWidth().background(SecondaryColor, RoundedCornerShape(15.dp)),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(text = "Rutinas", fontSize = 20.sp, maxLines = 1)
+                    AdjustableText(modifier = Modifier.padding(8.dp), text = "Rutinas", style = TextStyle(fontSize = 20.sp))
                 }
 
             }
             item {
 
-                Button(
-                    onClick = {
-                        navController.navigate("workouts") },
-                    colors = rutinAppButtonsColours(),
-                    shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier.fillMaxWidth()
+                Box(
+                    modifier = Modifier.clickable {
+                        navController.navigate("workouts") }
+                        .fillMaxWidth().background(SecondaryColor, RoundedCornerShape(15.dp)),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(text = "Entrenamientos", fontSize = 20.sp, maxLines = 1)
+                    AdjustableText(modifier = Modifier.padding(8.dp), text = "Entrenamientos", style = TextStyle(fontSize = 20.sp))
                 }
 
 
             }
             item {
 
-                Button(
-                    onClick = {
-                        navController.navigate("stats") },
-                    colors = rutinAppButtonsColours(),
-                    shape = RoundedCornerShape(15.dp),
-                    modifier = Modifier.fillMaxWidth()
+                Box(
+                    modifier = Modifier.clickable {
+                        navController.navigate("stats") }
+                        .fillMaxWidth().background(SecondaryColor, RoundedCornerShape(15.dp)),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(text = "Estadisticas", fontSize = 20.sp, maxLines = 1)
+                    AdjustableText(modifier = Modifier.padding(8.dp), text = "Estadisticas", style = TextStyle(fontSize = 20.sp))
                 }
 
             }
