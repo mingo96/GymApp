@@ -1,5 +1,7 @@
 package com.mintocode.rutinapp.viewmodels
 
+import android.content.Context
+import android.widget.Toast
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -72,7 +74,11 @@ class MainScreenViewModel @Inject constructor(
         }
     }
 
-    fun saveBodypart(it: String) {
+    fun saveBodypart(it: String, context: Context) {
+        if (it.isEmpty()) {
+            Toast.makeText(context, "Debes escribir una parte del cuerpo", Toast.LENGTH_SHORT).show()
+            return
+        }
         val actualState = _uiState.value as MainScreenState.PlanningOnMainFocus
 
         val planning = actualState.planningModel.copy(statedBodyPart = it, statedRoutine = null)

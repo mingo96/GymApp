@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.pm.ActivityInfo
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.animation.scaleIn
@@ -94,6 +95,10 @@ class MainActivity : ComponentActivity() {
                         composable("start",
                             enterTransition = { onEnter },
                             exitTransition = { onExit }) {
+                            BackHandler {
+                                moveTaskToBack(true)
+                            }
+
                             MainScreen(
                                 navController = navController,
                                 mainScreenViewModel = mainScreenViewModel

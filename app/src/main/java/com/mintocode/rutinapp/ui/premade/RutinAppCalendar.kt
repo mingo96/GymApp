@@ -113,7 +113,7 @@ fun DateVerticalItem(
     ) {
         Text(planning.date.dayAndMonthString(), fontSize = 20.sp, modifier = Modifier.padding(end = 8.dp))
 
-        Spacer(modifier = Modifier.width(1.dp).fillMaxHeight().background(SecondaryColor))
+        Spacer(modifier = Modifier.width(2.dp).fillMaxHeight().background(SecondaryColor))
         Row(
             modifier = Modifier
                 .fillMaxWidth()

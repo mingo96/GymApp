@@ -36,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
@@ -178,6 +179,8 @@ fun PlanningEditionDialog(
     viewModel: MainScreenViewModel, uistate: MainScreenState.PlanningOnMainFocus
 ) {
 
+    val context = LocalContext.current
+
     Dialog(onDismissRequest = { viewModel.backToObservation() }) {
         DialogContainer (){
             Text(
@@ -191,7 +194,7 @@ fun PlanningEditionDialog(
                 }
 
                 FieldBeingEdited.BODYPART -> {
-                    BodyPartSelectedContent(onSend = { viewModel.saveBodypart(it) }) {
+                    BodyPartSelectedContent(onSend = { viewModel.saveBodypart(it, context) }) {
                         viewModel.backToSelection()
                     }
                 }
