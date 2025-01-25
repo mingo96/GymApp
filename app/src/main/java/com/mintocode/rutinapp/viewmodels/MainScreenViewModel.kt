@@ -14,14 +14,17 @@ import com.mintocode.rutinapp.domain.getUseCases.GetRoutinesUseCase
 import com.mintocode.rutinapp.domain.updateUseCases.UpdatePlanningUseCase
 import com.mintocode.rutinapp.ui.screenStates.FieldBeingEdited
 import com.mintocode.rutinapp.ui.screenStates.MainScreenState
+import com.mintocode.rutinapp.utils.toSimpleDate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.util.Date
 import javax.inject.Inject
 
 @HiltViewModel
@@ -32,10 +35,17 @@ class MainScreenViewModel @Inject constructor(
     private val getRoutinesUseCase: GetRoutinesUseCase
 ) : ViewModel() {
 
-    val plannings: StateFlow<List<PlanningModel>> =
-        getPlanningsUseCase().catch { Error(it) }.stateIn(
-            viewModelScope, SharingStarted.Eagerly, emptyList()
-        )
+    val plannings: StateFlow<List<PlanningModel>> = getPlanningsUseCase().catch { Error(it) }.map {
+        _todaysPlanning.postValue(it.find { it.date.time == Date().toSimpleDate().time }
+            ?: PlanningModel(id = 0, date = Date().toSimpleDate()))
+        it
+    }.stateIn(
+        viewModelScope, SharingStarted.Eagerly, emptyList()
+    )
+
+    private val _todaysPlanning: MutableLiveData<PlanningModel> = MutableLiveData()
+
+    val todaysPlanning: LiveData<PlanningModel> = _todaysPlanning
 
     private val _uiState: MutableLiveData<MainScreenState> =
         MutableLiveData(MainScreenState.Observation)
@@ -54,7 +64,6 @@ class MainScreenViewModel @Inject constructor(
 
     fun selectBodypartClicked() {
         val actualState = _uiState.value as MainScreenState.PlanningOnMainFocus
-
 
         _uiState.postValue(actualState.copy(fieldBeingEdited = FieldBeingEdited.BODYPART))
 
@@ -76,7 +85,8 @@ class MainScreenViewModel @Inject constructor(
 
     fun saveBodypart(it: String, context: Context) {
         if (it.isEmpty()) {
-            Toast.makeText(context, "Debes escribir una parte del cuerpo", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Debes escribir una parte del cuerpo", Toast.LENGTH_SHORT)
+                .show()
             return
         }
         val actualState = _uiState.value as MainScreenState.PlanningOnMainFocus

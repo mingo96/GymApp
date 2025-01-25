@@ -2,10 +2,7 @@ package com.mintocode.rutinapp.ui.screens
 
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,7 +15,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.twotone.Add
 import androidx.compose.material.icons.twotone.ArrowForward
+import androidx.compose.material.icons.twotone.Edit
 import androidx.compose.material.icons.twotone.KeyboardArrowDown
 import androidx.compose.material.icons.twotone.KeyboardArrowUp
 import androidx.compose.material.icons.twotone.List
@@ -26,6 +25,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -40,20 +40,23 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavHostController
 import com.mintocode.rutinapp.R
 import com.mintocode.rutinapp.data.models.RoutineModel
+import com.mintocode.rutinapp.ui.premade.AdjustableText
 import com.mintocode.rutinapp.ui.premade.AnimatedItem
 import com.mintocode.rutinapp.ui.premade.RutinAppCalendar
 import com.mintocode.rutinapp.ui.screenStates.FieldBeingEdited
 import com.mintocode.rutinapp.ui.screenStates.MainScreenState
+import com.mintocode.rutinapp.ui.theme.PrimaryColor
 import com.mintocode.rutinapp.ui.theme.ScreenContainer
 import com.mintocode.rutinapp.ui.theme.TextFieldColor
 import com.mintocode.rutinapp.ui.theme.rutinAppButtonsColours
@@ -62,6 +65,7 @@ import com.mintocode.rutinapp.ui.uiClasses.FABButton
 import com.mintocode.rutinapp.utils.simpleDateString
 import com.mintocode.rutinapp.viewmodels.MainScreenViewModel
 import kotlinx.coroutines.delay
+import java.util.Date
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -72,6 +76,8 @@ fun MainScreen(
     val plannings by mainScreenViewModel.plannings.collectAsState()
 
     val uiState by mainScreenViewModel.uiState.observeAsState(MainScreenState.Observation)
+
+    val todaysPlanning by mainScreenViewModel.todaysPlanning.observeAsState()
 
     when (uiState) {
         MainScreenState.Observation -> {
@@ -98,7 +104,40 @@ fun MainScreen(
             navController.navigate("settings")
         }))
     }) {
-        Column(Modifier.padding(it)) {
+        Column(Modifier.padding(it), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+
+            AdjustableText("Plan de hoy " + Date().simpleDateString(), TextStyle(fontSize = 30.sp))
+            if (todaysPlanning != null) {
+                Row(
+                    modifier = Modifier
+                        .background(
+                            brush = Brush.horizontalGradient(
+                                listOf(TextFieldColor, TextFieldColor, PrimaryColor)
+                            )
+                        )
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+
+                    val content =
+                        if (todaysPlanning!!.statedBodyPart != null) todaysPlanning!!.statedBodyPart
+                        else if (todaysPlanning!!.statedRoutine != null) todaysPlanning!!.statedRoutine!!.name
+                        else "Nada planeado"
+                    AdjustableText("Objetivo : $content", TextStyle(fontSize = 20.sp))
+
+                    IconButton(
+                        onClick = { mainScreenViewModel.planningClicked(todaysPlanning!!) },
+                        modifier = Modifier
+                    ) {
+                        Icon(
+                            imageVector = if (content == null) Icons.TwoTone.Add else Icons.TwoTone.Edit,
+                            contentDescription = if (content == null) "add planning" else "edit planning"
+                        )
+                    }
+                }
+            }
 
             RutinAppCalendar(plannings, {
                 mainScreenViewModel.planningClicked(it)
@@ -129,11 +168,11 @@ fun FABComposable(buttons: List<FABButton>) {
             }
             Column(
                 horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.spacedBy(8.dp,Alignment.Bottom,),
+                verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Bottom),
                 modifier = Modifier.rotate(180f)
             ) {
                 for (i in buttons.reversed().take(maxIndex)) {
-                    AnimatedItem(slideInVertically{-it}, 100) {
+                    AnimatedItem(slideInVertically { -it }, 100) {
                         TextButton(
                             onClick = { i.onClick() },
                             colors = rutinAppTextButtonColors(),
@@ -147,7 +186,11 @@ fun FABComposable(buttons: List<FABButton>) {
                 }
             }
         }
-        IconButton(onClick = { extended = !extended }) {
+        IconButton(
+            onClick = { extended = !extended },
+            colors = IconButtonDefaults.iconButtonColors(containerColor = PrimaryColor),
+            modifier = Modifier.padding(8.dp)
+        ) {
             Icon(
                 Icons.TwoTone.List,
                 contentDescription = "Display Buttons",
