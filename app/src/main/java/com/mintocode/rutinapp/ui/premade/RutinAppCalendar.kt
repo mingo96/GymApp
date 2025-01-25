@@ -68,8 +68,7 @@ fun RutinAppCalendar(
 
     Column(
         Modifier
-            .fillMaxSize()
-            .padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)
+            .fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         AdjustableText(text = textContent, TextStyle(fontSize = 30.sp))
 
@@ -89,7 +88,7 @@ fun RutinAppCalendar(
                 }
             }
             item {
-                Spacer(modifier = Modifier.padding(bottom = 40.dp))
+                Spacer(modifier = Modifier.padding(bottom = 64.dp))
             }
 
         }

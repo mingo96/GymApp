@@ -14,3 +14,12 @@ fun rutinAppButtonsColours(): ButtonColors {
         disabledContentColor = SecondaryColor
     )
 }
+
+@Composable
+fun rutinAppTextButtonColors(): ButtonColors {
+    return ButtonDefaults.textButtonColors(
+        contentColor = ContentColor,
+        disabledContentColor = ContentColor,
+        containerColor = PrimaryColor
+    )
+}

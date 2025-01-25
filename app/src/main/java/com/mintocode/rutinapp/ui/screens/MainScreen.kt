@@ -1,62 +1,69 @@
 package com.mintocode.rutinapp.ui.screens
 
+import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.twotone.ArrowForward
 import androidx.compose.material.icons.twotone.KeyboardArrowDown
 import androidx.compose.material.icons.twotone.KeyboardArrowUp
-import androidx.compose.material.icons.twotone.Settings
+import androidx.compose.material.icons.twotone.List
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavHostController
 import com.mintocode.rutinapp.R
 import com.mintocode.rutinapp.data.models.RoutineModel
-import com.mintocode.rutinapp.ui.premade.AdjustableCollectivetext
-import com.mintocode.rutinapp.ui.premade.AdjustableText
+import com.mintocode.rutinapp.ui.premade.AnimatedItem
 import com.mintocode.rutinapp.ui.premade.RutinAppCalendar
 import com.mintocode.rutinapp.ui.screenStates.FieldBeingEdited
 import com.mintocode.rutinapp.ui.screenStates.MainScreenState
 import com.mintocode.rutinapp.ui.theme.ScreenContainer
-import com.mintocode.rutinapp.ui.theme.SecondaryColor
 import com.mintocode.rutinapp.ui.theme.TextFieldColor
 import com.mintocode.rutinapp.ui.theme.rutinAppButtonsColours
+import com.mintocode.rutinapp.ui.theme.rutinAppTextButtonColors
+import com.mintocode.rutinapp.ui.uiClasses.FABButton
 import com.mintocode.rutinapp.utils.simpleDateString
 import com.mintocode.rutinapp.viewmodels.MainScreenViewModel
+import kotlinx.coroutines.delay
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun MainScreen(
     navController: NavHostController, mainScreenViewModel: MainScreenViewModel
@@ -79,97 +86,74 @@ fun MainScreen(
     }
 
     ScreenContainer(title = "Menú principal", buttonText = "", floatingActionButton = {
-        IconButton(onClick = { navController.navigate("Settings") }) {
+        FABComposable(listOf(FABButton("Ejercicios") {
+            navController.navigate("exercises")
+        }, FABButton("Rutinas") {
+            navController.navigate("routines")
+        }, FABButton("Entrenamientos") {
+            navController.navigate("workouts")
+        }, FABButton("Estadísticas") {
+            navController.navigate("stats")
+        }, FABButton("Configuración") {
+            navController.navigate("settings")
+        }))
+    }) {
+        Column(Modifier.padding(it)) {
+
+            RutinAppCalendar(plannings, {
+                mainScreenViewModel.planningClicked(it)
+            })
+        }
+    }
+
+}
+
+@Composable
+fun FABComposable(buttons: List<FABButton>) {
+
+    var extended by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        if (extended) {
+
+            var maxIndex by rememberSaveable {
+                mutableIntStateOf(0)
+            }
+            LaunchedEffect(buttons) {
+                while (maxIndex < buttons.size) {
+                    delay(150)
+                    maxIndex++
+                }
+            }
+            Column(
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.spacedBy(8.dp,Alignment.Bottom,),
+                modifier = Modifier.rotate(180f)
+            ) {
+                for (i in buttons.reversed().take(maxIndex)) {
+                    AnimatedItem(slideInVertically{-it}, 100) {
+                        TextButton(
+                            onClick = { i.onClick() },
+                            colors = rutinAppTextButtonColors(),
+                            border = ButtonDefaults.outlinedButtonBorder,
+                            shape = RoundedCornerShape(15.dp),
+                            modifier = Modifier.rotate(180f)
+                        ) {
+                            Text(text = i.text!!, fontSize = 20.sp)
+                        }
+                    }
+                }
+            }
+        }
+        IconButton(onClick = { extended = !extended }) {
             Icon(
-                Icons.TwoTone.Settings,
-                contentDescription = "Settings",
+                Icons.TwoTone.List,
+                contentDescription = "Display Buttons",
                 modifier = Modifier.size(50.dp)
             )
         }
-    }) {
-        LazyVerticalGrid(
-            modifier = Modifier
-                .padding(it),
-            columns = GridCells.Fixed(2),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-
-            item {
-
-                Box(modifier = Modifier
-                    .clickable {
-                        navController.navigate("exercises")
-                    }
-                    .fillMaxWidth()
-                    .background(SecondaryColor, RoundedCornerShape(10.dp)),
-                    contentAlignment = Alignment.Center) {
-                    AdjustableCollectivetext(
-                        modifier = Modifier.padding(8.dp),
-                        text = "Ejercicios",
-                        style = TextStyle(fontSize = 20.sp)
-                    )
-                }
-
-            }
-            item {
-
-                Box(modifier = Modifier
-                    .clickable {
-                        navController.navigate("routines")
-                    }
-                    .fillMaxWidth()
-                    .background(SecondaryColor, RoundedCornerShape(10.dp)),
-                    contentAlignment = Alignment.Center) {
-                    AdjustableCollectivetext(
-                        modifier = Modifier.padding(8.dp),
-                        text = "Rutinas",
-                        style = TextStyle(fontSize = 20.sp)
-                    )
-                }
-
-            }
-            item {
-
-                Box(modifier = Modifier
-                    .clickable {
-                        navController.navigate("workouts")
-                    }
-                    .fillMaxWidth()
-                    .background(SecondaryColor, RoundedCornerShape(10.dp)),
-                    contentAlignment = Alignment.Center) {
-                    AdjustableCollectivetext(
-                        modifier = Modifier.padding(8.dp),
-                        text = "Entrenamientos",
-                        style = TextStyle(fontSize = 20.sp)
-                    )
-                }
-
-
-            }
-            item {
-
-                Box(modifier = Modifier
-                    .clickable {
-                        navController.navigate("stats")
-                    }
-                    .fillMaxWidth()
-                    .background(SecondaryColor, RoundedCornerShape(10.dp)),
-                    contentAlignment = Alignment.Center) {
-                    AdjustableCollectivetext(
-                        modifier = Modifier.padding(8.dp),
-                        text = "Estadisticas",
-                        style = TextStyle(fontSize = 20.sp)
-                    )
-                }
-
-            }
-
-
-        }
-        RutinAppCalendar(plannings, {
-            mainScreenViewModel.planningClicked(it)
-        })
     }
 
 }
@@ -182,7 +166,7 @@ fun PlanningEditionDialog(
     val context = LocalContext.current
 
     Dialog(onDismissRequest = { viewModel.backToObservation() }) {
-        DialogContainer (){
+        DialogContainer() {
             Text(
                 text = "Objetivo el " + uistate.planningModel.date.simpleDateString(),
                 fontSize = 25.sp
