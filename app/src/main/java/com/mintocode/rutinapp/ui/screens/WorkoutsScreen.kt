@@ -347,7 +347,7 @@ fun WorkoutProgression(
             .padding(top = 16.dp),
     ) {
 
-        items(uiState.workout.exercisesAndSets.take(maxIndex)) {
+        items(uiState.workout.exercisesAndSets.take(maxIndex+1), key = { it.first.id }) {
 
             AnimatedItem(delay = 50, enterAnimation = slideInHorizontally()) {
 

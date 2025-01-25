@@ -255,6 +255,22 @@ class WorkoutsViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Adds an exercise to the current workout, initializing it with an empty set list.
+     *
+     * This function updates the `_workoutScreenStates` LiveData to reflect the addition of a new exercise to the
+     * currently active workout. It retrieves the current state, ensures it's in the `WorkoutStarted` state,
+     * then adds the provided exercise to the `exercisesAndSets` list within the workout.  Each new exercise is added with an
+     * empty list of sets, represented as a `MutableList<SetModel>`.
+     *
+     * The function also removes the added exercise from the list of `otherExercises`.
+     *
+     * @param exercise The `ExerciseModel` to be added to the workout.
+     * @throws IllegalStateException if the current state of `_workoutScreenStates` is not `WorkoutStarted`.
+     * @see WorkoutsScreenState
+     * @see WorkoutModel
+     * @see ExerciseModel
+     */
     fun addExerciseToWorkout(exercise: ExerciseModel) {
 
         val currentState = _workoutScreenStates.value as WorkoutsScreenState.WorkoutStarted
