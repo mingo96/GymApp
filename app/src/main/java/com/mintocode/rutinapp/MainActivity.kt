@@ -153,7 +153,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun start() {
-        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
 
         val context = this.baseContext
 
