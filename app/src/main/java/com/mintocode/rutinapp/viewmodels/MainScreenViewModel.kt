@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.mintocode.rutinapp.data.models.PlanningModel
 import com.mintocode.rutinapp.data.models.RoutineModel
 import com.mintocode.rutinapp.domain.addUseCases.AddPlanningUseCase
+import com.mintocode.rutinapp.domain.getUseCases.DAY_IN_MILLIS
 import com.mintocode.rutinapp.domain.getUseCases.GetPlanningsUseCase
 import com.mintocode.rutinapp.domain.getUseCases.GetRoutinesUseCase
 import com.mintocode.rutinapp.domain.updateUseCases.UpdatePlanningUseCase
@@ -29,19 +30,26 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MainScreenViewModel @Inject constructor(
-    getPlanningsUseCase: GetPlanningsUseCase,
+    private val getPlanningsUseCase: GetPlanningsUseCase,
     private val addPlanningUseCase: AddPlanningUseCase,
     private val updatePlanningUseCase: UpdatePlanningUseCase,
     private val getRoutinesUseCase: GetRoutinesUseCase
 ) : ViewModel() {
 
-    val plannings: StateFlow<List<PlanningModel>> = getPlanningsUseCase().catch { Error(it) }.map {
-        _todaysPlanning.postValue(it.find { it.date.time == Date().toSimpleDate().time }
-            ?: PlanningModel(id = 0, date = Date().toSimpleDate()))
-        it
-    }.stateIn(
-        viewModelScope, SharingStarted.Eagerly, emptyList()
-    )
+    private var _planningsFlow: StateFlow<List<PlanningModel>> =
+        getPlanningsUseCase(Pair(Date().toSimpleDate(), Date(Date().time + DAY_IN_MILLIS * 7))).catch { Error(it) }
+            .map {
+                _todaysPlanning.postValue(it.find { it.date.toSimpleDate().time == Date().toSimpleDate().time }
+                    ?: PlanningModel(id = 0, date = Date().toSimpleDate()))
+                _plannings.postValue(it)
+                it
+            }.stateIn(
+                viewModelScope, SharingStarted.Eagerly, emptyList()
+            )
+
+    private val _plannings: MutableLiveData<List<PlanningModel>> = MutableLiveData(emptyList())
+
+    var plannings: LiveData<List<PlanningModel>> = _plannings
 
     private val _todaysPlanning: MutableLiveData<PlanningModel> = MutableLiveData()
 
@@ -51,6 +59,21 @@ class MainScreenViewModel @Inject constructor(
         MutableLiveData(MainScreenState.Observation)
 
     val uiState: LiveData<MainScreenState> = _uiState
+
+    fun changeDates(selectedStartMillis: Long, selectedEndDateMillis: Long) {
+        println("esto ha pasado")
+        if (selectedEndDateMillis > selectedStartMillis) {
+            _planningsFlow =
+                getPlanningsUseCase(Date(selectedStartMillis) to Date(selectedEndDateMillis)).catch {
+                    Error(it)
+                }.map {
+                    _plannings.postValue(it)
+                    it
+                }.stateIn(
+                    viewModelScope, SharingStarted.Eagerly, emptyList()
+                )
+        }
+    }
 
     fun planningClicked(it: PlanningModel) {
         val destination =

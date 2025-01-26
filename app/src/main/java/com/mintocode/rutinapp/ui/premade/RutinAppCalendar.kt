@@ -2,23 +2,18 @@ package com.mintocode.rutinapp.ui.premade
 
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.twotone.Add
 import androidx.compose.material.icons.twotone.Edit
@@ -29,7 +24,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -43,8 +37,6 @@ import com.mintocode.rutinapp.ui.theme.PrimaryColor
 import com.mintocode.rutinapp.ui.theme.SecondaryColor
 import com.mintocode.rutinapp.ui.theme.TextFieldColor
 import com.mintocode.rutinapp.utils.dayAndMonthString
-import com.mintocode.rutinapp.utils.dayOfWeekString
-import com.mintocode.rutinapp.utils.simpleDateString
 import com.mintocode.rutinapp.utils.toSimpleDate
 import kotlinx.coroutines.delay
 import java.util.Date
@@ -60,15 +52,14 @@ fun RutinAppCalendar(
         if (listOfDates.isEmpty()) "Calendario" else "Calendario " + listOfDates.first().date.dayAndMonthString() + " - " + listOfDates.last().date.dayAndMonthString()
 
     LaunchedEffect(listOfDates) {
-        while (maxIndex < 14) {
+        while (true) {
             delay(100)
-            maxIndex++
+            if (maxIndex < listOfDates.size) maxIndex++
         }
     }
 
     Column(
-        Modifier
-            .fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)
+        Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         AdjustableText(text = textContent, TextStyle(fontSize = 30.sp))
 
@@ -107,16 +98,30 @@ fun DateVerticalItem(
     else null
 
     Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.heightIn(0.dp, 50.dp)
+        verticalAlignment = Alignment.CenterVertically, modifier = Modifier.heightIn(0.dp, 50.dp)
     ) {
-        Text(planning.date.dayAndMonthString(), fontSize = 20.sp, modifier = Modifier.padding(end = 8.dp))
+        Text(
+            planning.date.dayAndMonthString(),
+            fontSize = 20.sp,
+            modifier = Modifier.padding(end = 8.dp)
+        )
 
-        Spacer(modifier = Modifier.width(2.dp).fillMaxHeight().background(SecondaryColor))
+        Spacer(
+            modifier = Modifier
+                .width(2.dp)
+                .fillMaxHeight()
+                .background(SecondaryColor)
+        )
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(brush = Brush.horizontalGradient(listOf(TextFieldColor, TextFieldColor, PrimaryColor)))
+                .background(
+                    brush = Brush.horizontalGradient(
+                        listOf(
+                            TextFieldColor, TextFieldColor, PrimaryColor
+                        )
+                    )
+                )
                 .padding(8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
@@ -124,6 +129,7 @@ fun DateVerticalItem(
             Text(
                 text = content ?: "Día no planeado", fontSize = 20.sp, modifier = Modifier
             )
+            if (planning.date.time >= Date().toSimpleDate().time)
             IconButton(onClick = { onPlanningSelected() }, modifier = Modifier) {
                 Icon(
                     imageVector = if (content == null) Icons.TwoTone.Add else Icons.TwoTone.Edit,

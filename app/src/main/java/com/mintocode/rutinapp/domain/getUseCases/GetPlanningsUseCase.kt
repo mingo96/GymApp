@@ -4,17 +4,20 @@ import com.mintocode.rutinapp.data.models.PlanningModel
 import com.mintocode.rutinapp.data.repositories.PlanningRepository
 import com.mintocode.rutinapp.data.repositories.RoutineRepository
 import com.mintocode.rutinapp.data.repositories.toModel
+import com.mintocode.rutinapp.utils.toSimpleDate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.util.Date
 import javax.inject.Inject
+
+const val DAY_IN_MILLIS = 86400000L
 
 class GetPlanningsUseCase @Inject constructor(
     private val planningRepository: PlanningRepository,
     private val routineRepository: RoutineRepository
 ) {
 
-    operator fun invoke(): Flow<List<PlanningModel>> {
+    operator fun invoke(firstToSecondDate: Pair<Date, Date>): Flow<List<PlanningModel>> {
         return planningRepository.allPlannings.map {
             val plannings = it.map { planning ->
                 val newItem = planning.toModel()
@@ -27,24 +30,19 @@ class GetPlanningsUseCase @Inject constructor(
                 }
 
                 newItem
-            }
+            }.filter { it.date.time in firstToSecondDate.first.time..firstToSecondDate.second.time }
 
-            val actualDate = Date()
-            val dayOfWeek = actualDate.day - 1
-            val today = actualDate.date
-            val rangeOfDates = -dayOfWeek + today..13 - dayOfWeek + today
             val addedValues = mutableListOf<PlanningModel>()
 
+            val rangeOfDates = firstToSecondDate.first.time..firstToSecondDate.second.time step DAY_IN_MILLIS
+
             for (i in rangeOfDates) {
-                if (plannings.none { planning -> planning.date.date == i }) {
+                if (plannings.none { planning -> planning.date.toSimpleDate().time == Date(i).toSimpleDate().time }) {
                     addedValues += PlanningModel(
                         id = 0,
-                        date = Date(
-                            actualDate.year,
-                            if (i > 0) actualDate.month else actualDate.month - 1,
-                            if (i > 0) i else i + 30
-                        )
+                        date = Date(i)
                     )
+                    println(addedValues.last().date.time)
                 }
             }
 

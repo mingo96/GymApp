@@ -1,6 +1,5 @@
 package com.mintocode.rutinapp.ui.screens
 
-import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
@@ -17,20 +16,24 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.twotone.Add
 import androidx.compose.material.icons.twotone.ArrowForward
+import androidx.compose.material.icons.twotone.Check
+import androidx.compose.material.icons.twotone.CheckCircle
 import androidx.compose.material.icons.twotone.Edit
 import androidx.compose.material.icons.twotone.KeyboardArrowDown
 import androidx.compose.material.icons.twotone.KeyboardArrowUp
 import androidx.compose.material.icons.twotone.List
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DateRangePicker
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
@@ -45,6 +48,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -60,6 +64,7 @@ import com.mintocode.rutinapp.ui.theme.PrimaryColor
 import com.mintocode.rutinapp.ui.theme.ScreenContainer
 import com.mintocode.rutinapp.ui.theme.TextFieldColor
 import com.mintocode.rutinapp.ui.theme.rutinAppButtonsColours
+import com.mintocode.rutinapp.ui.theme.rutinAppDatePickerColors
 import com.mintocode.rutinapp.ui.theme.rutinAppTextButtonColors
 import com.mintocode.rutinapp.ui.uiClasses.FABButton
 import com.mintocode.rutinapp.utils.simpleDateString
@@ -67,13 +72,13 @@ import com.mintocode.rutinapp.viewmodels.MainScreenViewModel
 import kotlinx.coroutines.delay
 import java.util.Date
 
-@OptIn(ExperimentalSharedTransitionApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     navController: NavHostController, mainScreenViewModel: MainScreenViewModel
 ) {
 
-    val plannings by mainScreenViewModel.plannings.collectAsState()
+    val plannings by mainScreenViewModel.plannings.observeAsState(emptyList())
 
     val uiState by mainScreenViewModel.uiState.observeAsState(MainScreenState.Observation)
 
@@ -139,9 +144,62 @@ fun MainScreen(
                 }
             }
 
-            RutinAppCalendar(plannings, {
+            val dateRangePickerState = rememberDateRangePickerState()
+
+            var isExtended by rememberSaveable {
+                mutableStateOf(false)
+            }
+
+            DateRangePicker(
+                dateRangePickerState,
+                title = null,
+                headline = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            AdjustableText(
+                                "Rango de fechas",
+                                TextStyle(fontSize = 20.sp),
+                                modifier = Modifier.padding(16.dp)
+                            )
+                            if (isExtended) IconButton(onClick = {
+                                mainScreenViewModel.changeDates(
+                                    dateRangePickerState.selectedStartDateMillis!!,
+                                    dateRangePickerState.selectedEndDateMillis!!
+                                )
+                                isExtended = false
+                            }) {
+                                Icon(
+                                    Icons.TwoTone.CheckCircle, contentDescription = "edit dates"
+                                )
+                            }
+                        }
+                        IconButton(onClick = { isExtended = !isExtended }) {
+                            Icon(
+                                if (!isExtended) Icons.TwoTone.KeyboardArrowDown else Icons.TwoTone.KeyboardArrowUp,
+                                contentDescription = "edit dates"
+                            )
+                        }
+                    }
+                },
+                colors = rutinAppDatePickerColors(),
+                modifier = Modifier
+                    .heightIn(0.dp, if (isExtended) 300.dp else 60.dp)
+                    .animateContentSize(),
+                showModeToggle = false,
+            )
+
+
+            RutinAppCalendar(plannings) {
                 mainScreenViewModel.planningClicked(it)
-            })
+            }
         }
     }
 
