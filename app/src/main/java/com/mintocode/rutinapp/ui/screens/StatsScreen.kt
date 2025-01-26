@@ -68,10 +68,7 @@ fun StatsScreen(navController: NavHostController, statsViewModel: StatsViewModel
 
     val uiState by statsViewModel.uiState.observeAsState(StatsScreenState.Observation())
 
-    ScreenContainer(title = "Tus estadisticas", onExit = {
-        if(uiState is StatsScreenState.StatsOfExercise) statsViewModel.backToObservation() else
-        navController.navigateUp()
-    }) {
+    ScreenContainer(title = "Tus estadisticas", navController = navController) {
 
         Column(Modifier.padding(it), verticalArrangement = Arrangement.spacedBy(16.dp)) {
 

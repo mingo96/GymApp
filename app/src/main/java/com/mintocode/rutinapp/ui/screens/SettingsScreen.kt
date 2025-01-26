@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import com.mintocode.rutinapp.data.UserDetails
 import com.mintocode.rutinapp.ui.screenStates.SettingsScreenState
 import com.mintocode.rutinapp.ui.theme.ScreenContainer
@@ -26,13 +27,13 @@ import com.mintocode.rutinapp.ui.theme.rutinAppButtonsColours
 import com.mintocode.rutinapp.viewmodels.SettingsViewModel
 
 @Composable
-fun SettinsScreen(navController: NavController, settingsViewModel: SettingsViewModel) {
+fun SettinsScreen(navController: NavHostController, settingsViewModel: SettingsViewModel) {
 
     val data by settingsViewModel.data.observeAsState()
 
     val uiState by settingsViewModel.uiState.observeAsState(initial = SettingsScreenState.Start)
 
-    ScreenContainer(title = "Configuración", onExit = { navController.navigateUp() }) {
+    ScreenContainer(title = "Configuración", navController = navController) {
 
         Column(
             Modifier.padding(it),

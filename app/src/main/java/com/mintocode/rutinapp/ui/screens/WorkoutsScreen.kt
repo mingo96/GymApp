@@ -99,15 +99,8 @@ fun WorkoutsScreen(viewModel: WorkoutsViewModel, navController: NavHostControlle
         }
 
     ScreenContainer(
-        onExit = {
-
-            if (workoutScreenState is WorkoutsScreenState.WorkoutStarted) {
-                viewModel.backToObserve()
-            } else {
-                navController.navigateUp()
-            }
-        },
         bottomButtonAction = bottomButtonAction,
+        navController = navController,
         title = if (workoutScreenState is WorkoutsScreenState.WorkoutStarted) "Progreso de entrenamiento" else "Entrenamientos",
         buttonText = if (workoutScreenState is WorkoutsScreenState.WorkoutStarted) {
             "Finalizar entrenamiento"

@@ -27,6 +27,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Clear
+import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material.icons.twotone.Add
 import androidx.compose.material.icons.twotone.Delete
 import androidx.compose.material.icons.twotone.Edit
@@ -124,12 +125,10 @@ fun ExercisesScreen(viewModel: ExercisesViewModel, navController: NavHostControl
         null -> {}
     }
 
-    ScreenContainer(onExit = {
-        navController.navigateUp()
-        viewModel.backToObserve()
-    },
+    ScreenContainer(
         buttonText = "Crear un ejercicio",
         title = "Ejercicios",
+        navController = navController,
         bottomButtonAction = { viewModel.clickToCreate() }) { it ->
 
         var name by rememberSaveable { mutableStateOf("") }
@@ -285,7 +284,7 @@ fun ExerciseItem(item: ExerciseModel, onEditClick: () -> Unit, onClick: () -> Un
 }
 
 @Composable
-fun TopBar(onExit: (() -> Unit)?, text: String) {
+fun TopBar(onExpandPressed: (() -> Unit)?, text: String) {
     Column(
         modifier = Modifier.background(PrimaryColor)
     ) {
@@ -298,10 +297,10 @@ fun TopBar(onExit: (() -> Unit)?, text: String) {
                 .padding(24.dp)
                 .wrapContentHeight()
         ) {
-            if (onExit != null) Icon(imageVector = Icons.Outlined.Clear,
-                contentDescription = "Exit",
+            if (onExpandPressed != null) Icon(imageVector = Icons.Outlined.Menu,
+                contentDescription = "expand menu",
                 Modifier
-                    .clickable { onExit() }
+                    .clickable { onExpandPressed() }
                     .size(40.dp))
             Text(
                 text = text,

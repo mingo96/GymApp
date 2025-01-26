@@ -96,19 +96,7 @@ fun MainScreen(
         }
     }
 
-    ScreenContainer(title = "Menú principal", buttonText = "", floatingActionButton = {
-        FABComposable(listOf(FABButton("Ejercicios") {
-            navController.navigate("exercises")
-        }, FABButton("Rutinas") {
-            navController.navigate("routines")
-        }, FABButton("Entrenamientos") {
-            navController.navigate("workouts")
-        }, FABButton("Estadísticas") {
-            navController.navigate("stats")
-        }, FABButton("Configuración") {
-            navController.navigate("settings")
-        }))
-    }) {
+    ScreenContainer(title = "Menú principal", buttonText = "", navController = navController) {
         Column(Modifier.padding(it), verticalArrangement = Arrangement.spacedBy(16.dp)) {
 
             AdjustableText("Plan de hoy " + Date().simpleDateString(), TextStyle(fontSize = 30.sp))

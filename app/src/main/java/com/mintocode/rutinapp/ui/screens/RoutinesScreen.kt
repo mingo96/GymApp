@@ -117,11 +117,9 @@ fun RoutinesScreen(viewModel: RoutinesViewModel, navController: NavHostControlle
         RoutinesScreenState.Overview -> {}
     }
 
-    ScreenContainer(onExit = {
-        viewModel.backToObserve()
-        navController.navigateUp()
-    },
+    ScreenContainer(
         bottomButtonAction = { viewModel.clickCreateRoutine() },
+        navController = navController,
         title = "Rutinas",
         buttonText = "Crear nueva rutina"
     ) {
