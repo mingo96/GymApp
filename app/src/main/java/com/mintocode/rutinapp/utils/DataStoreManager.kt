@@ -21,6 +21,8 @@ class DataStoreManager(val context: Context) {
         val NAME = stringPreferencesKey("name")
         val CODE = stringPreferencesKey("code")
         val ISDARKTHEME = booleanPreferencesKey("isDarkTheme")
+        val AUTHTOKEN = stringPreferencesKey("authToken")
+        val EMAIL = stringPreferencesKey("email")
     }
 
     suspend fun saveData(userDetails: UserDetails) {
@@ -28,6 +30,8 @@ class DataStoreManager(val context: Context) {
             it[NAME] = userDetails.name
             it[CODE] = userDetails.code
             it[ISDARKTHEME] = userDetails.isDarkTheme
+            it[AUTHTOKEN] = userDetails.authToken
+            it[EMAIL] = userDetails.email
         }
     }
 
@@ -35,7 +39,9 @@ class DataStoreManager(val context: Context) {
         UserDetails(
             code = it[CODE]?:"",
             name = it[NAME] ?: "",
-            isDarkTheme = it[ISDARKTHEME] ?: true
+            isDarkTheme = it[ISDARKTHEME] ?: true,
+            authToken = it[AUTHTOKEN] ?: "",
+            email = it[EMAIL] ?: ""
         )
     }
 

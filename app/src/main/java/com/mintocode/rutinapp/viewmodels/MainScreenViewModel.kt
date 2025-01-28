@@ -37,7 +37,12 @@ class MainScreenViewModel @Inject constructor(
 ) : ViewModel() {
 
     private var _planningsFlow: StateFlow<List<PlanningModel>> =
-        getPlanningsUseCase(Pair(Date().toSimpleDate(), Date(Date().time + DAY_IN_MILLIS * 7))).catch { Error(it) }
+        getPlanningsUseCase(
+            Pair(
+                Date().toSimpleDate(),
+                Date(Date().time + DAY_IN_MILLIS * 7)
+            )
+        ).catch { Error(it) }
             .map {
                 _todaysPlanning.postValue(it.find { it.date.toSimpleDate().time == Date().toSimpleDate().time }
                     ?: PlanningModel(id = 0, date = Date().toSimpleDate()))
@@ -60,8 +65,9 @@ class MainScreenViewModel @Inject constructor(
 
     val uiState: LiveData<MainScreenState> = _uiState
 
-    fun changeDates(selectedStartMillis: Long, selectedEndDateMillis: Long) {
-        println("esto ha pasado")
+    fun changeDates(selectedStartMillis: Long?, selectedEndDateMillis: Long?) {
+        if (selectedStartMillis == null || selectedEndDateMillis == null) return
+
         if (selectedEndDateMillis > selectedStartMillis) {
             _planningsFlow =
                 getPlanningsUseCase(Date(selectedStartMillis) to Date(selectedEndDateMillis)).catch {

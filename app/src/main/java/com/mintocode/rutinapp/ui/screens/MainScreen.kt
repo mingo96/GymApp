@@ -159,8 +159,8 @@ fun MainScreen(
                             )
                             if (isExtended) IconButton(onClick = {
                                 mainScreenViewModel.changeDates(
-                                    dateRangePickerState.selectedStartDateMillis!!,
-                                    dateRangePickerState.selectedEndDateMillis!!
+                                    dateRangePickerState.selectedStartDateMillis,
+                                    dateRangePickerState.selectedEndDateMillis
                                 )
                                 isExtended = false
                             }) {

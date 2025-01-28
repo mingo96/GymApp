@@ -143,7 +143,7 @@ fun LateralMenu(
             }
             Button(
                 onClick = { navController.navigate("start") },
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor)
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor, contentColor = ContentColor)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -160,7 +160,7 @@ fun LateralMenu(
             }
             Button(
                 onClick = { navController.navigate("exercises") },
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor)
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor, contentColor = ContentColor)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -177,7 +177,7 @@ fun LateralMenu(
             }
             Button(
                 onClick = { navController.navigate("routines") },
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor)
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor, contentColor = ContentColor)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -194,7 +194,7 @@ fun LateralMenu(
             }
             Button(
                 onClick = { navController.navigate("workouts") },
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor)
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor, contentColor = ContentColor)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -211,7 +211,7 @@ fun LateralMenu(
             }
             Button(
                 onClick = { navController.navigate("stats") },
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor)
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor, contentColor = ContentColor)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -228,7 +228,7 @@ fun LateralMenu(
             }
             Button(
                 onClick = { navController.navigate("settings") },
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor)
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor, contentColor = ContentColor)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
