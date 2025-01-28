@@ -1,7 +1,9 @@
 package com.mintocode.rutinapp
 
 import android.app.Application
-import android.content.pm.ActivityInfo
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -19,6 +21,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.google.android.gms.ads.MobileAds
+import com.google.android.gms.auth.api.identity.BeginSignInRequest
 import com.mintocode.rutinapp.ui.screens.ExercisesScreen
 import com.mintocode.rutinapp.ui.screens.LoadingScreen
 import com.mintocode.rutinapp.ui.screens.MainScreen
@@ -174,4 +177,19 @@ class MainActivity : ComponentActivity() {
 
     }
 
+}
+
+fun isConnectedToInternet(context: Context): Boolean {
+    var isConnected = false
+    val connectivityManager =
+        context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager?
+
+    if (connectivityManager != null) {
+        val network = connectivityManager.activeNetwork
+        val capabilities = connectivityManager.getNetworkCapabilities(network)
+        isConnected =
+            capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
+    }
+
+    return isConnected
 }

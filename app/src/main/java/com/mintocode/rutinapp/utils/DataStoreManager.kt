@@ -41,7 +41,7 @@ class DataStoreManager(val context: Context) {
             name = it[NAME] ?: "",
             isDarkTheme = it[ISDARKTHEME] ?: true,
             authToken = it[AUTHTOKEN] ?: "",
-            email = it[EMAIL] ?: ""
+            email = it[EMAIL] ?: "@gmail.com"
         )
     }
 

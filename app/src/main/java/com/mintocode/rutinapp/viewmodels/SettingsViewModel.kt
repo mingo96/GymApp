@@ -1,6 +1,7 @@
 package com.mintocode.rutinapp.viewmodels
 
 import android.content.Context
+import android.content.Intent
 import android.widget.Toast
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.LiveData
@@ -8,6 +9,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.Firebase
+import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.auth
 import com.mintocode.rutinapp.data.UserDetails
 import com.mintocode.rutinapp.ui.screenStates.SettingsScreenState
@@ -50,7 +52,7 @@ class SettingsViewModel : ViewModel() {
     fun toggleUiState() {
         if (_uiState.value is SettingsScreenState.LogIn) {
             _uiState.postValue(SettingsScreenState.UserData)
-        } else _uiState.postValue(SettingsScreenState.LogIn(false))
+        } else _uiState.postValue(SettingsScreenState.LogIn(false, userMail = _data.value!!.email))
     }
 
     private suspend fun getUserDetails() {
@@ -157,6 +159,27 @@ class SettingsViewModel : ViewModel() {
             }
         }
 
+    }
+
+    fun logInWithGoogle(context: Context, credential: AuthCredential)= viewModelScope.launch {
+        try {
+            auth.signInWithCredential(credential).addOnSuccessListener { authUser ->
+
+                updateUserDetails(authToken = authUser.user!!.uid, name = authUser.user!!.displayName!!, email = authUser.user!!.email!!)
+
+                val actualState = _uiState.value as SettingsScreenState.LogIn
+
+                _uiState.postValue(actualState.copy(userMail = authUser.user!!.email!!))
+
+                Toast.makeText(context, "Sesión iniciada correctamente", Toast.LENGTH_SHORT).show()
+                toggleUiState()
+            }.addOnFailureListener {
+                Toast.makeText(context, "Error al iniciar sesión", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+
+            Toast.makeText(context, "Error al iniciar sesión", Toast.LENGTH_SHORT).show()
+        }
     }
 
 }

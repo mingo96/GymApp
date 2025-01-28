@@ -1,5 +1,8 @@
 package com.mintocode.rutinapp.ui.screens
 
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -25,13 +28,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.credentials.CredentialManager
 import androidx.navigation.NavHostController
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
+import com.google.firebase.auth.GoogleAuthProvider
 import com.mintocode.rutinapp.R
 import com.mintocode.rutinapp.data.UserDetails
+import com.mintocode.rutinapp.isConnectedToInternet
 import com.mintocode.rutinapp.ui.premade.AdjustableText
 import com.mintocode.rutinapp.ui.screenStates.SettingsScreenState
 import com.mintocode.rutinapp.ui.theme.ScreenContainer
@@ -45,6 +55,42 @@ fun SettinsScreen(navController: NavHostController, settingsViewModel: SettingsV
     val data by settingsViewModel.data.observeAsState()
 
     val uiState by settingsViewModel.uiState.observeAsState(initial = SettingsScreenState.UserData)
+
+    val context = LocalContext.current
+
+    val launcher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.StartActivityForResult()) {
+
+            val task = GoogleSignIn.getSignedInAccountFromIntent(it.data)
+            try {
+                val account = task.getResult(ApiException::class.java)
+                val credential = GoogleAuthProvider.getCredential(account.idToken, null)
+                settingsViewModel.logInWithGoogle(
+                    credential = credential,
+                    context = context)
+            } catch (e: Exception) {
+
+                Toast.makeText(context, "Cuenta no valida", Toast.LENGTH_SHORT).show()
+            }
+
+        }
+
+    val token = stringResource(R.string.default_web_client_id)
+
+    val onGoogleClick = {
+        if(isConnectedToInternet(context)) {
+
+            val options = GoogleSignInOptions.Builder(
+                GoogleSignInOptions.DEFAULT_SIGN_IN
+            ).requestIdToken(token).requestEmail().build()
+            val googleSignInClient = GoogleSignIn.getClient(context, options)
+            googleSignInClient.signOut()
+            launcher.launch(googleSignInClient.signInIntent)
+
+        }else{
+            Toast.makeText(context, "No hay conexión a internet", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     ScreenContainer(title = "Configuración", navController = navController, floatingActionButton = {
         Button(onClick = {
@@ -69,7 +115,8 @@ fun SettinsScreen(navController: NavHostController, settingsViewModel: SettingsV
                 is SettingsScreenState.LogIn -> {
                     UserLogInInput(
                         settingsViewModel = settingsViewModel,
-                        uiState = (uiState as SettingsScreenState.LogIn)
+                        uiState = (uiState as SettingsScreenState.LogIn),
+                        onGoogleClick = onGoogleClick
                     )
                 }
             }
@@ -79,19 +126,26 @@ fun SettinsScreen(navController: NavHostController, settingsViewModel: SettingsV
 }
 
 @Composable
-fun UserLogInInput(settingsViewModel: SettingsViewModel, uiState: SettingsScreenState.LogIn) {
+fun UserLogInInput(
+    settingsViewModel: SettingsViewModel,
+    uiState: SettingsScreenState.LogIn,
+    onGoogleClick: () -> Unit
+) {
 
     val context = LocalContext.current
 
-    var mail by rememberSaveable { mutableStateOf("@gmail.com") }
+    var mail by rememberSaveable { mutableStateOf(uiState.userMail) }
     var password by rememberSaveable { mutableStateOf("") }
 
-    TextFieldWithTitle(title = "Correo", text = mail, onWrite = { mail = it })
+    TextFieldWithTitle(title = "Correo", text = mail, onWrite = { mail = it }, typeOfKeyBoard = KeyboardType.Email)
     TextFieldWithTitle(
         title = "Contraseña",
         text = password,
         onWrite = { password = it },
-        typeOfKeyBoard = KeyboardType.Password
+        typeOfKeyBoard = KeyboardType.Password,
+        sendFunction = {
+            settingsViewModel.tryToAuthenticate(mail, password, context)
+        }
     )
 
     Row(
@@ -122,7 +176,7 @@ fun UserLogInInput(settingsViewModel: SettingsViewModel, uiState: SettingsScreen
             }
         }
         IconButton(
-            onClick = {},
+            onClick = onGoogleClick,
             modifier = Modifier
                 .background(TextFieldColor, RoundedCornerShape(20.dp))
                 .padding(8.dp),

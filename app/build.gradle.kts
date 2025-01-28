@@ -66,7 +66,6 @@ dependencies {
     implementation(libs.androidx.room.common)
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.navigation.compose)
-    implementation(libs.firebase.auth)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -91,6 +90,10 @@ dependencies {
 
     //To use Kotlin annotation processing tool (kapt)
     kapt("androidx.room:room-compiler:2.6.1")
+    implementation("com.google.android.gms:play-services-auth:21.1.1")
+
+    implementation("com.google.firebase:firebase-auth-ktx:23.0.0")
+    implementation(platform(libs.firebase.bom))
 
     //ads
     implementation("com.google.android.gms:play-services-ads:23.6.0")
