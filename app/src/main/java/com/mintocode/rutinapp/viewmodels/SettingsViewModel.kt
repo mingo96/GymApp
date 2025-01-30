@@ -1,7 +1,6 @@
 package com.mintocode.rutinapp.viewmodels
 
 import android.content.Context
-import android.content.Intent
 import android.widget.Toast
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.LiveData
@@ -10,8 +9,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.Firebase
 import com.google.firebase.auth.AuthCredential
+import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.auth
 import com.mintocode.rutinapp.data.UserDetails
+import com.mintocode.rutinapp.data.api.Rutinappi
+import com.mintocode.rutinapp.data.api.classes.User
 import com.mintocode.rutinapp.ui.screenStates.SettingsScreenState
 import com.mintocode.rutinapp.ui.theme.ContentColor
 import com.mintocode.rutinapp.ui.theme.PrimaryColor
@@ -137,6 +139,11 @@ class SettingsViewModel : ViewModel() {
                     authToken = it.user!!.uid, name = it.user!!.displayName ?: _data.value!!.name,
                     email = it.user!!.email!!
                 )
+
+                if(it.additionalUserInfo!!.isNewUser){
+                    registerUserOnServer(it)
+                }
+
                 Toast.makeText(context, "Registrado correctamente", Toast.LENGTH_SHORT).show()
                 toggleUiState()
             }.addOnFailureListener {
@@ -165,6 +172,9 @@ class SettingsViewModel : ViewModel() {
         try {
             auth.signInWithCredential(credential).addOnSuccessListener { authUser ->
 
+                if (authUser.additionalUserInfo!!.isNewUser){
+                    registerUserOnServer(authUser)
+                }
                 updateUserDetails(authToken = authUser.user!!.uid, name = authUser.user!!.displayName!!, email = authUser.user!!.email!!)
 
                 val actualState = _uiState.value as SettingsScreenState.LogIn
@@ -179,6 +189,19 @@ class SettingsViewModel : ViewModel() {
         } catch (e: Exception) {
 
             Toast.makeText(context, "Error al iniciar sesión", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun registerUserOnServer(authResult: AuthResult) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val user = User(
+                name = authResult.user?.displayName,
+                email = authResult.user!!.email!!,
+                authId = authResult.user!!.uid
+            )
+
+            Rutinappi.retrofitService.createUser(user)
+
         }
     }
 

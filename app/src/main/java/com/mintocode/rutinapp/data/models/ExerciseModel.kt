@@ -1,5 +1,7 @@
 package com.mintocode.rutinapp.data.models
 
+import com.mintocode.rutinapp.data.api.classes.Exercise
+
 data class ExerciseModel(
     var id: String = "",
     var name: String,
@@ -8,4 +10,11 @@ data class ExerciseModel(
     var equivalentExercises: List<ExerciseModel> = emptyList(),
     var setsAndReps: String = "",
     var observations: String = ""
-)
+){
+    fun toAPIModel() = Exercise(
+        exerciseId = id.toLong(),
+        exerciseName = name,
+        exerciseDescription = description,
+        targetedBodyPart = targetedBodyPart
+    )
+}
