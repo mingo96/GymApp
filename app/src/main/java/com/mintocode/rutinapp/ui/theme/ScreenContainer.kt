@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavHostController
 import com.mintocode.rutinapp.R
+import com.mintocode.rutinapp.data.UserDetails
 import com.mintocode.rutinapp.ui.premade.AdjustableText
 import com.mintocode.rutinapp.ui.screens.TopBar
 import kotlinx.coroutines.launch
@@ -63,7 +64,7 @@ fun ScreenContainer(
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            LateralMenu(navController, "Usuario", {
+            LateralMenu(navController, UserDetails.actualValue?.name?: "Usuario", {
                 scope.launch { drawerState.close() }
             })
         },
@@ -132,7 +133,7 @@ fun LateralMenu(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                AdjustableText(userName, TextStyle(fontWeight = FontWeight.Bold, fontSize = 40.sp))
+                AdjustableText(userName, TextStyle(fontWeight = FontWeight.Bold, fontSize = 40.sp), Modifier.fillMaxWidth(0.8f))
                 IconButton(onClick = onClose) {
                     Icon(
                         imageVector = Icons.TwoTone.ArrowBack,

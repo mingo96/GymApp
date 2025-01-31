@@ -6,6 +6,7 @@ import com.mintocode.rutinapp.data.daos.ExerciseToExerciseDao
 import com.mintocode.rutinapp.data.daos.ExerciseToExerciseEntity
 import com.mintocode.rutinapp.data.models.ExerciseModel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
 
@@ -18,10 +19,7 @@ fun ExerciseEntity.toModel() = ExerciseModel(
 )
 
 fun ExerciseModel.toEntity() = ExerciseEntity(
-    this.id.toIntOrNull() ?: 0,
-    this.name,
-    this.description,
-    this.targetedBodyPart
+    this.id.toIntOrNull() ?: 0, this.name, this.description, this.targetedBodyPart
 )
 
 class ExerciseRepository @Inject constructor(
@@ -49,6 +47,9 @@ class ExerciseRepository @Inject constructor(
     }
 
     suspend fun addExercise(exercise: ExerciseEntity) {
+        if (allExercises.first()
+                .find { it.exerciseName == exercise.exerciseName && it.targetedBodyPart == exercise.targetedBodyPart && it.exerciseDescription == exercise.exerciseDescription } != null
+        ) return
         exerciseDao.insert(
             ExerciseEntity(
                 exerciseName = exercise.exerciseName,
@@ -61,8 +62,7 @@ class ExerciseRepository @Inject constructor(
     suspend fun relateExercises(exercise1: ExerciseEntity, exercise2: ExerciseEntity) {
         exerciseToExerciseDao.insert(
             ExerciseToExerciseEntity(
-                exercise1Id = exercise1.exerciseId,
-                exercise2Id = exercise2.exerciseId
+                exercise1Id = exercise1.exerciseId, exercise2Id = exercise2.exerciseId
             )
         )
     }
@@ -70,8 +70,7 @@ class ExerciseRepository @Inject constructor(
     suspend fun unRelateExercises(exercise1: ExerciseEntity, exercise2: ExerciseEntity) {
         exerciseToExerciseDao.delete(
             ExerciseToExerciseEntity(
-                exercise1Id = exercise1.exerciseId,
-                exercise2Id = exercise2.exerciseId
+                exercise1Id = exercise1.exerciseId, exercise2Id = exercise2.exerciseId
             )
         )
     }

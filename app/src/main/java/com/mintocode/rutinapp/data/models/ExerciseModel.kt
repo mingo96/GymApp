@@ -3,7 +3,7 @@ package com.mintocode.rutinapp.data.models
 import com.mintocode.rutinapp.data.api.classes.Exercise
 
 data class ExerciseModel(
-    var id: String = "",
+    var id: String = "0",
     var name: String,
     var description: String,
     var targetedBodyPart: String,

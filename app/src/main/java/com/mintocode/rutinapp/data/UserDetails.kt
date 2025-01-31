@@ -6,4 +6,10 @@ data class UserDetails(
     val isDarkTheme: Boolean = true,
     val authToken: String = "",
     val email: String = "@gmail.com"
-)
+){
+    companion object{
+
+        var actualValue : UserDetails? = null
+
+    }
+}

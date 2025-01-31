@@ -159,7 +159,9 @@ class MainActivity : ComponentActivity() {
 
         val context = this.baseContext
 
-        settingsViewModel.initiateDataStore(DataStoreManager(context))
+        val datastore = DataStoreManager(context)
+
+        settingsViewModel.initiateDataStore(datastore)
 
         workoutsViewModel.provideAdsViewModel(adViewModel)
 

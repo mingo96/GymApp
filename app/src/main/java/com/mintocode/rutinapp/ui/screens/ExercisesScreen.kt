@@ -26,7 +26,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material.icons.twotone.Add
 import androidx.compose.material.icons.twotone.Delete
@@ -35,6 +34,7 @@ import androidx.compose.material.icons.twotone.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -51,6 +51,7 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -66,6 +67,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.mintocode.rutinapp.R
 import com.mintocode.rutinapp.data.models.ExerciseModel
 import com.mintocode.rutinapp.ui.premade.AnimatedItem
 import com.mintocode.rutinapp.ui.screenStates.ExercisesState
@@ -125,19 +127,25 @@ fun ExercisesScreen(viewModel: ExercisesViewModel, navController: NavHostControl
         null -> {}
     }
 
-    ScreenContainer(
-        buttonText = "Crear un ejercicio",
+    ScreenContainer(buttonText = "Crear un ejercicio",
         title = "Ejercicios",
         navController = navController,
         bottomButtonAction = { viewModel.clickToCreate() }) { it ->
 
         var name by rememberSaveable { mutableStateOf("") }
-        SearchTextField(
-            value = name,
+        SearchTextField(value = name,
             onValueChange = { name = it },
             onSearch = { viewModel.writeOnExerciseName(name) },
             modifier = Modifier.padding(top = it.calculateTopPadding() - 16.dp)
         )
+        Row {
+            val context = LocalContext.current
+            IconButton(onClick = {
+                viewModel.fetchExercises(context = context)
+            }) {
+                Icon(painter = painterResource(R.drawable.download), "load exercises")
+            }
+        }
 
         LazyColumn(
             Modifier.fillMaxHeight(), contentPadding = PaddingValues(
@@ -358,12 +366,14 @@ fun TextFieldWithTitle(
 }
 
 @Composable
-fun DialogContainer(backGroundIsOn : Boolean = true, content: @Composable ColumnScope.() -> Unit) {
+fun DialogContainer(backGroundIsOn: Boolean = true, content: @Composable ColumnScope.() -> Unit) {
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(if(backGroundIsOn)PrimaryColor else Color.Transparent, RoundedCornerShape(15.dp))
+            .background(
+                if (backGroundIsOn) PrimaryColor else Color.Transparent, RoundedCornerShape(15.dp)
+            )
             .padding(16.dp), verticalArrangement = Arrangement.spacedBy(
             16.dp, Alignment.CenterVertically
         ), horizontalAlignment = Alignment.Start, content = content
@@ -487,7 +497,11 @@ fun CreateExerciseDialog(viewModel: ExercisesViewModel, onExit: (() -> Unit)? = 
             TextFieldWithTitle(title = "Parte del cuerpo",
                 onWrite = { targetedBodyPart = it },
                 text = targetedBodyPart,
-                sendFunction = { viewModel.addExercise(name, description, targetedBodyPart, context) })
+                sendFunction = {
+                    viewModel.addExercise(
+                        name, description, targetedBodyPart, context
+                    )
+                })
             Button(
                 onClick = {
                     viewModel.addExercise(

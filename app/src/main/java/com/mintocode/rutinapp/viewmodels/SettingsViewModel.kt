@@ -12,6 +12,7 @@ import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.auth
 import com.mintocode.rutinapp.data.UserDetails
+import com.mintocode.rutinapp.data.UserDetails.Companion.actualValue
 import com.mintocode.rutinapp.data.api.Rutinappi
 import com.mintocode.rutinapp.data.api.classes.User
 import com.mintocode.rutinapp.ui.screenStates.SettingsScreenState
@@ -22,14 +23,22 @@ import com.mintocode.rutinapp.ui.theme.TextFieldColor
 import com.mintocode.rutinapp.utils.DataStoreManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.lang.Thread.State
 
 class SettingsViewModel : ViewModel() {
 
     private val _data: MutableLiveData<UserDetails> = MutableLiveData()
 
     val data: LiveData<UserDetails> = _data
+
+    private lateinit var userDataUpdater : StateFlow<UserDetails?>
 
     private val auth = Firebase.auth
 
@@ -46,6 +55,11 @@ class SettingsViewModel : ViewModel() {
     fun initiateDataStore(value: DataStoreManager) {
         dataStoreManager = value
 
+        userDataUpdater = dataStoreManager.getData().map {
+            actualValue = it
+            it
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
         viewModelScope.launch(Dispatchers.IO) {
             getUserDetails()
         }
@@ -58,11 +72,11 @@ class SettingsViewModel : ViewModel() {
     }
 
     private suspend fun getUserDetails() {
-        _data.postValue(dataStoreManager.getData().first())
+        _data.postValue(dataStoreManager.data())
         delay(1000)
 
         if (_data.value != null) {
-            val isDarkTheme = dataStoreManager.getData().first().isDarkTheme
+            val isDarkTheme = dataStoreManager.data().isDarkTheme
             if (!isDarkTheme) {
                 changeToClearTheme()
             }

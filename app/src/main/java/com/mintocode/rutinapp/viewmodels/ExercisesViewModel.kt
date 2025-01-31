@@ -6,6 +6,8 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mintocode.rutinapp.data.UserDetails
+import com.mintocode.rutinapp.data.api.Rutinappi
 import com.mintocode.rutinapp.data.models.ExerciseModel
 import com.mintocode.rutinapp.domain.addUseCases.AddExerciseUseCase
 import com.mintocode.rutinapp.domain.addUseCases.AddExercisesRelationUseCase
@@ -55,14 +57,47 @@ class ExercisesViewModel @Inject constructor(
         if (name.isNotEmpty() && description.isNotEmpty() && targetedBodyPart.isNotEmpty()) viewModelScope.launch(
             context = Dispatchers.IO
         ) {
+            val exercise = ExerciseModel(
+                name = name, description = description, targetedBodyPart = targetedBodyPart
+            )
             addExerciseUseCase(
-                ExerciseModel(
-                    name = name, description = description, targetedBodyPart = targetedBodyPart
-                )
+                exercise
             )
             _uiState.postValue(ExercisesState.Observe())
+
+            if (UserDetails.actualValue?.authToken?.isEmpty() != false) return@launch
+
+            val response = Rutinappi.retrofitService.createExercise(
+                exercise.toAPIModel(), UserDetails.actualValue!!.authToken
+            )
+
         }
         else Toast.makeText(context, "Faltan campos por rellenar", Toast.LENGTH_SHORT).show()
+    }
+
+    fun fetchExercises(context: Context) {
+        viewModelScope.launch(Dispatchers.Main) {
+            val response =
+                Rutinappi.retrofitService.getExercises(UserDetails.actualValue!!.authToken)
+            if (response.isSuccessful) {
+                if (response.body() != null) {
+
+                    response.body()!!.forEach {
+                        addExerciseUseCase(it.toExerciseModel())
+                    }
+                    val fetchedExercises = response.body()!!.size
+                    Toast.makeText(
+                        context,
+                        if (fetchedExercises == 0) "No se han podido obtener ejercicios" else "Se han obtenido $fetchedExercises ejercicio" + if (fetchedExercises > 1) "s" else "",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    Toast.makeText(
+                        context, "No se han podido obtener los ejercicios", Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
     }
 
     fun toggleExercisesRelation(exercise: ExerciseModel) {
@@ -141,8 +176,7 @@ class ExercisesViewModel @Inject constructor(
                     //i dont know how would this happen
                 }
             }
-        else
-            Toast.makeText(context, "Faltan campos por rellenar", Toast.LENGTH_SHORT).show()
+        else Toast.makeText(context, "Faltan campos por rellenar", Toast.LENGTH_SHORT).show()
     }
 
     fun clickToCreate() {

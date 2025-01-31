@@ -45,7 +45,7 @@ class AdViewModel() : ViewModel() {
 
         viewModelScope.launch(Dispatchers.Main) {
 
-            if (dataStoreManager.getData().first().code != SECRET_CODE) {
+            if (dataStoreManager.data().code != SECRET_CODE) {
 
                 initiateInterstitialAd(activity.baseContext)
                 initiateRewardedAd(activity.baseContext)
