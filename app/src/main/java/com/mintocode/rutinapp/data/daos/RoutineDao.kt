@@ -10,6 +10,7 @@ import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Relation
 import androidx.room.Update
+import com.mintocode.rutinapp.data.models.RoutineModel
 import kotlinx.coroutines.flow.Flow
 
 
@@ -17,10 +18,22 @@ import kotlinx.coroutines.flow.Flow
     indices = [Index("routineId")]
 )
 data class RoutineEntity(
-    @PrimaryKey(autoGenerate = true) val routineId: Int,
+    @PrimaryKey(autoGenerate = true)
+    val routineId: Int,
     var name: String,
     var targetedBodyPart: String,
-)
+    var realId: Int,
+    var isFromThisUser: Boolean = true
+){
+    fun toModel() = RoutineModel(
+        id = routineId,
+        name = name,
+        targetedBodyPart = targetedBodyPart,
+        exercises = mutableListOf(),
+        isFromThisUser = isFromThisUser,
+        realId = realId
+    )
+}
 
 
 data class RoutineWithExercises(

@@ -3,7 +3,6 @@ package com.mintocode.rutinapp.domain.getUseCases
 import com.mintocode.rutinapp.data.models.PlanningModel
 import com.mintocode.rutinapp.data.repositories.PlanningRepository
 import com.mintocode.rutinapp.data.repositories.RoutineRepository
-import com.mintocode.rutinapp.data.repositories.toModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject

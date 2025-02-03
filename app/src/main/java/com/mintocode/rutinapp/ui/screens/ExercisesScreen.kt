@@ -145,6 +145,7 @@ fun ExercisesScreen(viewModel: ExercisesViewModel, navController: NavHostControl
             }) {
                 Icon(painter = painterResource(R.drawable.download), "load exercises")
             }
+
         }
 
         LazyColumn(

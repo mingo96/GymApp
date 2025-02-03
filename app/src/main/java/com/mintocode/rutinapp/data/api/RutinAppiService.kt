@@ -12,6 +12,7 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
+import retrofit2.http.PUT
 
 
 private val retrofit =
@@ -32,6 +33,9 @@ interface RutinAppiService {
 
     @GET("exercises/myexercises")
     suspend fun getExercises(@Header("Authorization") token: String): Response<List<Exercise>>
+
+    @PUT("exercises/updateexercise")
+    suspend fun updateExercise(@Body toAPIModel: Exercise, @Header("Authorization")authToken: String): Response<Exercise>
 
 }
 

@@ -2,17 +2,28 @@ package com.mintocode.rutinapp.data.api.classes
 
 import com.mintocode.rutinapp.data.models.ExerciseModel
 
-class Exercise(
-    val exerciseId: Long = 0,
-    var exerciseName: String = "",
-    var exerciseDescription: String = "",
-    var targetedBodyPart: String = "",
-    var userId: Long = 0
+data class Exercise(
+
+    var id: String = "0",
+    var realId: Long = 0L,
+    var name: String,
+    var description: String,
+    var targetedBodyPart: String,
+    var equivalentExercises: List<Int> = emptyList(),
+    var setsAndReps: String = "",
+    var observations: String = "",
+    val isFromThisUser : Boolean = true
 ) {
-    fun toExerciseModel() = ExerciseModel(
-        id = exerciseId.toString(),
-        name = exerciseName,
-        description = exerciseDescription,
-        targetedBodyPart = targetedBodyPart
-    )
+    fun toModel(): ExerciseModel {
+        return ExerciseModel(
+            id = id,
+            realId = realId,
+            name = name,
+            description = description,
+            targetedBodyPart = targetedBodyPart,
+            setsAndReps = setsAndReps,
+            observations = observations,
+            isFromThisUser = isFromThisUser
+            )
+    }
 }

@@ -9,7 +9,9 @@ import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Relation
 import androidx.room.Update
+import com.mintocode.rutinapp.data.models.WorkoutModel
 import kotlinx.coroutines.flow.Flow
+import java.util.Date
 
 
 @Entity
@@ -18,7 +20,16 @@ data class WorkOutEntity(
     val date: Long,
     var title: String,
     var isFinished: Boolean
-)
+){
+    fun toModel(): WorkoutModel {
+        return WorkoutModel(
+            id = this.workOutId,
+            date = Date(this.date),
+            title = this.title,
+            isFinished = this.isFinished
+        )
+    }
+}
 
 data class WorkOutWithSets(
     @Embedded val workOut: WorkOutEntity,

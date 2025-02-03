@@ -4,7 +4,6 @@ import android.util.Log
 import com.mintocode.rutinapp.data.models.RoutineModel
 import com.mintocode.rutinapp.data.repositories.ExerciseRepository
 import com.mintocode.rutinapp.data.repositories.RoutineRepository
-import com.mintocode.rutinapp.data.repositories.toModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject

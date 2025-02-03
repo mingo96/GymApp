@@ -10,18 +10,6 @@ import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
 
-fun ExerciseEntity.toModel() = ExerciseModel(
-    this.exerciseId.toString(),
-    this.exerciseName,
-    this.exerciseDescription,
-    this.targetedBodyPart,
-    emptyList()
-)
-
-fun ExerciseModel.toEntity() = ExerciseEntity(
-    this.id.toIntOrNull() ?: 0, this.name, this.description, this.targetedBodyPart
-)
-
 class ExerciseRepository @Inject constructor(
     private val exerciseDao: ExerciseDao, private val exerciseToExerciseDao: ExerciseToExerciseDao
 ) {
@@ -47,16 +35,25 @@ class ExerciseRepository @Inject constructor(
     }
 
     suspend fun addExercise(exercise: ExerciseEntity) {
-        if (allExercises.first()
+        if (exerciseDao.getAll()
                 .find { it.exerciseName == exercise.exerciseName && it.targetedBodyPart == exercise.targetedBodyPart && it.exerciseDescription == exercise.exerciseDescription } != null
         ) return
         exerciseDao.insert(
-            ExerciseEntity(
-                exerciseName = exercise.exerciseName,
-                exerciseDescription = exercise.exerciseDescription,
-                targetedBodyPart = exercise.targetedBodyPart
-            )
+            exercise
         )
+    }
+
+    suspend fun addExercise(exercise: ExerciseEntity, idsOfRelatedExercises : List<Long>) {
+        if (exerciseDao.getAll()
+                .find { it.realId == exercise.realId } != null
+        ) return
+        exerciseDao.insert(
+            exercise
+        )
+        idsOfRelatedExercises.forEach {
+            val foundValue = exerciseDao.getByRealId(it.toInt())
+            if (foundValue != null) relateExercises(exercise, foundValue)
+        }
     }
 
     suspend fun relateExercises(exercise1: ExerciseEntity, exercise2: ExerciseEntity) {

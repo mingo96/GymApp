@@ -64,7 +64,7 @@ fun ScreenContainer(
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            LateralMenu(navController, UserDetails.actualValue?.name?: "Usuario", {
+            LateralMenu(navController, UserDetails.actualValue?.name.orEmpty().ifEmpty { "Usuario" }, {
                 scope.launch { drawerState.close() }
             })
         },

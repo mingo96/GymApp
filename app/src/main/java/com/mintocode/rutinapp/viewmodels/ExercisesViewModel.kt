@@ -71,6 +71,10 @@ class ExercisesViewModel @Inject constructor(
                 exercise.toAPIModel(), UserDetails.actualValue!!.authToken
             )
 
+            if (response.isSuccessful) {
+                updateExerciseUseCase(exercise.copy(realId = response.body()!!.realId))
+            }
+
         }
         else Toast.makeText(context, "Faltan campos por rellenar", Toast.LENGTH_SHORT).show()
     }
@@ -83,7 +87,7 @@ class ExercisesViewModel @Inject constructor(
                 if (response.body() != null) {
 
                     response.body()!!.forEach {
-                        addExerciseUseCase(it.toExerciseModel())
+                        addExerciseUseCase(it.toModel(), it.equivalentExercises.map { it.toLong() })
                     }
                     val fetchedExercises = response.body()!!.size
                     Toast.makeText(
@@ -172,6 +176,12 @@ class ExercisesViewModel @Inject constructor(
                     selected.targetedBodyPart = targetedBodyPart
                     updateExerciseUseCase(selected)
                     _uiState.postValue(ExercisesState.Observe(selected))
+                    if (UserDetails.actualValue?.authToken?.isEmpty() != false && selected.realId != 0L) return@launch
+
+                    val response = Rutinappi.retrofitService.updateExercise(
+                        selected.toAPIModel(), UserDetails.actualValue!!.authToken
+                    )
+
                 } catch (error: AssertionError) {
                     //i dont know how would this happen
                 }

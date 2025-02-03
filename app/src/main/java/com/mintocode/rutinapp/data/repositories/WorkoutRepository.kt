@@ -15,21 +15,6 @@ import kotlinx.coroutines.flow.Flow
 import java.util.Date
 import javax.inject.Inject
 
-fun WorkOutEntity.toModel(): WorkoutModel {
-    return WorkoutModel(
-        id = this.workOutId,
-        date = Date(this.date),
-        title = this.title,
-        isFinished = this.isFinished
-    )
-}
-
-fun WorkoutModel.toEntity(): WorkOutEntity {
-    return WorkOutEntity(
-        workOutId = this.id, date = this.date.time, title = this.title, isFinished = isFinished
-    )
-}
-
 class WorkoutRepository @Inject constructor(
     private val workoutDao: WorkOutDao,
     private val setDao: SetDao,

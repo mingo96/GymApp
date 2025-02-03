@@ -9,6 +9,7 @@ import androidx.room.Insert
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Update
+import com.mintocode.rutinapp.data.models.ExerciseModel
 import kotlinx.coroutines.flow.Flow
 
 
@@ -20,7 +21,21 @@ class ExerciseEntity(
     var exerciseName: String = "",
     var exerciseDescription: String = "",
     var targetedBodyPart: String = "",
-)
+    var realId: Int = 0,
+    val isFromThisUser: Boolean = true
+) {
+    fun toModel() = ExerciseModel(
+        this.exerciseId.toString(),
+        this.realId.toLong(),
+        this.exerciseName,
+        this.exerciseDescription,
+        this.targetedBodyPart,
+        emptyList(),
+        "",
+        "",
+        this.isFromThisUser
+    )
+}
 
 @Entity(
     primaryKeys = ["exercise1Id", "exercise2Id"],
@@ -52,6 +67,9 @@ interface ExerciseDao {
 
     @Query("SELECT * FROM ExerciseEntity WHERE exerciseId = :id")
     suspend fun getById(id: Int): ExerciseEntity
+
+    @Query("SELECT * FROM ExerciseEntity WHERE realId = :realId")
+    suspend fun getByRealId(realId: Int): ExerciseEntity?
 
     @Insert
     suspend fun insert(item: ExerciseEntity)

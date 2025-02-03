@@ -11,21 +11,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
-fun RoutineEntity.toModel(): RoutineModel {
-    return RoutineModel(
-        id = this.routineId,
-        name = this.name,
-        targetedBodyPart = this.targetedBodyPart,
-        exercises = mutableListOf()
-    )
-}
-
-fun RoutineModel.toEntity(): RoutineEntity {
-    return RoutineEntity(
-        routineId = this.id, name = this.name, targetedBodyPart = this.targetedBodyPart
-    )
-}
-
 class RoutineRepository @Inject constructor(
     private val routineDao: RoutineDao,
     private val routineExerciseDao: RoutineExerciseDao,
