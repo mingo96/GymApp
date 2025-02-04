@@ -6,7 +6,6 @@ import com.mintocode.rutinapp.data.daos.RoutineEntity
 import com.mintocode.rutinapp.data.daos.RoutineExerciseDao
 import com.mintocode.rutinapp.data.daos.RoutineExerciseEntity
 import com.mintocode.rutinapp.data.daos.RoutineWithExercises
-import com.mintocode.rutinapp.data.models.RoutineModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
@@ -52,7 +51,13 @@ class RoutineRepository @Inject constructor(
     }
 
     suspend fun updateRoutineExerciseRelation(relation: RoutineExerciseEntity) {
-        routineExerciseDao.updateRoutineExercise(relation)
+        if (routineExerciseDao.existsRoutineExercise(
+                relation.routineId,
+                relation.exerciseId
+            )
+        ) routineExerciseDao.updateRoutineExercise(relation)
+        else
+            routineExerciseDao.addRoutineExercise(relation)
     }
 
     suspend fun getRoutineById(routineId: Int): RoutineEntity {

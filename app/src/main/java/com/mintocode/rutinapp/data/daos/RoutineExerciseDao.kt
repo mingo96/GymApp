@@ -52,4 +52,7 @@ interface RoutineExerciseDao {
     @Update(entity = RoutineExerciseEntity::class)
     suspend fun updateRoutineExercise(relation: RoutineExerciseEntity)
 
+    @Query("SELECT EXISTS(SELECT * FROM RoutineExerciseEntity WHERE routineId = :routineId AND exerciseId = :exerciseId)")
+    suspend fun existsRoutineExercise(routineId: Int, exerciseId: Int):Boolean
+
 }

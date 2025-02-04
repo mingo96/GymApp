@@ -67,12 +67,17 @@ class ExercisesViewModel @Inject constructor(
 
             if (UserDetails.actualValue?.authToken?.isEmpty() != false) return@launch
 
-            val response = Rutinappi.retrofitService.createExercise(
-                exercise.toAPIModel(), UserDetails.actualValue!!.authToken
-            )
+            try {
 
-            if (response.isSuccessful) {
-                updateExerciseUseCase(exercise.copy(realId = response.body()!!.realId))
+                val response = Rutinappi.retrofitService.createExercise(
+                    exercise.toAPIModel(), UserDetails.actualValue!!.authToken
+                )
+
+                if (response.isSuccessful) {
+                    updateExerciseUseCase(exercise.copy(realId = response.body()!!.realId))
+                }
+            }catch (e:Exception){
+                println("help")
             }
 
         }

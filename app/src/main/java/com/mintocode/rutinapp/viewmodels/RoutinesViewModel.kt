@@ -6,6 +6,8 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mintocode.rutinapp.data.UserDetails
+import com.mintocode.rutinapp.data.api.Rutinappi
 import com.mintocode.rutinapp.data.models.ExerciseModel
 import com.mintocode.rutinapp.data.models.RoutineModel
 import com.mintocode.rutinapp.domain.addUseCases.AddRoutineExerciseRelationUseCase
@@ -70,9 +72,7 @@ class RoutinesViewModel @Inject constructor(
 
         if (name.isEmpty() || targetedBodyPart.isEmpty()) {
             Toast.makeText(
-                context,
-                "Rellene todos los campos",
-                Toast.LENGTH_SHORT
+                context, "Rellene todos los campos", Toast.LENGTH_SHORT
             ).show()
             return
         }
@@ -90,6 +90,16 @@ class RoutinesViewModel @Inject constructor(
                     positionOfScreen = false
                 )
             )
+            UserDetails.actualValue?.authToken?.let {
+
+                val response = Rutinappi.retrofitService.createRoutine(
+                    createdRoutine.toAPIModel(), it
+                )
+                if (response.body() != null) {
+                    createdRoutine.realId = response.body()!!.realId
+                    updateRoutineUseCase(createdRoutine)
+                }
+            }
 
         }
 
@@ -128,6 +138,7 @@ class RoutinesViewModel @Inject constructor(
         )
     }
 
+
     fun changeExercisePresenceOnRoutine() {
         val actualState = _uiState.value as RoutinesScreenState.Editing
 
@@ -145,11 +156,40 @@ class RoutinesViewModel @Inject constructor(
                     actualState.routine.exercises += actualState.selectedExercise
                 }
                 _uiState.postValue(
-                    RoutinesScreenState.Editing(routine = actualState.routine,
+                    RoutinesScreenState.Editing(
+                        routine = actualState.routine,
                         positionOfScreen = false,
                         availableExercises = relatedExercisesByBodyPart(actualState.routine).filter { it.id !in actualState.routine.exercises.map { it.id } },
-                        selectedExercise = actualState.selectedExercise)
+                        selectedExercise = actualState.selectedExercise
+                    )
                 )
+
+                UserDetails.actualValue?.authToken?.let {
+                    try {
+
+                        val response =
+                            if (actualState.routine.realId == 0) Rutinappi.retrofitService.createRoutine(
+                                actualState.routine.toAPIModel(), it
+                            )
+                            else Rutinappi.retrofitService.updateRoutine(
+                                actualState.routine.toAPIModel(), it
+                            )
+
+                        if (response.body() != null) {
+                            val fetchedRoutine = response.body()!!
+                            actualState.routine.realId = fetchedRoutine.realId
+
+                            updateRoutineUseCase(actualState.routine)
+                        }
+
+                        println(response.isSuccessful)
+                        println(response.body())
+                    } catch (e: Exception) {
+
+                        println(e.message)
+                    }
+                }
+
 
             }
         }
@@ -175,8 +215,7 @@ class RoutinesViewModel @Inject constructor(
             viewModelScope.launch(
                 Dispatchers.IO
             ) {
-                updateRoutineExerciseRelationUseCase(
-                    actualState.routine,
+                updateRoutineExerciseRelationUseCase(actualState.routine,
                     actualState.selectedExercise.apply {
                         this.setsAndReps = setsAndReps
                         this.observations = observations
@@ -202,8 +241,13 @@ class RoutinesViewModel @Inject constructor(
                 updateRoutineUseCase(
                     actualState.routine.copy(targetedBodyPart = targetedBodyPart, name = name)
                 )
+                UserDetails.actualValue?.authToken?.let {
+                    Rutinappi.retrofitService.updateRoutine(
+                        actualState.routine.toAPIModel(), it
+                    )
+                }
             }
-        }else{
+        } else {
             Toast.makeText(context, "Rellene todos los campos", Toast.LENGTH_SHORT).show()
         }
     }
