@@ -4,7 +4,6 @@ import com.mintocode.rutinapp.data.BASE_URL
 import com.mintocode.rutinapp.data.api.classes.Exercise
 import com.mintocode.rutinapp.data.api.classes.Routine
 import com.mintocode.rutinapp.data.api.classes.User
-import okhttp3.CertificatePinner
 import okhttp3.OkHttpClient
 import retrofit2.Response
 import retrofit2.Retrofit
@@ -55,6 +54,16 @@ interface RutinAppiService {
     suspend fun updateRoutine(
         @Body routine: Routine, @Header("Authorization") token: String
     ): Response<Routine>
+
+    @GET("exercises/findbysimilarity")
+    suspend fun findExercise(
+        @Header("Authorization") token: String, @Header("text") bodyPart: String
+    ): Response<List<Exercise>>
+
+    @GET("exercises/fetchrelatedexercises")
+    suspend fun fetchRelatedExercises(
+        @Header("Authorization") token: String, @Header("id") exerciseId: String
+    ): Response<List<Exercise>>
 
 }
 

@@ -194,14 +194,19 @@ fun EditRoutineDialog(uiState: RoutinesScreenState.Editing, viewModel: RoutinesV
 
 }
 
+fun String.orSetsAndReps(): String {
+    if (this.isEmpty()|| this.isBlank()) return "0x0"
+    else return this
+}
+
 @Composable
 fun EditRoutineExerciseRelation(
     uiState: RoutinesScreenState.Editing, viewModel: RoutinesViewModel
 ) {
 
-    var setsAndReps by rememberSaveable { mutableStateOf(uiState.selectedExercise!!.setsAndReps) }
+    var setsAndReps by rememberSaveable { mutableStateOf(uiState.selectedExercise!!.setsAndReps.orSetsAndReps()) }
 
-    var manualEdition by rememberSaveable { mutableStateOf(uiState.selectedExercise!!.setsAndReps == "" || uiState.selectedExercise.setsAndReps.isSetsAndReps()) }
+    var manualEdition by rememberSaveable { mutableStateOf(!uiState.selectedExercise!!.setsAndReps.isSetsAndReps()) }
 
     var observations by rememberSaveable { mutableStateOf(uiState.selectedExercise!!.observations) }
 
@@ -242,7 +247,7 @@ fun EditRoutineExerciseRelation(
                     imageVector = Icons.TwoTone.KeyboardArrowUp, contentDescription = "Add to sets"
                 )
             }
-            Text(text = setsAndReps.split("x")[0])
+            Text(text = setsAndReps.split("x").first())
             IconButton(onClick = { setsAndReps = setsAndReps.changeValue(true, false) }) {
                 Icon(
                     imageVector = Icons.TwoTone.KeyboardArrowDown,
@@ -255,7 +260,7 @@ fun EditRoutineExerciseRelation(
                     imageVector = Icons.TwoTone.KeyboardArrowUp, contentDescription = "Add to sets"
                 )
             }
-            Text(text = setsAndReps.split("x")[1])
+            Text(text = setsAndReps.split("x").last())
             IconButton(onClick = { setsAndReps = setsAndReps.changeValue(false, false) }) {
                 Icon(
                     imageVector = Icons.TwoTone.KeyboardArrowDown,
@@ -278,7 +283,6 @@ fun EditRoutineExerciseRelation(
         Button(
             onClick = { viewModel.updateRoutineExerciseRelation(setsAndReps, observations) },
             colors = rutinAppButtonsColours(),
-            modifier = Modifier.weight(1f)
         ) {
             Icon(
                 imageVector = if (uiState.selectedExercise.setsAndReps == setsAndReps && uiState.selectedExercise.observations == observations) Icons.TwoTone.ArrowBack else Icons.TwoTone.Check,
@@ -287,11 +291,10 @@ fun EditRoutineExerciseRelation(
         }
         Button(onClick = {
             manualEdition = !manualEdition
-            if (!setsAndReps.isSetsAndReps()) {
-                setsAndReps = "0x0"
-            }
+            setsAndReps = "0x0"
+
         }, colors = rutinAppButtonsColours()) {
-            Text(text = "Cambiar contador", modifier = Modifier.fillMaxWidth(0.7f))
+            Text(text = "Cambiar contador", modifier = Modifier)
         }
     }
 

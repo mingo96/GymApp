@@ -90,16 +90,7 @@ class RoutinesViewModel @Inject constructor(
                     positionOfScreen = false
                 )
             )
-            UserDetails.actualValue?.authToken?.let {
-
-                val response = Rutinappi.retrofitService.createRoutine(
-                    createdRoutine.toAPIModel(), it
-                )
-                if (response.body() != null) {
-                    createdRoutine.realId = response.body()!!.realId
-                    updateRoutineUseCase(createdRoutine)
-                }
-            }
+            persistRoutine(createdRoutine)
 
         }
 
@@ -164,31 +155,7 @@ class RoutinesViewModel @Inject constructor(
                     )
                 )
 
-                UserDetails.actualValue?.authToken?.let {
-                    try {
-
-                        val response =
-                            if (actualState.routine.realId == 0) Rutinappi.retrofitService.createRoutine(
-                                actualState.routine.toAPIModel(), it
-                            )
-                            else Rutinappi.retrofitService.updateRoutine(
-                                actualState.routine.toAPIModel(), it
-                            )
-
-                        if (response.body() != null) {
-                            val fetchedRoutine = response.body()!!
-                            actualState.routine.realId = fetchedRoutine.realId
-
-                            updateRoutineUseCase(actualState.routine)
-                        }
-
-                        println(response.isSuccessful)
-                        println(response.body())
-                    } catch (e: Exception) {
-
-                        println(e.message)
-                    }
-                }
+                persistRoutine(actualState.routine)
 
 
             }
@@ -220,7 +187,7 @@ class RoutinesViewModel @Inject constructor(
                         this.setsAndReps = setsAndReps
                         this.observations = observations
                     })
-
+                persistRoutine(actualState.routine)
             }
         }
         _uiState.postValue(
@@ -231,6 +198,7 @@ class RoutinesViewModel @Inject constructor(
                 null
             )
         )
+
         toggleEditingState(true)
     }
 
@@ -241,15 +209,38 @@ class RoutinesViewModel @Inject constructor(
                 updateRoutineUseCase(
                     actualState.routine.copy(targetedBodyPart = targetedBodyPart, name = name)
                 )
-                UserDetails.actualValue?.authToken?.let {
-                    Rutinappi.retrofitService.updateRoutine(
-                        actualState.routine.toAPIModel(), it
-                    )
-                }
+                persistRoutine(actualState.routine)
             }
         } else {
             Toast.makeText(context, "Rellene todos los campos", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    private suspend fun persistRoutine(routine: RoutineModel) {
+
+        val token = UserDetails.actualValue?.authToken
+        if( token != null) {
+            try {
+
+                if (routine.realId != 0)
+                    Rutinappi.retrofitService.updateRoutine(
+                        routine.toAPIModel(), token
+                    )
+                else {
+                    val response = Rutinappi.retrofitService.createRoutine(
+                            routine.toAPIModel(), token
+                        )
+
+                    if (response.body() != null) {
+                        routine.realId = response.body()!!.realId
+                        updateRoutineUseCase(routine)
+                    }
+                }
+            } catch (e: Exception) {
+
+            }
+        }
+
     }
 
 }

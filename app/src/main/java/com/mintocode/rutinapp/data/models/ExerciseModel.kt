@@ -22,6 +22,7 @@ data class ExerciseModel(
             exerciseDescription = description,
             targetedBodyPart = targetedBodyPart,
             realId = realId.toInt(),
+            isFromThisUser = isFromThisUser
             )
     }
 

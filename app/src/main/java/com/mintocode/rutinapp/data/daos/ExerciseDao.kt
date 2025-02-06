@@ -72,7 +72,7 @@ interface ExerciseDao {
     suspend fun getByRealId(realId: Int): ExerciseEntity?
 
     @Insert
-    suspend fun insert(item: ExerciseEntity)
+    suspend fun insert(item: ExerciseEntity):Long
 
     @Update
     suspend fun update(item: ExerciseEntity)

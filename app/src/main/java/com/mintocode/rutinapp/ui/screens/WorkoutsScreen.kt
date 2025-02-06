@@ -729,7 +729,7 @@ fun OtherExercises(
                 SearchTextField(value = name,
                     onValueChange = { name = it },
                     onSearch = { viewModel.searchExercise(name) },
-                    modifier = Modifier
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
 

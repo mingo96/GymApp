@@ -94,12 +94,7 @@ fun ExercisesScreen(viewModel: ExercisesViewModel, navController: NavHostControl
 
     var maxIndex by rememberSaveable { mutableIntStateOf(0) }
 
-    LaunchedEffect(maxIndex) {
-        while (true) {
-            delay(100)
-            if (maxIndex < exercises.size) maxIndex++
-        }
-    }
+    var stateOfSearch: Boolean? by rememberSaveable { mutableStateOf(null) }
 
     when (uiState) {
         is ExercisesState.Modifying -> {
@@ -111,6 +106,7 @@ fun ExercisesScreen(viewModel: ExercisesViewModel, navController: NavHostControl
         }
 
         is ExercisesState.Observe -> {
+            stateOfSearch = null
             if ((uiState as ExercisesState.Observe).exercise != null) {
                 ObserveExerciseDialog(viewModel, uiState as ExercisesState.Observe)
             }
@@ -121,10 +117,13 @@ fun ExercisesScreen(viewModel: ExercisesViewModel, navController: NavHostControl
         }
 
         is ExercisesState.SearchingForExercise -> {
-
+            stateOfSearch = false
         }
 
         null -> {}
+        is ExercisesState.ExploringExercises -> {
+            stateOfSearch = true
+        }
     }
 
     ScreenContainer(buttonText = "Crear un ejercicio",
@@ -133,19 +132,63 @@ fun ExercisesScreen(viewModel: ExercisesViewModel, navController: NavHostControl
         bottomButtonAction = { viewModel.clickToCreate() }) { it ->
 
         var name by rememberSaveable { mutableStateOf("") }
+
         SearchTextField(value = name,
             onValueChange = { name = it },
             onSearch = { viewModel.writeOnExerciseName(name) },
             modifier = Modifier.padding(top = it.calculateTopPadding() - 16.dp)
         )
-        Row {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp, 8.dp, 8.dp, 0.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             val context = LocalContext.current
             IconButton(onClick = {
                 viewModel.fetchExercises(context = context)
             }) {
-                Icon(painter = painterResource(R.drawable.download), "load exercises")
+                Icon(
+                    painter = painterResource(R.drawable.download),
+                    "load exercises",
+                    modifier = Modifier.size(30.dp)
+                )
+            }
+            IconButton(onClick = {
+                viewModel.changeToUploadedExercises()
+            }, colors = IconButtonDefaults.iconButtonColors(containerColor = if (stateOfSearch == true) SecondaryColor else PrimaryColor)) {
+                Icon(
+                    painter = painterResource(R.drawable.hente),
+                    "upload exercises",
+                    modifier = Modifier.size(30.dp)
+                )
             }
 
+        }
+
+        val items = when (uiState) {
+            is ExercisesState.SearchingForExercise -> {
+                (uiState as ExercisesState.SearchingForExercise).possibleValues.take(maxIndex)
+            }
+
+            is ExercisesState.ExploringExercises -> {
+                (uiState as ExercisesState.ExploringExercises).possibleValues.take(maxIndex)
+            }
+
+            else -> exercises.take(maxIndex)
+        }
+
+        LaunchedEffect(maxIndex) {
+            while (true) {
+                delay(100)
+                if (maxIndex < when (stateOfSearch) {
+                        false -> (uiState as ExercisesState.SearchingForExercise).possibleValues.size
+                        true -> (uiState as ExercisesState.ExploringExercises).possibleValues.size
+                        else -> exercises.size
+                    }
+                ) maxIndex++
+            }
         }
 
         LazyColumn(
@@ -156,12 +199,7 @@ fun ExercisesScreen(viewModel: ExercisesViewModel, navController: NavHostControl
                 bottom = it.calculateBottomPadding()
             ), verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            items(
-                if (uiState is ExercisesState.SearchingForExercise) (uiState as ExercisesState.SearchingForExercise).possibleValues.take(
-                    maxIndex
-                )
-                else exercises.take(maxIndex)
-            ) { exercise ->
+            items(items) { exercise ->
                 AnimatedItem(enterAnimation = slideInHorizontally { +it }, delay = 50) {
 
                     ExerciseItem(item = exercise,
@@ -284,7 +322,7 @@ fun ExerciseItem(item: ExerciseModel, onEditClick: () -> Unit, onClick: () -> Un
                 text = item.description.take(40), modifier = Modifier.fillMaxWidth(0.8f)
             )
         }
-        Icon(imageVector = Icons.TwoTone.Edit,
+        if (item.isFromThisUser) Icon(imageVector = Icons.TwoTone.Edit,
             contentDescription = "editar",
             modifier = Modifier
                 .size(40.dp)
@@ -564,11 +602,30 @@ fun ObserveExerciseDialog(viewModel: ExercisesViewModel, uiState: ExercisesState
                 ) {
                     Text(text = "Salir")
                 }
-                Button(
-                    onClick = { viewModel.clickToEdit(uiState.exercise) },
-                    colors = rutinAppButtonsColours()
-                ) {
-                    Text(text = "Editar")
+                if (uiState.exercise.realId == 0L) {
+                    Button(
+                        onClick = { viewModel.uploadExercise(uiState.exercise) },
+                        colors = rutinAppButtonsColours()
+                    ) {
+                        Text(text = "Subir")
+                    }
+                }
+                if (uiState.exercise.isFromThisUser) {
+                    Button(
+                        onClick = { viewModel.clickToEdit(uiState.exercise) },
+                        colors = rutinAppButtonsColours()
+                    ) {
+                        Text(text = "Editar")
+                    }
+                }else{
+                    if(uiState.exercise.id == "0") {
+                        Button(
+                            onClick = { viewModel.saveExercise(uiState.exercise) },
+                            colors = rutinAppButtonsColours()
+                        ) {
+                            Text(text = "Obtener")
+                        }
+                    }
                 }
             }
 

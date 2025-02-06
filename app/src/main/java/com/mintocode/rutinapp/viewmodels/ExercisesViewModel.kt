@@ -44,13 +44,21 @@ class ExercisesViewModel @Inject constructor(
 
     fun writeOnExerciseName(name: String) {
 
+        if (uiState.value is ExercisesState.SearchingForExercise){
+            localSearch(name)
+        }else{
+            searchOnDB(name)
+        }
+
+    }
+
+    private fun localSearch(name: String){
         _uiState.postValue(
             ExercisesState.SearchingForExercise(exercisesState.value.filter {
                 it.name.lowercase(Locale.getDefault())
                     .contains(name, true) || it.targetedBodyPart.contains(name, true)
             })
         )
-
     }
 
     fun addExercise(name: String, description: String, targetedBodyPart: String, context: Context) {
@@ -76,7 +84,7 @@ class ExercisesViewModel @Inject constructor(
                 if (response.isSuccessful) {
                     updateExerciseUseCase(exercise.copy(realId = response.body()!!.realId))
                 }
-            }catch (e:Exception){
+            } catch (e: Exception) {
                 println("help")
             }
 
@@ -147,7 +155,7 @@ class ExercisesViewModel @Inject constructor(
     }
 
     fun clickToEdit(selected: ExerciseModel) {
-        _uiState.value = ExercisesState.Modifying(selected, selected.equivalentExercises)
+        _uiState.postValue(ExercisesState.Modifying(selected, selected.equivalentExercises))
     }
 
     /**this will only be reached during edit state*/
@@ -155,16 +163,17 @@ class ExercisesViewModel @Inject constructor(
         try {
             assert(_uiState.value is ExercisesState.Modifying)
             val selected = (_uiState.value as ExercisesState.Modifying).exerciseModel
-            _uiState.value = ExercisesState.AddingRelations(selected,
-                exercisesState.value.filter { it != selected && it.id !in selected.equivalentExercises.map { it.id } })
-
+            _uiState.postValue(
+                ExercisesState.AddingRelations(selected,
+                    exercisesState.value.filter { it != selected && it.id !in selected.equivalentExercises.map { it.id } })
+            )
         } catch (error: AssertionError) {
             Toast.makeText(context, "You are not in edit mode", Toast.LENGTH_SHORT).show()
         }
     }
 
     fun backToObserve() {
-        _uiState.value = ExercisesState.Observe()
+        _uiState.postValue(ExercisesState.Observe())
     }
 
     fun updateExercise(
@@ -195,11 +204,87 @@ class ExercisesViewModel @Inject constructor(
     }
 
     fun clickToCreate() {
-        _uiState.value = ExercisesState.Creating
+        _uiState.postValue(ExercisesState.Creating)
     }
 
     fun clickToObserve(exercise: ExerciseModel) {
-        _uiState.value = ExercisesState.Observe(exercise)
+        _uiState.postValue(ExercisesState.Observe(exercise))
+    }
+
+    fun uploadExercise(exercise: ExerciseModel) {
+        viewModelScope.launch {
+            try {
+                UserDetails.actualValue?.authToken ?: return@launch
+
+                val response = Rutinappi.retrofitService.createExercise(
+                    exercise.toAPIModel(), UserDetails.actualValue!!.authToken
+                )
+                if (response.isSuccessful) {
+                    updateExerciseUseCase(exercise.copy(realId = response.body()!!.realId))
+                    backToObserve()
+                }
+            } catch (e: Exception) {
+
+            }
+        }
+    }
+
+    fun changeToUploadedExercises() {
+        viewModelScope.launch {
+            if (_uiState.value !is ExercisesState.ExploringExercises) {
+            _uiState.postValue(ExercisesState.ExploringExercises(emptyList()))
+            }else{
+                _uiState.postValue(ExercisesState.Observe())
+            }
+        }
+    }
+
+    private fun searchOnDB(text: String) {
+        viewModelScope.launch {
+
+            val token = UserDetails.actualValue?.authToken ?: return@launch
+            try {
+                val response = Rutinappi.retrofitService.findExercise(token, text)
+
+                if (response.isSuccessful){
+                    val values = response.body()?.map { it.toModel() }?.filter { it.realId !in exercisesState.value.map { it.realId } } ?: emptyList()
+                    _uiState.postValue(ExercisesState.ExploringExercises(values))
+                }
+
+            }catch (e:Exception){
+
+            }
+        }
+    }
+
+    fun saveExercise(exercise: ExerciseModel) {
+
+        viewModelScope.launch(Dispatchers.IO) {
+
+            if (exercise.realId == 0L) return@launch
+
+            val token = UserDetails.actualValue?.authToken ?: return@launch
+
+            try {
+
+                val response = Rutinappi.retrofitService.fetchRelatedExercises(token, exercise.realId.toString())
+
+                if (!response.isSuccessful) return@launch
+
+                exercise.id = addExerciseUseCase(exercise).toString()
+
+                for (relatedExercise in response.body()!!){
+                    relatedExercise.id = addExerciseUseCase(relatedExercise.toModel()).toString()
+
+                    addExerciseRelationUseCase(exercise, relatedExercise.toModel())
+                }
+
+            }catch (e:Exception){
+
+            }
+            _uiState.postValue(ExercisesState.Observe())
+        }
+
     }
 
 }

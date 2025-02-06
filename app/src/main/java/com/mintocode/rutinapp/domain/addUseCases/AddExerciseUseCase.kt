@@ -6,8 +6,8 @@ import javax.inject.Inject
 
 class AddExerciseUseCase @Inject constructor(private val exerciseRepository: ExerciseRepository) {
 
-    suspend operator fun invoke(exerciseModel: ExerciseModel) {
-        exerciseRepository.addExercise(exerciseModel.toEntity())
+    suspend operator fun invoke(exerciseModel: ExerciseModel) : Int{
+        return exerciseRepository.addExercise(exerciseModel.toEntity()).toInt()
     }
 
     suspend operator fun invoke(exerciseModel: ExerciseModel, idsOfRelatedExercises : List<Long>) {

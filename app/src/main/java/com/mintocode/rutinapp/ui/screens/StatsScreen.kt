@@ -116,7 +116,7 @@ fun ObservationContent(statsViewModel: StatsViewModel, exercises: List<ExerciseM
                 value = name,
                 onValueChange = { name = it },
                 onSearch = { statsViewModel.searchExercise(name) },
-                modifier = Modifier
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }

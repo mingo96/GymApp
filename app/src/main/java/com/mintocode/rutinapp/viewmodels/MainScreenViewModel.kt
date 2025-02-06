@@ -18,6 +18,7 @@ import com.mintocode.rutinapp.ui.screenStates.MainScreenState
 import com.mintocode.rutinapp.utils.toSimpleDate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -44,6 +45,7 @@ class MainScreenViewModel @Inject constructor(
             )
         ).catch { Error(it) }
             .map {
+                delay(1000)
                 _todaysPlanning.postValue(it.find { it.date.toSimpleDate().time == Date().toSimpleDate().time }
                     ?: PlanningModel(id = 0, date = Date().toSimpleDate()))
                 _plannings.postValue(it)

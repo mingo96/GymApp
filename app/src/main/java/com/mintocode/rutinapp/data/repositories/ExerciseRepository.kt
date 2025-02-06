@@ -34,13 +34,14 @@ class ExerciseRepository @Inject constructor(
         return exerciseDao.getById(id.toInt())
     }
 
-    suspend fun addExercise(exercise: ExerciseEntity) {
-        if (exerciseDao.getAll()
-                .find { it.exerciseName == exercise.exerciseName && it.targetedBodyPart == exercise.targetedBodyPart && it.exerciseDescription == exercise.exerciseDescription } != null
-        ) return
-        exerciseDao.insert(
+    suspend fun addExercise(exercise: ExerciseEntity) :Long {
+        return if (exerciseDao.getAll()
+                .find { it.exerciseName == exercise.exerciseName && it.targetedBodyPart == exercise.targetedBodyPart && it.exerciseDescription == exercise.exerciseDescription } == null
+        ) exerciseDao.insert(
             exercise
-        )
+        ) else{
+            0
+        }
     }
 
     suspend fun addExercise(exercise: ExerciseEntity, idsOfRelatedExercises : List<Long>) {
