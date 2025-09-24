@@ -12,7 +12,8 @@ data class ExerciseModel(
     var equivalentExercises: List<ExerciseModel> = emptyList(),
     var setsAndReps: String = "",
     var observations: String = "",
-    val isFromThisUser : Boolean = true
+    val isFromThisUser : Boolean = true,
+    var isDirty: Boolean = false // local change not yet synced (create/update)
 ){
 
     fun toEntity(): ExerciseEntity{

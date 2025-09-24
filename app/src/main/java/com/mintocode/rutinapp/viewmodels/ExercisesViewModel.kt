@@ -7,7 +7,6 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mintocode.rutinapp.data.UserDetails
-import com.mintocode.rutinapp.data.api.Rutinappi
 import com.mintocode.rutinapp.data.models.ExerciseModel
 import com.mintocode.rutinapp.domain.addUseCases.AddExerciseUseCase
 import com.mintocode.rutinapp.domain.addUseCases.AddExercisesRelationUseCase
@@ -15,6 +14,7 @@ import com.mintocode.rutinapp.domain.deleteUseCases.DeleteExerciseRelationUseCas
 import com.mintocode.rutinapp.domain.getUseCases.GetExercisesUseCase
 import com.mintocode.rutinapp.domain.updateUseCases.UpdateExerciseUseCase
 import com.mintocode.rutinapp.ui.screenStates.ExercisesState
+import com.mintocode.rutinapp.sync.SyncManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
@@ -31,7 +31,8 @@ class ExercisesViewModel @Inject constructor(
     private val getExercisesUseCase: GetExercisesUseCase,
     private val addExerciseRelationUseCase: AddExercisesRelationUseCase,
     private val deleteExerciseRelationUseCase: DeleteExerciseRelationUseCase,
-    private val updateExerciseUseCase: UpdateExerciseUseCase
+    private val updateExerciseUseCase: UpdateExerciseUseCase,
+    private val syncManager: SyncManager
 ) : ViewModel() {
 
     val exercisesState: StateFlow<List<ExerciseModel>> = getExercisesUseCase().catch { Error(it) }
@@ -41,6 +42,106 @@ class ExercisesViewModel @Inject constructor(
         MutableLiveData(ExercisesState.Observe())
 
     val uiState: LiveData<ExercisesState> = _uiState
+
+    private val _showOthers = MutableLiveData(false)
+    val showOthers: LiveData<Boolean> = _showOthers
+
+    // Loading flag for remote fetches
+    private val _isLoading = MutableLiveData(false)
+    val isLoading: LiveData<Boolean> = _isLoading
+
+    // Simple debounce timestamp (ms)
+    @Volatile private var lastActionAt: Long = 0
+    private fun debounceWindow(): Long = 600 // ms
+    private fun canAct(): Boolean {
+        val now = System.currentTimeMillis()
+        return if (now - lastActionAt > debounceWindow()) {
+            lastActionAt = now; true
+        } else false
+    }
+
+    // Internal reusable downloader (no context side-effects)
+    private fun downloadMyExercisesInternal() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val token = UserDetails.actualValue?.authToken ?: return@launch
+            if (token.isBlank()) return@launch
+            _isLoading.postValue(true)
+            try {
+                val remote = syncManager.downloadMyExercises()
+                if (remote.isNotEmpty()) {
+                    val existingByReal = exercisesState.value.associateBy { it.realId }
+                    remote.forEach { incoming ->
+                        if (incoming.realId != 0L) {
+                            val existing = existingByReal[incoming.realId]
+                            if (existing == null) {
+                                addExerciseUseCase(incoming)
+                            } else {
+                                // Merge if changed
+                                if (existing.name != incoming.name ||
+                                    existing.description != incoming.description ||
+                                    existing.targetedBodyPart != incoming.targetedBodyPart ||
+                                    existing.observations != incoming.observations
+                                ) {
+                                    existing.name = incoming.name
+                                    existing.description = incoming.description
+                                    existing.targetedBodyPart = incoming.targetedBodyPart
+                                    existing.observations = incoming.observations
+                                    updateExerciseUseCase(existing)
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (_: Exception) { }
+            finally { _isLoading.postValue(false) }
+        }
+    }
+
+    // Public variant with optional toast if token blank
+    fun downloadMyExercises(context: Context) {
+        val token = UserDetails.actualValue?.authToken
+        if (token.isNullOrBlank()) {
+            Toast.makeText(context, "Token vacío", Toast.LENGTH_SHORT).show()
+            return
+        }
+        downloadMyExercisesInternal()
+    }
+
+    // Download others' exercises (always refresh on call)
+    fun downloadOtherExercises() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val token = UserDetails.actualValue?.authToken ?: return@launch
+            if (token.isBlank()) return@launch
+            _isLoading.postValue(true)
+            try {
+                val remote = syncManager.downloadOtherExercises()
+                if (remote.isNotEmpty()) {
+                    val existingByReal = exercisesState.value.associateBy { it.realId }
+                    remote.forEach { incoming ->
+                        if (incoming.realId != 0L) {
+                            val existing = existingByReal[incoming.realId]
+                            if (existing == null) {
+                                addExerciseUseCase(incoming)
+                            } else {
+                                if (existing.name != incoming.name ||
+                                    existing.description != incoming.description ||
+                                    existing.targetedBodyPart != incoming.targetedBodyPart ||
+                                    existing.observations != incoming.observations
+                                ) {
+                                    existing.name = incoming.name
+                                    existing.description = incoming.description
+                                    existing.targetedBodyPart = incoming.targetedBodyPart
+                                    existing.observations = incoming.observations
+                                    updateExerciseUseCase(existing)
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (_: Exception) { }
+            finally { _isLoading.postValue(false) }
+        }
+    }
 
     fun writeOnExerciseName(name: String) {
 
@@ -67,54 +168,20 @@ class ExercisesViewModel @Inject constructor(
         ) {
             val exercise = ExerciseModel(
                 name = name, description = description, targetedBodyPart = targetedBodyPart
-            )
+            ).apply { this.isDirty = true }
             addExerciseUseCase(
                 exercise
             )
             _uiState.postValue(ExercisesState.Observe())
 
-            if (UserDetails.actualValue?.authToken?.isEmpty() != false) return@launch
-
-            try {
-
-                val response = Rutinappi.retrofitService.createExercise(
-                    exercise.toAPIModel(), UserDetails.actualValue!!.authToken
-                )
-
-                if (response.isSuccessful) {
-                    updateExerciseUseCase(exercise.copy(realId = response.body()!!.realId))
-                }
-            } catch (e: Exception) {
-                println("help")
-            }
+            // Offline-first: no immediate remote create; syncPendingExercises will batch.
 
         }
         else Toast.makeText(context, "Faltan campos por rellenar", Toast.LENGTH_SHORT).show()
     }
 
-    fun fetchExercises(context: Context) {
-        viewModelScope.launch(Dispatchers.Main) {
-            val response =
-                Rutinappi.retrofitService.getExercises(UserDetails.actualValue!!.authToken)
-            if (response.isSuccessful) {
-                if (response.body() != null) {
-
-                    response.body()!!.forEach {
-                        addExerciseUseCase(it.toModel(), it.equivalentExercises.map { it.toLong() })
-                    }
-                    val fetchedExercises = response.body()!!.size
-                    Toast.makeText(
-                        context,
-                        if (fetchedExercises == 0) "No se han podido obtener ejercicios" else "Se han obtenido $fetchedExercises ejercicio" + if (fetchedExercises > 1) "s" else "",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                } else {
-                    Toast.makeText(
-                        context, "No se han podido obtener los ejercicios", Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-        }
+    fun fetchExercises(context: Context) { // reutilizamos el botón existente
+        downloadMyExercises(context)
     }
 
     fun toggleExercisesRelation(exercise: ExerciseModel) {
@@ -188,13 +255,10 @@ class ExercisesViewModel @Inject constructor(
                     selected.name = name
                     selected.description = description
                     selected.targetedBodyPart = targetedBodyPart
+                    selected.isDirty = true
                     updateExerciseUseCase(selected)
                     _uiState.postValue(ExercisesState.Observe(selected))
-                    if (UserDetails.actualValue?.authToken?.isEmpty() != false && selected.realId != 0L) return@launch
-
-                    val response = Rutinappi.retrofitService.updateExercise(
-                        selected.toAPIModel(), UserDetails.actualValue!!.authToken
-                    )
+                    // Remote update removed (offline-first). Mark dirty if future upsert added.
 
                 } catch (error: AssertionError) {
                     //i dont know how would this happen
@@ -211,23 +275,7 @@ class ExercisesViewModel @Inject constructor(
         _uiState.postValue(ExercisesState.Observe(exercise))
     }
 
-    fun uploadExercise(exercise: ExerciseModel) {
-        viewModelScope.launch {
-            try {
-                UserDetails.actualValue?.authToken ?: return@launch
-
-                val response = Rutinappi.retrofitService.createExercise(
-                    exercise.toAPIModel(), UserDetails.actualValue!!.authToken
-                )
-                if (response.isSuccessful) {
-                    updateExerciseUseCase(exercise.copy(realId = response.body()!!.realId))
-                    backToObserve()
-                }
-            } catch (e: Exception) {
-
-            }
-        }
-    }
+    fun uploadExercise(exercise: ExerciseModel) { /* deprecated - use syncPendingExercises */ }
 
     fun changeToUploadedExercises() {
         viewModelScope.launch {
@@ -239,21 +287,33 @@ class ExercisesViewModel @Inject constructor(
         }
     }
 
+    /** Offline-first sync: send all local exercises without a realId to server */
+    fun syncPendingExercises() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val token = UserDetails.actualValue?.authToken ?: return@launch
+            if (token.isBlank()) return@launch
+            val pending = exercisesState.value.filter { it.realId == 0L && it.isDirty }
+            if (pending.isEmpty()) return@launch
+            try {
+                val mappings = syncManager.syncNewExercises(pending)
+                if (mappings.isNotEmpty()) {
+                    val mapByLocal = mappings.toMap()
+                    pending.forEach { ex ->
+                        mapByLocal[ex.id]?.let { serverId ->
+                            ex.realId = serverId
+                            ex.isDirty = false
+                            updateExerciseUseCase(ex)
+                        }
+                    }
+                }
+            } catch (_: Exception) { }
+        }
+    }
+
     private fun searchOnDB(text: String) {
         viewModelScope.launch {
 
-            val token = UserDetails.actualValue?.authToken ?: return@launch
-            try {
-                val response = Rutinappi.retrofitService.findExercise(token, text)
-
-                if (response.isSuccessful){
-                    val values = response.body()?.map { it.toModel() }?.filter { it.realId !in exercisesState.value.map { it.realId } } ?: emptyList()
-                    _uiState.postValue(ExercisesState.ExploringExercises(values))
-                }
-
-            }catch (e:Exception){
-
-            }
+            // Remote search disabled; fallback to localSearch invoked by user typing.
         }
     }
 
@@ -263,28 +323,53 @@ class ExercisesViewModel @Inject constructor(
 
             if (exercise.realId == 0L) return@launch
 
-            val token = UserDetails.actualValue?.authToken ?: return@launch
-
-            try {
-
-                val response = Rutinappi.retrofitService.fetchRelatedExercises(token, exercise.realId.toString())
-
-                if (!response.isSuccessful) return@launch
-
-                exercise.id = addExerciseUseCase(exercise).toString()
-
-                for (relatedExercise in response.body()!!){
-                    relatedExercise.id = addExerciseUseCase(relatedExercise.toModel()).toString()
-
-                    addExerciseRelationUseCase(exercise, relatedExercise.toModel())
-                }
-
-            }catch (e:Exception){
-
-            }
+            // Related exercises fetch disabled (no server endpoint in offline-first scope).
             _uiState.postValue(ExercisesState.Observe())
         }
 
+    }
+
+    // Toggle view; always refresh corresponding remote list
+    fun toggleShowOthers(context: Context) {
+        val newValue = !(_showOthers.value ?: false)
+        if (_uiState.value !is ExercisesState.Observe) {
+            _uiState.postValue(ExercisesState.Observe())
+        }
+        _showOthers.postValue(newValue)
+        if (newValue) {
+            // Showing others
+            downloadOtherExercises()
+        } else {
+            // Refresh own list to capture possible changes
+            downloadMyExercises(context)
+        }
+    }
+
+    // Explicit actions (avoid relying only on toggle for UI with separate buttons)
+    fun showOthers(context: Context) {
+    if (!canAct()) return
+    if (_uiState.value !is ExercisesState.Observe) {
+            _uiState.postValue(ExercisesState.Observe())
+        }
+        _showOthers.postValue(true)
+        downloadOtherExercises()
+    }
+
+    fun showMine(context: Context) {
+    if (!canAct()) return
+    if (_uiState.value !is ExercisesState.Observe) {
+            _uiState.postValue(ExercisesState.Observe())
+        }
+        _showOthers.postValue(false)
+        downloadMyExercises(context)
+    }
+
+    val visibleExercises: StateFlow<List<ExerciseModel>> = exercisesState
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun currentVisible(): List<ExerciseModel> {
+        val base = exercisesState.value
+        return if (showOthers.value == true) base.filter { !it.isFromThisUser } else base.filter { it.isFromThisUser }
     }
 
 }

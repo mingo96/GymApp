@@ -133,12 +133,16 @@ fun ExercisesScreen(viewModel: ExercisesViewModel, navController: NavHostControl
 
         var name by rememberSaveable { mutableStateOf("") }
 
+    // Observed flags (hoisted so they are visible across the whole content lambda)
+    val showOthers by viewModel.showOthers.observeAsState(false)
+    val loading by viewModel.isLoading.observeAsState(false)
+
         SearchTextField(value = name,
             onValueChange = { name = it },
             onSearch = { viewModel.writeOnExerciseName(name) },
             modifier = Modifier.padding(top = it.calculateTopPadding() - 16.dp)
         )
-        Row(
+    Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(8.dp, 8.dp, 8.dp, 0.dp),
@@ -164,6 +168,19 @@ fun ExercisesScreen(viewModel: ExercisesViewModel, navController: NavHostControl
                     modifier = Modifier.size(30.dp)
                 )
             }
+            // Buttons to explicitly select list: own vs others
+            IconButton(onClick = { viewModel.showMine(context) },
+                colors = IconButtonDefaults.iconButtonColors(
+                    containerColor = if (!showOthers) SecondaryColor else PrimaryColor
+                )) {
+                Text("Mis")
+            }
+            IconButton(onClick = { viewModel.showOthers(context) },
+                colors = IconButtonDefaults.iconButtonColors(
+                    containerColor = if (showOthers) SecondaryColor else PrimaryColor
+                )) {
+                Text("Otros")
+            }
 
         }
 
@@ -176,7 +193,11 @@ fun ExercisesScreen(viewModel: ExercisesViewModel, navController: NavHostControl
                 (uiState as ExercisesState.ExploringExercises).possibleValues.take(maxIndex)
             }
 
-            else -> exercises.take(maxIndex)
+            else -> {
+                val showOthers = viewModel.showOthers.observeAsState(false).value
+                val filtered = if (showOthers) exercises.filter { !it.isFromThisUser } else exercises.filter { it.isFromThisUser }
+                filtered.take(maxIndex)
+            }
         }
 
         LaunchedEffect(maxIndex) {
@@ -188,6 +209,21 @@ fun ExercisesScreen(viewModel: ExercisesViewModel, navController: NavHostControl
                         else -> exercises.size
                     }
                 ) maxIndex++
+            }
+        }
+
+        if (viewModel.isLoading.observeAsState(false).value) {
+            Column(Modifier.fillMaxWidth().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                androidx.compose.material3.CircularProgressIndicator()
+                Spacer(Modifier.height(8.dp))
+                Text(text = "Cargando...")
+            }
+        }
+
+        val isEmptyList = items.isEmpty() && !viewModel.isLoading.observeAsState(false).value
+        if (isEmptyList) {
+            Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(text = if (showOthers) "No hay ejercicios de otros usuarios" else "No tienes ejercicios aún")
             }
         }
 

@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
     <domain-config cleartextTrafficPermitted="true">
+        <!-- Remote / previous host -->
         <domain includeSubdomains="true">13.38.217.242</domain>
+        <!-- Old local IP kept for fallback -->
         <domain includeSubdomains="true">192.168.1.138</domain>
+        <!-- Current local machine IP -->
+        <domain includeSubdomains="true">192.168.1.130</domain>
+        <!-- Android emulator alias to host (if you switch BASE_URL to 10.0.2.2) -->
+        <domain includeSubdomains="true">10.0.2.2</domain>
     </domain-config>
 </network-security-config>

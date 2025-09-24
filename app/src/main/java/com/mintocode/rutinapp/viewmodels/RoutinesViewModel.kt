@@ -7,7 +7,6 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mintocode.rutinapp.data.UserDetails
-import com.mintocode.rutinapp.data.api.Rutinappi
 import com.mintocode.rutinapp.data.models.ExerciseModel
 import com.mintocode.rutinapp.data.models.RoutineModel
 import com.mintocode.rutinapp.domain.addUseCases.AddRoutineExerciseRelationUseCase
@@ -18,6 +17,7 @@ import com.mintocode.rutinapp.domain.getUseCases.GetRoutinesUseCase
 import com.mintocode.rutinapp.domain.updateUseCases.UpdateRoutineExerciseRelationUseCase
 import com.mintocode.rutinapp.domain.updateUseCases.UpdateRoutineUseCase
 import com.mintocode.rutinapp.ui.screenStates.RoutinesScreenState
+import com.mintocode.rutinapp.sync.SyncManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
@@ -36,7 +36,8 @@ class RoutinesViewModel @Inject constructor(
     private val addRoutineExerciseRelationUseCase: AddRoutineExerciseRelationUseCase,
     private val deleteRoutineExerciseRelationUseCase: DeleteRoutineExerciseRelationUseCase,
     private val updateRoutineExerciseRelationUseCase: UpdateRoutineExerciseRelationUseCase,
-    private val updateRoutineUseCase: UpdateRoutineUseCase
+    private val updateRoutineUseCase: UpdateRoutineUseCase,
+    private val syncManager: SyncManager
 ) : ViewModel() {
 
     val routines: StateFlow<List<RoutineModel>> = getRoutinesUseCase().catch { Error(it) }
@@ -50,6 +51,82 @@ class RoutinesViewModel @Inject constructor(
         MutableLiveData(RoutinesScreenState.Overview)
 
     val uiState: LiveData<RoutinesScreenState> = _uiState
+
+    private val _showOthers = MutableLiveData(false)
+    val showOthers: LiveData<Boolean> = _showOthers
+
+    private val _isLoading = MutableLiveData(false)
+    val isLoading: LiveData<Boolean> = _isLoading
+
+    @Volatile private var lastActionAt: Long = 0
+    private fun debounceWindow(): Long = 600
+    private fun canAct(): Boolean {
+        val now = System.currentTimeMillis()
+        return if (now - lastActionAt > debounceWindow()) { lastActionAt = now; true } else false
+    }
+
+    // Insert routines from remote if new (by realId)
+    private fun insertDownloaded(routinesRemote: List<RoutineModel>) {
+        if (routinesRemote.isEmpty()) return
+        val existing = routines.value.associateBy { it.realId }
+        routinesRemote.forEach { r ->
+            if (r.realId != 0 && existing[r.realId] == null) {
+                // mark not dirty (already server authoritative)
+                viewModelScope.launch(Dispatchers.IO) { createRoutineUseCase(r) }
+            } else if (r.realId != 0) {
+                val current = existing[r.realId]
+                if (current != null && (current.name != r.name || current.targetedBodyPart != r.targetedBodyPart)) {
+                    current.name = r.name
+                    current.targetedBodyPart = r.targetedBodyPart
+                    viewModelScope.launch(Dispatchers.IO) { updateRoutineUseCase(current) }
+                }
+            }
+        }
+    }
+
+    fun downloadMyRoutines() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val token = UserDetails.actualValue?.authToken ?: return@launch
+            if (token.isBlank()) return@launch
+            _isLoading.postValue(true)
+            try {
+                val remote = syncManager.downloadMyRoutines()
+                insertDownloaded(remote)
+            } catch (_: Exception) { }
+            finally { _isLoading.postValue(false) }
+        }
+    }
+
+    fun downloadOtherRoutines() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val token = UserDetails.actualValue?.authToken ?: return@launch
+            if (token.isBlank()) return@launch
+            _isLoading.postValue(true)
+            try {
+                val remote = syncManager.downloadOtherRoutines()
+                insertDownloaded(remote)
+            } catch (_: Exception) { }
+            finally { _isLoading.postValue(false) }
+        }
+    }
+
+    fun toggleShowOthers() {
+        val newValue = !(_showOthers.value ?: false)
+        _showOthers.postValue(newValue)
+        if (newValue) downloadOtherRoutines() else downloadMyRoutines()
+    }
+
+    fun showOthers() {
+    if (_showOthers.value == true || !canAct()) return
+        _showOthers.postValue(true)
+        downloadOtherRoutines()
+    }
+
+    fun showMine() {
+    if (_showOthers.value == false || !canAct()) return
+        _showOthers.postValue(false)
+        downloadMyRoutines()
+    }
 
     fun clickObserveRoutine(routine: RoutineModel) {
         _uiState.postValue(RoutinesScreenState.Observe(routine))
@@ -80,7 +157,7 @@ class RoutinesViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             val createdRoutine = RoutineModel(
                 name = name, targetedBodyPart = targetedBodyPart
-            )
+            ).apply { this.isDirty = true }
             createdRoutine.id = createRoutineUseCase(createdRoutine)
 
             _uiState.postValue(
@@ -145,6 +222,7 @@ class RoutinesViewModel @Inject constructor(
                         actualState.routine, actualState.selectedExercise
                     )
                     actualState.routine.exercises += actualState.selectedExercise
+                    actualState.routine.isDirty = true
                 }
                 _uiState.postValue(
                     RoutinesScreenState.Editing(
@@ -206,6 +284,7 @@ class RoutinesViewModel @Inject constructor(
         if (name.isNotEmpty() && targetedBodyPart.isNotEmpty()) {
             val actualState = _uiState.value as RoutinesScreenState.Editing
             viewModelScope.launch(Dispatchers.IO) {
+                actualState.routine.isDirty = true
                 updateRoutineUseCase(
                     actualState.routine.copy(targetedBodyPart = targetedBodyPart, name = name)
                 )
@@ -218,29 +297,31 @@ class RoutinesViewModel @Inject constructor(
 
     private suspend fun persistRoutine(routine: RoutineModel) {
 
-        val token = UserDetails.actualValue?.authToken
-        if( token != null) {
+    // Offline-first: immediate remote persistence removed. syncPendingRoutines will batch create.
+
+    }
+
+    /** Offline-first sync: send all local routines without a realId */
+    fun syncPendingRoutines() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val token = UserDetails.actualValue?.authToken ?: return@launch
+            if (token.isBlank()) return@launch
+            val pending = routines.value.filter { it.realId == 0 && it.isDirty }
+            if (pending.isEmpty()) return@launch
             try {
-
-                if (routine.realId != 0)
-                    Rutinappi.retrofitService.updateRoutine(
-                        routine.toAPIModel(), token
-                    )
-                else {
-                    val response = Rutinappi.retrofitService.createRoutine(
-                            routine.toAPIModel(), token
-                        )
-
-                    if (response.body() != null) {
-                        routine.realId = response.body()!!.realId
-                        updateRoutineUseCase(routine)
+                val mappings = syncManager.syncNewRoutines(pending)
+                if (mappings.isNotEmpty()) {
+                    val mapByLocal = mappings.toMap()
+                    pending.forEach { r ->
+                        mapByLocal[r.id.toString()]?.let { serverId ->
+                            r.realId = serverId.toInt()
+                            r.isDirty = false
+                            updateRoutineUseCase(r)
+                        }
                     }
                 }
-            } catch (e: Exception) {
-
-            }
+            } catch (_: Exception) { }
         }
-
     }
 
 }

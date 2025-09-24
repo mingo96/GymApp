@@ -1,5 +1,9 @@
 package com.mintocode.rutinapp.data.api.classes
 
+/**
+ * Legacy DTO for old auth endpoints; retained until new auth integration is wired.
+ */
+
 import com.google.gson.annotations.SerializedName
 
 

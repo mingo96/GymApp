@@ -56,6 +56,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -123,8 +124,73 @@ fun RoutinesScreen(viewModel: RoutinesViewModel, navController: NavHostControlle
         title = "Rutinas",
         buttonText = "Crear nueva rutina"
     ) {
-        LazyColumn(modifier = Modifier.padding(it)) {
-            items(routines.map {
+        val showOthers by viewModel.showOthers.observeAsState(false)
+        val loading by viewModel.isLoading.observeAsState(false)
+
+        // Top actions row (ensure not hidden behind top bar by applying scaffold top padding)
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(
+                    top = it.calculateTopPadding() + 4.dp,
+                    start = 8.dp,
+                    end = 8.dp,
+                    bottom = 4.dp
+                ),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row {
+                IconButton(
+                    onClick = { viewModel.showMine() },
+                    colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = if (!showOthers) SecondaryColor else PrimaryColor
+                    )
+                ) {
+                    Text("Mis", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+                IconButton(
+                    onClick = { viewModel.showOthers() },
+                    colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = if (showOthers) SecondaryColor else PrimaryColor
+                    )
+                ) {
+                    Text("Otros", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+            IconButton(
+                onClick = { if (showOthers) viewModel.downloadOtherRoutines() else viewModel.downloadMyRoutines() },
+                colors = IconButtonDefaults.iconButtonColors(containerColor = PrimaryColor)
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.download),
+                    contentDescription = "refresh",
+                    tint = Color.White
+                )
+            }
+        }
+
+        if (loading) {
+            Column(Modifier.fillMaxWidth().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                androidx.compose.material3.CircularProgressIndicator()
+                Text("Cargando...")
+            }
+        }
+
+        val filtered = if (showOthers) routines.filter { !it.isFromThisUser } else routines.filter { it.isFromThisUser }
+        if (!loading && filtered.isEmpty()) {
+            Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(text = if (showOthers) "No hay rutinas de otros usuarios" else "No tienes rutinas aún")
+            }
+        }
+
+        LazyColumn(modifier = Modifier.padding(
+            start = it.calculateLeftPadding(LayoutDirection.Ltr),
+            end = it.calculateRightPadding(LayoutDirection.Ltr),
+            bottom = it.calculateBottomPadding(),
+            top = 8.dp // list starts after buttons
+        )) {
+            items(filtered.map {
                 it.targetedBodyPart.replaceFirstChar {
                     if (it.isLowerCase()) it.titlecase(
                         Locale.ROOT
@@ -140,7 +206,7 @@ fun RoutinesScreen(viewModel: RoutinesViewModel, navController: NavHostControlle
                             textDecoration = TextDecoration.Underline
                         )
                         LazyRow {
-                            items(routines.filter {
+                            items(filtered.filter {
                                 it.targetedBodyPart.replaceFirstChar {
                                     if (it.isLowerCase()) it.titlecase(
                                         Locale.ROOT

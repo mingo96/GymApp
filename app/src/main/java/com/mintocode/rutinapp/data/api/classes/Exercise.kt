@@ -1,5 +1,10 @@
 package com.mintocode.rutinapp.data.api.classes
 
+/**
+ * Legacy DTO kept temporarily only for conversion of existing local models.
+ * Will be removed once full v1 REST endpoints (read/update) are implemented.
+ */
+
 import com.mintocode.rutinapp.data.models.ExerciseModel
 
 data class Exercise(

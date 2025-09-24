@@ -2,6 +2,8 @@ package com.mintocode.rutinapp.viewmodels
 
 import android.content.Context
 import android.widget.Toast
+import android.util.Log
+import android.util.Patterns
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -13,8 +15,11 @@ import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.auth
 import com.mintocode.rutinapp.data.UserDetails
 import com.mintocode.rutinapp.data.UserDetails.Companion.actualValue
-import com.mintocode.rutinapp.data.api.Rutinappi
-import com.mintocode.rutinapp.data.api.classes.User
+import com.mintocode.rutinapp.data.api.v1.ApiV1Service
+import com.mintocode.rutinapp.data.api.v1.dto.LoginRequest
+import com.mintocode.rutinapp.data.api.v1.dto.RegisterRequest
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import com.mintocode.rutinapp.ui.screenStates.SettingsScreenState
 import com.mintocode.rutinapp.ui.theme.ContentColor
 import com.mintocode.rutinapp.ui.theme.PrimaryColor
@@ -30,9 +35,14 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
+import java.io.IOException
 import java.lang.Thread.State
 
-class SettingsViewModel : ViewModel() {
+@HiltViewModel
+class SettingsViewModel @Inject constructor(
+    private val apiV1: ApiV1Service
+) : ViewModel() {
 
     private val _data: MutableLiveData<UserDetails> = MutableLiveData()
 
@@ -88,7 +98,7 @@ class SettingsViewModel : ViewModel() {
         name: String = _data.value!!.name,
         code: String = _data.value!!.code,
         isDarkTheme: Boolean = _data.value!!.isDarkTheme,
-        email: String = _data.value!!.name,
+        email: String = _data.value!!.email, // fixed: previously used name erroneously
         authToken: String = _data.value!!.authToken
     ) {
         val newData = UserDetails(
@@ -138,45 +148,71 @@ class SettingsViewModel : ViewModel() {
 
     fun tryToAuthenticate(mail: String, password: String, context: Context) {
         val actualState = _uiState.value as SettingsScreenState.LogIn
-        if (!mail.isValidEmail()) {
+        val normalizedMail = mail.trim()
+        if (!normalizedMail.isValidEmail()) {
             Toast.makeText(context, "Correo no válido", Toast.LENGTH_SHORT).show()
             return
         }
 
-        if (actualState.isRegister) {
-            if (password.isBlank() || password.length < 5) {
-                Toast.makeText(context, "Contraseña no válida", Toast.LENGTH_SHORT).show()
-                return
-            }
-            auth.createUserWithEmailAndPassword(mail, password).addOnSuccessListener {
-                updateUserDetails(
-                    authToken = it.user!!.uid, name = it.user!!.displayName ?: _data.value!!.name,
-                    email = it.user!!.email!!
-                )
-
-                if(it.additionalUserInfo!!.isNewUser){
-                    registerUserOnServer(it)
+        // Backend auth (preferred). Firebase kept temporarily for Google Sign-In only.
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                if (actualState.isRegister) {
+                    if (password.isBlank() || password.length < 5) {
+                        launch(Dispatchers.Main) { Toast.makeText(context, "Contraseña no válida", Toast.LENGTH_SHORT).show() }
+                        return@launch
+                    }
+                    val res = apiV1.register(RegisterRequest(
+                        name = normalizedMail.substringBefore('@'),
+                        email = normalizedMail,
+                        password = password,
+                        password_confirmation = password
+                    ))
+                    val token = res.access_token
+                    if (!token.isNullOrBlank()) {
+                        updateUserDetails(
+                            authToken = token,
+                            name = res.data?.user?.name ?: normalizedMail.substringBefore('@'),
+                            email = res.data?.user?.email ?: normalizedMail
+                        )
+                        launch(Dispatchers.Main) {
+                            Toast.makeText(context, "Registrado correctamente", Toast.LENGTH_SHORT).show()
+                            toggleUiState()
+                        }
+                    } else launch(Dispatchers.Main) { Toast.makeText(context, "Error registro", Toast.LENGTH_SHORT).show() }
+                } else {
+                    val res = apiV1.login(LoginRequest(email = normalizedMail, password = password))
+                    val token = res.access_token
+                    if (!token.isNullOrBlank()) {
+                        updateUserDetails(
+                            authToken = token,
+                            name = res.data?.user?.name ?: _data.value?.name ?: normalizedMail.substringBefore('@'),
+                            email = res.data?.user?.email ?: normalizedMail
+                        )
+                        launch(Dispatchers.Main) {
+                            Toast.makeText(context, "Sesión iniciada correctamente", Toast.LENGTH_SHORT).show()
+                            toggleUiState()
+                        }
+                    } else launch(Dispatchers.Main) { Toast.makeText(context, "Error login", Toast.LENGTH_SHORT).show() }
                 }
-
-                Toast.makeText(context, "Registrado correctamente", Toast.LENGTH_SHORT).show()
-                toggleUiState()
-            }.addOnFailureListener {
-                Toast.makeText(context, "Error al registrarse", Toast.LENGTH_SHORT).show()
-            }.addOnCanceledListener {
-                Toast.makeText(context, "Error al registrarse", Toast.LENGTH_SHORT).show()
-            }
-        } else {
-            auth.signInWithEmailAndPassword(mail, password).addOnSuccessListener {
-                updateUserDetails(
-                    authToken = it.user!!.uid, name = it.user!!.displayName ?: _data.value!!.name,
-                    email = it.user!!.email!!
-                )
-                Toast.makeText(context, "Sesión iniciada correctamente", Toast.LENGTH_SHORT).show()
-                toggleUiState()
-            }.addOnFailureListener {
-                Toast.makeText(context, "Error al iniciar sesión", Toast.LENGTH_SHORT).show()
-            }.addOnCanceledListener {
-                Toast.makeText(context, "Error al iniciar sesión", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Log.e("Auth", "Login/Register failure", e)
+                var detail: String? = null
+                if (e is HttpException) {
+                    try { detail = e.response()?.errorBody()?.string()?.take(300) } catch (_: Exception) {}
+                }
+                val msg = when (e) {
+                    is HttpException -> when (e.code()) {
+                        401 -> "No autorizado"
+                        422 -> "Credenciales inválidas"
+                        429 -> "Demasiados intentos"
+                        else -> "HTTP ${e.code()}"
+                    }
+                    is IOException -> "Sin conexión"
+                    else -> "Error inesperado"
+                }
+                val finalMsg = if (!detail.isNullOrBlank()) "$msg" else msg
+                launch(Dispatchers.Main) { Toast.makeText(context, finalMsg, Toast.LENGTH_SHORT).show() }
             }
         }
 
@@ -206,21 +242,11 @@ class SettingsViewModel : ViewModel() {
         }
     }
 
-    private fun registerUserOnServer(authResult: AuthResult) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val user = User(
-                name = authResult.user?.displayName,
-                email = authResult.user!!.email!!,
-                authId = authResult.user!!.uid
-            )
-
-            Rutinappi.retrofitService.createUser(user)
-
-        }
-    }
+    private fun registerUserOnServer(authResult: AuthResult) { /* deprecated with backend auth */ }
 
 }
 
 private fun String.isValidEmail(): Boolean {
-    return this.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\$".toRegex())
+    if (this.isBlank()) return false
+    return Patterns.EMAIL_ADDRESS.matcher(this).matches()
 }

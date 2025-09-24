@@ -16,6 +16,8 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -33,6 +35,8 @@ import com.mintocode.rutinapp.ui.theme.ContentColor
 import com.mintocode.rutinapp.ui.theme.PrimaryColor
 import com.mintocode.rutinapp.ui.theme.RutinAppTheme
 import com.mintocode.rutinapp.utils.DataStoreManager
+import com.mintocode.rutinapp.sync.SyncStateHolder
+import android.widget.Toast
 import com.mintocode.rutinapp.viewmodels.AdViewModel
 import com.mintocode.rutinapp.viewmodels.ExercisesViewModel
 import com.mintocode.rutinapp.viewmodels.MainScreenViewModel
@@ -82,6 +86,15 @@ class MainActivity : ComponentActivity() {
 
                     val navController = rememberNavController()
 
+                    val syncing by SyncStateHolder.isSyncing.collectAsState()
+                    val lastError by SyncStateHolder.lastError.collectAsState()
+
+                    LaunchedEffect(lastError) {
+                        if (lastError != null) {
+                            Toast.makeText(this@MainActivity, "Sync error: ${lastError}", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+
                     NavHost(navController = navController, startDestination = "loadingScreen") {
 
                         composable("loadingScreen", exitTransition = { onExit }) {
@@ -89,6 +102,9 @@ class MainActivity : ComponentActivity() {
                                 while (!settingsViewModel.hasLoaded) {
                                     delay(100)
                                 }
+                                // Trigger background sync of pending local items once user/token loaded
+                                exercisesViewModel.syncPendingExercises()
+                                routinesViewModel.syncPendingRoutines()
                                 navController.navigate("start")
                             }
 
@@ -106,6 +122,10 @@ class MainActivity : ComponentActivity() {
                                 navController = navController,
                                 mainScreenViewModel = mainScreenViewModel
                             )
+                            if (syncing) {
+                                // Very lightweight indicator (could be improved with Compose Snackbar/Overlay)
+                                Toast.makeText(this@MainActivity, "Sincronizando...", Toast.LENGTH_SHORT).show()
+                            }
                         }
 
                         composable("exercises",

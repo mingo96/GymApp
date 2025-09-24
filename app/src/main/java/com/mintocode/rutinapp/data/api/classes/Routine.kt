@@ -1,5 +1,9 @@
 package com.mintocode.rutinapp.data.api.classes
 
+/**
+ * Legacy DTO; scheduled for removal after migrating to dedicated v1 routine endpoints.
+ */
+
 import com.mintocode.rutinapp.data.models.RoutineModel
 
 data class Routine(

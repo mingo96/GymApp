@@ -9,7 +9,8 @@ data class RoutineModel(
     var targetedBodyPart: String,
     var exercises: MutableList<ExerciseModel> = mutableListOf(),
     var realId: Int = 0,
-    var isFromThisUser : Boolean = true
+    var isFromThisUser : Boolean = true,
+    var isDirty: Boolean = false // local create/update pending sync
 ){
     fun toEntity(): RoutineEntity {
         return RoutineEntity(

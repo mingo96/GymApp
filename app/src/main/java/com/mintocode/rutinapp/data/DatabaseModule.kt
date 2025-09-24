@@ -2,6 +2,8 @@ package com.mintocode.rutinapp.data
 
 import android.content.Context
 import androidx.room.Room
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.mintocode.rutinapp.data.daos.ExerciseDao
 import com.mintocode.rutinapp.data.daos.ExerciseToExerciseDao
 import com.mintocode.rutinapp.data.daos.PlanningDao
@@ -64,8 +66,30 @@ class DatabaseModule {
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext appContext: Context): RutinAppDatabase {
+        // Migrations:
+        // v2 -> v3: add realId columns (default 0) to Exercise, Routine, WorkOut tables
+        // v3 -> v4: add isFromThisUser columns (default 1) to Exercise, Routine, WorkOut tables
+        // Direct v2 -> v4 supported by sequential application.
+
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // Add realId columns if not exist (Room doesn't support IF NOT EXISTS inside ALTER properly, assume clean add)
+                database.execSQL("ALTER TABLE ExerciseEntity ADD COLUMN realId INTEGER NOT NULL DEFAULT 0")
+                database.execSQL("ALTER TABLE RoutineEntity ADD COLUMN realId INTEGER NOT NULL DEFAULT 0")
+                database.execSQL("ALTER TABLE WorkOutEntity ADD COLUMN realId INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE ExerciseEntity ADD COLUMN isFromThisUser INTEGER NOT NULL DEFAULT 1")
+                database.execSQL("ALTER TABLE RoutineEntity ADD COLUMN isFromThisUser INTEGER NOT NULL DEFAULT 1")
+                database.execSQL("ALTER TABLE WorkOutEntity ADD COLUMN isFromThisUser INTEGER NOT NULL DEFAULT 1")
+            }
+        }
+
         return Room.databaseBuilder(appContext, RutinAppDatabase::class.java, "RutinAppDatabase.db")
-            .fallbackToDestructiveMigration()
+            .addMigrations(MIGRATION_2_3, MIGRATION_3_4)
             .build()
     }
 

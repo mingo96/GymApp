@@ -15,8 +15,8 @@ android {
         applicationId = "com.mintocode.rutinapp"
         minSdk = 29
         targetSdk = 34
-        versionCode = 14
-        versionName = "0.1.0-alpha"
+        versionCode = 15
+        versionName = "0.1.1-alpha"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
