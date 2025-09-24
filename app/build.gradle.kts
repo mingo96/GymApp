@@ -14,8 +14,8 @@ android {
     defaultConfig {
         applicationId = "com.mintocode.rutinapp"
         minSdk = 29
-        targetSdk = 34
-        versionCode = 15
+        targetSdk = 36
+        versionCode = 16
         versionName = "0.1.1-alpha"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
