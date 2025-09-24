@@ -9,7 +9,7 @@ plugins {
 
 android {
     namespace = "com.mintocode.rutinapp"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.mintocode.rutinapp"

@@ -90,9 +90,9 @@ class RoutinesViewModel @Inject constructor(
             if (token.isBlank()) return@launch
             _isLoading.postValue(true)
             try {
-                val remote = syncManager.downloadMyRoutines()
+                val remote = syncManager.downloadMyRoutines(token)
                 insertDownloaded(remote)
-            } catch (_: Exception) { }
+            } catch (e: Exception) { }
             finally { _isLoading.postValue(false) }
         }
     }
@@ -103,9 +103,9 @@ class RoutinesViewModel @Inject constructor(
             if (token.isBlank()) return@launch
             _isLoading.postValue(true)
             try {
-                val remote = syncManager.downloadOtherRoutines()
+                val remote = syncManager.downloadOtherRoutines(token)
                 insertDownloaded(remote)
-            } catch (_: Exception) { }
+            } catch (e: Exception) { }
             finally { _isLoading.postValue(false) }
         }
     }

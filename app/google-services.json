@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "295603528096",
+    "project_id": "rutinapplication",
+    "storage_bucket": "rutinapplication.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:295603528096:android:2674c66b2fea86cf9784c5",
+        "android_client_info": {
+          "package_name": "com.mintocode.rutinapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "295603528096-k77qpcdfqr8bd06d7st833jm1nvplf44.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mintocode.rutinapp",
+            "certificate_hash": "c76cd6a0e6013bd50f58dc260c2c08c0d5371a4c"
+          }
+        },
+        {
+          "client_id": "295603528096-t1j1h813uqovtvof5g915l56f3m84dom.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mintocode.rutinapp",
+            "certificate_hash": "109b4fdd94fbb48bd00a7b2d6a136695789f6e2a"
+          }
+        },
+        {
+          "client_id": "295603528096-ulroq8vp87afeljh4jsf5d1oijnkudio.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBYaryEh8fADkTLqHil2l3uz3VOgSu34uQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "295603528096-ulroq8vp87afeljh4jsf5d1oijnkudio.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
