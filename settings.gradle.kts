@@ -21,4 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "RutinApp"
 include(":app")
- 
+include(":RutinappMultiplatform")

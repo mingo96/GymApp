@@ -1,0 +1,6 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="RutinappMultiplatform">
+    <output-path>$PROJECT_DIR$/RutinappMultiplatform/build/libs</output-path>
+    <root id="archive" name="RutinappMultiplatform.jar" />
+  </artifact>
+</component>
