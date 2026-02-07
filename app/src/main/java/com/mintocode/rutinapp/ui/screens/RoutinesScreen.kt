@@ -14,9 +14,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -26,17 +28,20 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.twotone.ArrowBack
 import androidx.compose.material.icons.twotone.Add
-import androidx.compose.material.icons.twotone.ArrowBack
 import androidx.compose.material.icons.twotone.Check
 import androidx.compose.material.icons.twotone.Delete
 import androidx.compose.material.icons.twotone.Edit
 import androidx.compose.material.icons.twotone.KeyboardArrowDown
 import androidx.compose.material.icons.twotone.KeyboardArrowUp
+import androidx.compose.material.icons.twotone.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -55,8 +60,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -127,45 +130,49 @@ fun RoutinesScreen(viewModel: RoutinesViewModel, navController: NavHostControlle
         val showOthers by viewModel.showOthers.observeAsState(false)
         val loading by viewModel.isLoading.observeAsState(false)
 
-        // Top actions row (ensure not hidden behind top bar by applying scaffold top padding)
+        // Top actions row
         Row(
             Modifier
                 .fillMaxWidth()
                 .padding(
                     top = it.calculateTopPadding() + 4.dp,
-                    start = 8.dp,
-                    end = 8.dp,
+                    start = 12.dp,
+                    end = 12.dp,
                     bottom = 4.dp
                 ),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row {
-                IconButton(
-                    onClick = { viewModel.showMine() },
-                    colors = IconButtonDefaults.iconButtonColors(
-                        containerColor = if (!showOthers) SecondaryColor else PrimaryColor
-                    )
-                ) {
-                    Text("Mis", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                }
-                IconButton(
-                    onClick = { viewModel.showOthers() },
-                    colors = IconButtonDefaults.iconButtonColors(
-                        containerColor = if (showOthers) SecondaryColor else PrimaryColor
-                    )
-                ) {
-                    Text("Otros", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                }
-            }
+            FilterChip(
+                selected = !showOthers,
+                onClick = { viewModel.showMine() },
+                label = { Text("Mis", fontSize = 13.sp) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = SecondaryColor,
+                    selectedLabelColor = Color.White
+                )
+            )
+            FilterChip(
+                selected = showOthers,
+                onClick = { viewModel.showOthers() },
+                label = { Text("De otros", fontSize = 13.sp) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = SecondaryColor,
+                    selectedLabelColor = Color.White
+                )
+            )
+
+            Spacer(modifier = androidx.compose.ui.Modifier.weight(1f))
+
             IconButton(
-                onClick = { if (showOthers) viewModel.downloadOtherRoutines() else viewModel.downloadMyRoutines() },
-                colors = IconButtonDefaults.iconButtonColors(containerColor = PrimaryColor)
+                onClick = { viewModel.syncRoutines() },
+                modifier = Modifier.size(36.dp)
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.download),
-                    contentDescription = "refresh",
-                    tint = Color.White
+                    imageVector = Icons.TwoTone.Refresh,
+                    contentDescription = "Sincronizar",
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp)
                 )
             }
         }
@@ -185,10 +192,9 @@ fun RoutinesScreen(viewModel: RoutinesViewModel, navController: NavHostControlle
         }
 
         LazyColumn(modifier = Modifier.padding(
-            start = it.calculateLeftPadding(LayoutDirection.Ltr),
-            end = it.calculateRightPadding(LayoutDirection.Ltr),
-            bottom = it.calculateBottomPadding(),
-            top = 8.dp // list starts after buttons
+            start = 12.dp,
+            end = 12.dp,
+            bottom = it.calculateBottomPadding()
         )) {
             items(filtered.map {
                 it.targetedBodyPart.replaceFirstChar {
@@ -198,12 +204,12 @@ fun RoutinesScreen(viewModel: RoutinesViewModel, navController: NavHostControlle
                 }
             }.distinct().take(maxIndex)) { thisBodyPart ->
                 AnimatedItem(enterAnimation = slideInHorizontally(), delay = 100) {
-                    Column {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(
                             text = thisBodyPart,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp,
-                            textDecoration = TextDecoration.Underline
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp,
+                            color = Color.White.copy(alpha = 0.85f)
                         )
                         LazyRow {
                             items(filtered.filter {
@@ -351,7 +357,7 @@ fun EditRoutineExerciseRelation(
             colors = rutinAppButtonsColours(),
         ) {
             Icon(
-                imageVector = if (uiState.selectedExercise.setsAndReps == setsAndReps && uiState.selectedExercise.observations == observations) Icons.TwoTone.ArrowBack else Icons.TwoTone.Check,
+                imageVector = if (uiState.selectedExercise.setsAndReps == setsAndReps && uiState.selectedExercise.observations == observations) Icons.AutoMirrored.TwoTone.ArrowBack else Icons.TwoTone.Check,
                 contentDescription = "Delete exercise"
             )
         }
@@ -639,13 +645,27 @@ fun RoutineCreationPhase(
 @Composable
 fun RoutineCard(routine: RoutineModel, modifier: Modifier) {
     Card(
-        shape = RoundedCornerShape(15.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = rutinappCardColors(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 10.dp),
-        modifier = Modifier.padding(16.dp),
-        border = BorderStroke(2.dp, Color.Black)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        modifier = modifier.padding(end = 10.dp, top = 4.dp, bottom = 4.dp),
+        border = BorderStroke(1.dp, SecondaryColor.copy(alpha = 0.4f))
     ) {
-        Text(text = routine.name, modifier = modifier.padding(16.dp))
+        Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+            Text(
+                text = routine.name,
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+                maxLines = 1
+            )
+            if (routine.exercises.isNotEmpty()) {
+                Text(
+                    text = "${routine.exercises.size} ejercicios",
+                    fontSize = 12.sp,
+                    color = Color.White.copy(alpha = 0.55f)
+                )
+            }
+        }
     }
 }
 

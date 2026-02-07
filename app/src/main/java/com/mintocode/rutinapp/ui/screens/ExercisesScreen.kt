@@ -9,12 +9,15 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
@@ -30,8 +33,11 @@ import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material.icons.twotone.Add
 import androidx.compose.material.icons.twotone.Delete
 import androidx.compose.material.icons.twotone.Edit
+import androidx.compose.material.icons.twotone.Refresh
 import androidx.compose.material.icons.twotone.Search
 import androidx.compose.material3.Button
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -60,7 +66,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -140,48 +145,60 @@ fun ExercisesScreen(viewModel: ExercisesViewModel, navController: NavHostControl
         SearchTextField(value = name,
             onValueChange = { name = it },
             onSearch = { viewModel.writeOnExerciseName(name) },
-            modifier = Modifier.padding(top = it.calculateTopPadding() - 16.dp)
+            modifier = Modifier.padding(top = it.calculateTopPadding())
         )
     Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(8.dp, 8.dp, 8.dp, 0.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+                .padding(horizontal = 12.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             val context = LocalContext.current
-            IconButton(onClick = {
-                viewModel.fetchExercises(context = context)
-            }) {
-                Icon(
-                    painter = painterResource(R.drawable.download),
-                    "load exercises",
-                    modifier = Modifier.size(30.dp)
+
+            // Toggle: Mis ejercicios / De otros
+            FilterChip(
+                selected = !showOthers,
+                onClick = { viewModel.showMine(context) },
+                label = { Text("Mis", fontSize = 13.sp) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = SecondaryColor,
+                    selectedLabelColor = Color.White
                 )
-            }
-            IconButton(onClick = {
-                viewModel.changeToUploadedExercises()
-            }, colors = IconButtonDefaults.iconButtonColors(containerColor = if (stateOfSearch == true) SecondaryColor else PrimaryColor)) {
+            )
+            FilterChip(
+                selected = showOthers,
+                onClick = { viewModel.showOthers(context) },
+                label = { Text("De otros", fontSize = 13.sp) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = SecondaryColor,
+                    selectedLabelColor = Color.White
+                )
+            )
+
+            Spacer(Modifier.weight(1f))
+
+            // Explore server exercises
+            IconButton(onClick = { viewModel.changeToUploadedExercises() },
+                modifier = Modifier.size(36.dp),
+                colors = IconButtonDefaults.iconButtonColors(
+                    containerColor = if (stateOfSearch == true) SecondaryColor.copy(alpha = 0.8f) else Color.Transparent
+                )) {
                 Icon(
                     painter = painterResource(R.drawable.hente),
-                    "upload exercises",
-                    modifier = Modifier.size(30.dp)
+                    contentDescription = "Explorar ejercicios",
+                    modifier = Modifier.size(20.dp)
                 )
             }
-            // Buttons to explicitly select list: own vs others
-            IconButton(onClick = { viewModel.showMine(context) },
-                colors = IconButtonDefaults.iconButtonColors(
-                    containerColor = if (!showOthers) SecondaryColor else PrimaryColor
-                )) {
-                Text("Mis")
+            // Sync from server
+            IconButton(onClick = { viewModel.syncExercises(context = context) },
+                modifier = Modifier.size(36.dp)) {
+                Icon(
+                    imageVector = Icons.TwoTone.Refresh,
+                    contentDescription = "Sincronizar ejercicios",
+                    modifier = Modifier.size(20.dp)
+                )
             }
-            IconButton(onClick = { viewModel.showOthers(context) },
-                colors = IconButtonDefaults.iconButtonColors(
-                    containerColor = if (showOthers) SecondaryColor else PrimaryColor
-                )) {
-                Text("Otros")
-            }
-
         }
 
         val items = when (uiState) {
@@ -212,7 +229,7 @@ fun ExercisesScreen(viewModel: ExercisesViewModel, navController: NavHostControl
             }
         }
 
-        if (viewModel.isLoading.observeAsState(false).value) {
+        if (loading) {
             Column(Modifier.fillMaxWidth().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 androidx.compose.material3.CircularProgressIndicator()
                 Spacer(Modifier.height(8.dp))
@@ -220,7 +237,7 @@ fun ExercisesScreen(viewModel: ExercisesViewModel, navController: NavHostControl
             }
         }
 
-        val isEmptyList = items.isEmpty() && !viewModel.isLoading.observeAsState(false).value
+        val isEmptyList = items.isEmpty() && !loading
         if (isEmptyList) {
             Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(text = if (showOthers) "No hay ejercicios de otros usuarios" else "No tienes ejercicios aún")
@@ -228,12 +245,11 @@ fun ExercisesScreen(viewModel: ExercisesViewModel, navController: NavHostControl
         }
 
         LazyColumn(
-            Modifier.fillMaxHeight(), contentPadding = PaddingValues(
-                top = 16.dp,
-                start = it.calculateLeftPadding(LayoutDirection.Ltr),
-                end = it.calculateRightPadding(LayoutDirection.Ltr),
-                bottom = it.calculateBottomPadding()
-            ), verticalArrangement = Arrangement.spacedBy(16.dp)
+            Modifier
+                .fillMaxHeight()
+                .padding(horizontal = 12.dp),
+            contentPadding = PaddingValues(top = 8.dp, bottom = it.calculateBottomPadding()),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             items(items) { exercise ->
                 AnimatedItem(enterAnimation = slideInHorizontally { +it }, delay = 50) {
@@ -343,25 +359,34 @@ fun AddRelationsDialog(
 fun ExerciseItem(item: ExerciseModel, onEditClick: () -> Unit, onClick: () -> Unit = {}) {
 
     Row(
-        Modifier.fillMaxWidth(),
+        Modifier
+            .fillMaxWidth()
+            .background(TextFieldColor, RoundedCornerShape(12.dp))
+            .clickable { onClick() }
+            .padding(horizontal = 14.dp, vertical = 10.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(modifier = Modifier.clickable { onClick() }) {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = item.name,
                 fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                modifier = Modifier.fillMaxWidth(0.8f)
+                fontSize = 15.sp,
+                maxLines = 1
             )
-            Text(
-                text = item.description.take(40), modifier = Modifier.fillMaxWidth(0.8f)
-            )
+            if (item.description.isNotBlank()) {
+                Text(
+                    text = item.description.take(50),
+                    fontSize = 13.sp,
+                    color = Color.White.copy(alpha = 0.6f),
+                    maxLines = 1
+                )
+            }
         }
         if (item.isFromThisUser) Icon(imageVector = Icons.TwoTone.Edit,
             contentDescription = "editar",
             modifier = Modifier
-                .size(40.dp)
+                .size(22.dp)
                 .clickable { onEditClick() })
     }
 }
@@ -369,37 +394,39 @@ fun ExerciseItem(item: ExerciseModel, onEditClick: () -> Unit, onClick: () -> Un
 @Composable
 fun TopBar(onExpandPressed: (() -> Unit)?, text: String) {
     Column(
-        modifier = Modifier.background(PrimaryColor)
+        modifier = Modifier
+            .background(PrimaryColor)
+            .windowInsetsPadding(WindowInsets.statusBars)
     ) {
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterHorizontally),
+            horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp)
+                .padding(horizontal = 16.dp, vertical = 12.dp)
                 .wrapContentHeight()
         ) {
             if (onExpandPressed != null) Icon(imageVector = Icons.Outlined.Menu,
                 contentDescription = "expand menu",
                 Modifier
                     .clickable { onExpandPressed() }
-                    .size(40.dp))
+                    .size(28.dp))
             Text(
                 text = text,
                 modifier = Modifier
                     .fillMaxWidth()
                     .wrapContentWidth(Alignment.CenterHorizontally),
                 style = TextStyle(
-                    fontWeight = FontWeight.Bold, fontSize = 24.sp, textAlign = TextAlign.Center
+                    fontWeight = FontWeight.Bold, fontSize = 20.sp, textAlign = TextAlign.Center
                 )
             )
         }
         Spacer(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(4.dp)
-                .background(SecondaryColor.copy(alpha = 0.7f))
+                .height(2.dp)
+                .background(SecondaryColor.copy(alpha = 0.5f))
         )
     }
 }

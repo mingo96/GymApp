@@ -15,9 +15,10 @@ import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.auth
 import com.mintocode.rutinapp.data.UserDetails
 import com.mintocode.rutinapp.data.UserDetails.Companion.actualValue
-import com.mintocode.rutinapp.data.api.v1.ApiV1Service
-import com.mintocode.rutinapp.data.api.v1.dto.LoginRequest
-import com.mintocode.rutinapp.data.api.v1.dto.RegisterRequest
+import com.mintocode.rutinapp.data.api.v2.ApiV2Service
+import com.mintocode.rutinapp.data.api.v2.dto.GoogleAuthRequest
+import com.mintocode.rutinapp.data.api.v2.dto.LoginRequest
+import com.mintocode.rutinapp.data.api.v2.dto.RegisterRequest
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import com.mintocode.rutinapp.ui.screenStates.SettingsScreenState
@@ -41,7 +42,7 @@ import java.lang.Thread.State
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    private val apiV1: ApiV1Service
+    private val apiV2: ApiV2Service
 ) : ViewModel() {
 
     private val _data: MutableLiveData<UserDetails> = MutableLiveData()
@@ -162,13 +163,13 @@ class SettingsViewModel @Inject constructor(
                         launch(Dispatchers.Main) { Toast.makeText(context, "Contraseña no válida", Toast.LENGTH_SHORT).show() }
                         return@launch
                     }
-                    val res = apiV1.register(RegisterRequest(
+                    val res = apiV2.register(RegisterRequest(
                         name = normalizedMail.substringBefore('@'),
                         email = normalizedMail,
                         password = password,
-                        password_confirmation = password
+                        passwordConfirmation = password
                     ))
-                    val token = res.access_token
+                    val token = res.accessToken
                     if (!token.isNullOrBlank()) {
                         updateUserDetails(
                             authToken = token,
@@ -181,8 +182,8 @@ class SettingsViewModel @Inject constructor(
                         }
                     } else launch(Dispatchers.Main) { Toast.makeText(context, "Error registro", Toast.LENGTH_SHORT).show() }
                 } else {
-                    val res = apiV1.login(LoginRequest(email = normalizedMail, password = password))
-                    val token = res.access_token
+                    val res = apiV2.login(LoginRequest(email = normalizedMail, password = password))
+                    val token = res.accessToken
                     if (!token.isNullOrBlank()) {
                         updateUserDetails(
                             authToken = token,
@@ -218,31 +219,79 @@ class SettingsViewModel @Inject constructor(
 
     }
 
-    fun logInWithGoogle(context: Context, credential: AuthCredential)= viewModelScope.launch {
+    /**
+     * Authenticates with Google via the backend API.
+     *
+     * Sends the Google ID token to the backend for verification. The backend
+     * verifies the token using Google's public keys, creates/finds the user,
+     * and returns a Sanctum bearer token. Firebase sign-in is maintained
+     * alongside for push notifications (FCM).
+     *
+     * @param context Android context for Toast messages
+     * @param credential Firebase AuthCredential (for optional Firebase sign-in)
+     * @param googleIdToken The Google ID token from GoogleSignInAccount.idToken
+     */
+    fun logInWithGoogle(context: Context, credential: AuthCredential, googleIdToken: String) = viewModelScope.launch {
         try {
-            auth.signInWithCredential(credential).addOnSuccessListener { authUser ->
+            // 1. Send the Google ID token to the backend for verification
+            val backendRes = apiV2.googleAuth(GoogleAuthRequest(idToken = googleIdToken))
+            val sanctumToken = backendRes.accessToken
 
-                if (authUser.additionalUserInfo!!.isNewUser){
-                    registerUserOnServer(authUser)
+            if (sanctumToken.isNullOrBlank()) {
+                launch(Dispatchers.Main) {
+                    Toast.makeText(context, "Error al autenticar con Google", Toast.LENGTH_SHORT).show()
                 }
-                updateUserDetails(authToken = authUser.user!!.uid, name = authUser.user!!.displayName!!, email = authUser.user!!.email!!)
+                return@launch
+            }
 
-                val actualState = _uiState.value as SettingsScreenState.LogIn
+            // 2. Also sign into Firebase (for FCM and other Firebase services)
+            auth.signInWithCredential(credential).addOnSuccessListener { authUser ->
+                // Store the Sanctum token (NOT the Firebase UID)
+                updateUserDetails(
+                    authToken = sanctumToken,
+                    name = backendRes.data?.user?.name ?: authUser.user?.displayName ?: "",
+                    email = backendRes.data?.user?.email ?: authUser.user?.email ?: ""
+                )
 
-                _uiState.postValue(actualState.copy(userMail = authUser.user!!.email!!))
+                val actualState = _uiState.value as? SettingsScreenState.LogIn
+                if (actualState != null) {
+                    _uiState.postValue(actualState.copy(userMail = backendRes.data?.user?.email ?: authUser.user?.email ?: ""))
+                }
 
                 Toast.makeText(context, "Sesión iniciada correctamente", Toast.LENGTH_SHORT).show()
                 toggleUiState()
             }.addOnFailureListener {
-                Toast.makeText(context, "Error al iniciar sesión", Toast.LENGTH_SHORT).show()
+                // Firebase sign-in failed, but backend auth succeeded.
+                // Store the Sanctum token anyway (Firebase is secondary).
+                updateUserDetails(
+                    authToken = sanctumToken,
+                    name = backendRes.data?.user?.name ?: "",
+                    email = backendRes.data?.user?.email ?: ""
+                )
+                launch(Dispatchers.Main) {
+                    Toast.makeText(context, "Sesión iniciada (sin Firebase)", Toast.LENGTH_SHORT).show()
+                    toggleUiState()
+                }
             }
         } catch (e: Exception) {
-
-            Toast.makeText(context, "Error al iniciar sesión", Toast.LENGTH_SHORT).show()
+            Log.e("Auth", "Google login failure", e)
+            val msg = when (e) {
+                is retrofit2.HttpException -> when (e.code()) {
+                    401 -> "Token de Google inválido"
+                    422 -> "Error de validación"
+                    429 -> "Demasiados intentos"
+                    else -> "Error HTTP ${e.code()}"
+                }
+                is IOException -> "Sin conexión"
+                else -> "Error al iniciar sesión"
+            }
+            launch(Dispatchers.Main) {
+                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
-    private fun registerUserOnServer(authResult: AuthResult) { /* deprecated with backend auth */ }
+    private fun registerUserOnServer(authResult: AuthResult) { /* deprecated: backend handles via /auth/google */ }
 
 }
 

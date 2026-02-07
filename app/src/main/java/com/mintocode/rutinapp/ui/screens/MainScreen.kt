@@ -14,14 +14,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.twotone.ArrowForward
+import androidx.compose.material.icons.automirrored.twotone.List
 import androidx.compose.material.icons.twotone.Add
-import androidx.compose.material.icons.twotone.ArrowForward
 import androidx.compose.material.icons.twotone.Check
 import androidx.compose.material.icons.twotone.CheckCircle
 import androidx.compose.material.icons.twotone.Edit
 import androidx.compose.material.icons.twotone.KeyboardArrowDown
 import androidx.compose.material.icons.twotone.KeyboardArrowUp
-import androidx.compose.material.icons.twotone.List
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DateRangePicker
@@ -48,6 +48,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -97,19 +98,20 @@ fun MainScreen(
     }
 
     ScreenContainer(title = "Menú principal", buttonText = "", navController = navController) {
-        Column(Modifier.padding(it), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Column(Modifier.padding(it), verticalArrangement = Arrangement.spacedBy(12.dp)) {
 
-            AdjustableText("Plan de hoy " + Date().simpleDateString(), TextStyle(fontSize = 30.sp))
+            AdjustableText("Plan de hoy · " + Date().simpleDateString(), TextStyle(fontSize = 22.sp, fontWeight = FontWeight.Bold))
             if (todaysPlanning != null) {
                 Row(
                     modifier = Modifier
                         .background(
                             brush = Brush.horizontalGradient(
                                 listOf(TextFieldColor, TextFieldColor, PrimaryColor)
-                            )
+                            ),
+                            shape = RoundedCornerShape(12.dp)
                         )
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
@@ -118,7 +120,7 @@ fun MainScreen(
                         if (todaysPlanning!!.statedBodyPart != null) todaysPlanning!!.statedBodyPart
                         else if (todaysPlanning!!.statedRoutine != null) todaysPlanning!!.statedRoutine!!.name
                         else "Nada planeado"
-                    AdjustableText("Objetivo : $content", TextStyle(fontSize = 20.sp))
+                    AdjustableText("Objetivo: $content", TextStyle(fontSize = 16.sp))
 
                     IconButton(
                         onClick = { mainScreenViewModel.planningClicked(todaysPlanning!!) },
@@ -154,8 +156,8 @@ fun MainScreen(
                         ) {
                             AdjustableText(
                                 "Rango de fechas",
-                                TextStyle(fontSize = 20.sp),
-                                modifier = Modifier.padding(16.dp)
+                                TextStyle(fontSize = 16.sp),
+                                modifier = Modifier.padding(12.dp)
                             )
                             if (isExtended) IconButton(onClick = {
                                 mainScreenViewModel.changeDates(
@@ -179,7 +181,7 @@ fun MainScreen(
                 },
                 colors = rutinAppDatePickerColors(),
                 modifier = Modifier
-                    .heightIn(0.dp, if (isExtended) 300.dp else 60.dp)
+                    .heightIn(0.dp, if (isExtended) 280.dp else 52.dp)
                     .animateContentSize(),
                 showModeToggle = false,
             )
@@ -222,7 +224,7 @@ fun FABComposable(buttons: List<FABButton>) {
                         TextButton(
                             onClick = { i.onClick() },
                             colors = rutinAppTextButtonColors(),
-                            border = ButtonDefaults.outlinedButtonBorder,
+                            border = ButtonDefaults.outlinedButtonBorder(enabled = true),
                             shape = RoundedCornerShape(15.dp),
                             modifier = Modifier.rotate(180f)
                         ) {
@@ -238,7 +240,7 @@ fun FABComposable(buttons: List<FABButton>) {
             modifier = Modifier.padding(8.dp)
         ) {
             Icon(
-                Icons.TwoTone.List,
+                Icons.AutoMirrored.TwoTone.List,
                 contentDescription = "Display Buttons",
                 modifier = Modifier.size(50.dp)
             )
@@ -392,7 +394,7 @@ fun RoutineSelectedContent(
                         }
                         IconButton(onClick = { onSelect(it) }) {
                             Icon(
-                                imageVector = Icons.TwoTone.ArrowForward,
+                                imageVector = Icons.AutoMirrored.TwoTone.ArrowForward,
                                 contentDescription = "select routine"
                             )
                         }

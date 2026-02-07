@@ -1,5 +1,17 @@
 package com.mintocode.rutinapp.data.api
 
+/**
+ * @deprecated DEAD CODE - This legacy Retrofit service is not referenced anywhere in the app.
+ *
+ * Replaced by [com.mintocode.rutinapp.data.api.v2.ApiV2Service] which provides
+ * correct endpoint mappings for the RutinApp API v2.
+ *
+ * All endpoints below pointed to the old API format (auth/newuser, exercises/newexercise, etc.)
+ * which no longer exists on the server.
+ *
+ * TODO: Remove this file entirely once migration is confirmed complete.
+ */
+
 import com.mintocode.rutinapp.data.BASE_URL
 import com.mintocode.rutinapp.data.api.classes.Exercise
 import com.mintocode.rutinapp.data.api.classes.Routine

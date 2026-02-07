@@ -29,9 +29,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.twotone.ArrowBack
+import androidx.compose.material.icons.automirrored.twotone.ArrowForward
 import androidx.compose.material.icons.twotone.Add
-import androidx.compose.material.icons.twotone.ArrowBack
-import androidx.compose.material.icons.twotone.ArrowForward
 import androidx.compose.material.icons.twotone.Delete
 import androidx.compose.material.icons.twotone.KeyboardArrowDown
 import androidx.compose.material.icons.twotone.KeyboardArrowUp
@@ -104,7 +104,7 @@ fun WorkoutsScreen(viewModel: WorkoutsViewModel, navController: NavHostControlle
         title = if (workoutScreenState is WorkoutsScreenState.WorkoutStarted) "Progreso de entrenamiento" else "Entrenamientos",
         buttonText = if (workoutScreenState is WorkoutsScreenState.WorkoutStarted) {
             "Finalizar entrenamiento"
-        } else "Empezar entrenamiento sin rutina"
+        } else "Entrenar sin rutina"
     ) {
         Column(modifier = Modifier.padding(it)) {
             when (workoutScreenState) {
@@ -188,7 +188,7 @@ fun ObservationContent(viewModel: WorkoutsViewModel, state: WorkoutsScreenState.
 
                 Text(
                     text = "Entrenamientos recientes",
-                    fontSize = 20.sp,
+                    fontSize = 17.sp,
                     fontWeight = FontWeight.Bold
                 )
 
@@ -220,7 +220,7 @@ fun ObservationContent(viewModel: WorkoutsViewModel, state: WorkoutsScreenState.
         item {
             AnimatedItem(enterAnimation = slideInHorizontally { +it }, delay = 100) {
 
-                Text(text = "Rutinas", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text(text = "Rutinas", fontSize = 17.sp, fontWeight = FontWeight.Bold)
                 LazyRow(
                     Modifier
                         .fillMaxWidth()
@@ -248,7 +248,7 @@ fun ObservationContent(viewModel: WorkoutsViewModel, state: WorkoutsScreenState.
         item {
             AnimatedItem(enterAnimation = slideInHorizontally(), delay = 100) {
                 if (state.planning != null) {
-                    Text(text = "Lo planificado", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    Text(text = "Lo planificado", fontSize = 17.sp, fontWeight = FontWeight.Bold)
 
                     if (state.planning.statedRoutine != null) {
                         RoutineItem(
@@ -272,7 +272,7 @@ fun ObservationContent(viewModel: WorkoutsViewModel, state: WorkoutsScreenState.
                             )
                             IconButton(onClick = { viewModel.startFromStatedBodyPart() }) {
                                 Icon(
-                                    imageVector = Icons.TwoTone.ArrowForward,
+                                    imageVector = Icons.AutoMirrored.TwoTone.ArrowForward,
                                     contentDescription = "start from scheduled bodypart"
                                 )
                             }
@@ -331,7 +331,7 @@ fun WorkoutProgression(
 
     Text(
         text = "Progreso" + if (uiState.workout.isFinished) " del entrenamiento" else " actual",
-        fontSize = 20.sp,
+        fontSize = 17.sp,
         fontWeight = FontWeight.Bold
     )
 
@@ -427,9 +427,9 @@ fun SetOptionsDialog(viewModel: WorkoutsViewModel, uiState: WorkoutsScreenState.
             DialogContainer {
                 Text(
                     text = "Opciones de serie",
-                    fontSize = 35.sp,
+                    fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
-                    lineHeight = 40.sp
+                    lineHeight = 26.sp
                 )
 
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -468,13 +468,13 @@ fun ButtonsOfEditSet(exit: () -> Unit, onEditClick: () -> Unit, delete: () -> Un
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Button(onClick = { onEditClick() }, colors = rutinAppButtonsColours()) {
-            Text(text = "Editar", fontSize = 20.sp)
+            Text(text = "Editar", fontSize = 15.sp)
         }
         Button(onClick = { exit() }, colors = rutinAppButtonsColours()) {
-            Text(text = "Salir", fontSize = 20.sp)
+            Text(text = "Salir", fontSize = 15.sp)
         }
         Button(onClick = { delete() }, colors = rutinAppButtonsColours()) {
-            Text(text = "Eliminar", fontSize = 20.sp)
+            Text(text = "Eliminar", fontSize = 15.sp)
         }
     }
 }
@@ -539,7 +539,7 @@ fun ExerciseActions(
         if (exerciseAndSets != uiState.workout.exercisesAndSets.last()) {
             IconButton(onClick = { viewModel.moveExercise(exerciseAndSets.first, false) }) {
                 Icon(
-                    imageVector = Icons.TwoTone.ArrowBack,
+                    imageVector = Icons.AutoMirrored.TwoTone.ArrowBack,
                     contentDescription = "move up",
                     modifier = Modifier.rotate(-90f)
                 )
@@ -548,7 +548,7 @@ fun ExerciseActions(
         if (exerciseAndSets != uiState.workout.exercisesAndSets.first()) {
             IconButton(onClick = { viewModel.moveExercise(exerciseAndSets.first, true) }) {
                 Icon(
-                    imageVector = Icons.TwoTone.ArrowBack,
+                    imageVector = Icons.AutoMirrored.TwoTone.ArrowBack,
                     contentDescription = "move down",
                     modifier = Modifier.rotate(90f)
                 )
@@ -806,16 +806,16 @@ fun OtherExercises(
 @Composable
 fun WorkoutItem(item: WorkoutModel, onClick: () -> Unit) {
     Box(modifier = Modifier
-        .padding(16.dp)
+        .padding(end = 10.dp, top = 4.dp, bottom = 4.dp)
         .background(
-            PrimaryColor, RoundedCornerShape(15.dp)
+            PrimaryColor, RoundedCornerShape(12.dp)
         )
         .clickable { onClick() }) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
 
-            Text(text = item.title)
-            Text(text = "Inicio : " + item.date.completeHourString())
-            if (item.isFinished) Text(text = "Terminado", color = Color.Green)
+            Text(text = item.title, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+            Text(text = item.date.completeHourString(), fontSize = 12.sp, color = Color.White.copy(alpha = 0.6f))
+            if (item.isFinished) Text(text = "Terminado", color = Color.Green, fontSize = 12.sp)
         }
     }
 }
@@ -838,7 +838,7 @@ fun RoutineItem(routine: RoutineModel, modifier: Modifier, onPress: () -> Unit) 
             }
         }
         IconButton(onClick = { onPress() }, modifier = Modifier.padding(end = 16.dp, top = 16.dp)) {
-            Icon(imageVector = Icons.TwoTone.ArrowForward, contentDescription = null)
+            Icon(imageVector = Icons.AutoMirrored.TwoTone.ArrowForward, contentDescription = null)
         }
     }
 }
@@ -858,11 +858,12 @@ fun DigitalWatch(uiState: WorkoutsScreenState.WorkoutStarted, viewModel: Workout
                 if (it.second.isEmpty()) Date(0) else it.second.maxOf { it.date }
             }
             Text(
-                text = "Último hecho " + lastSet.completeHourString(),
-                fontSize = 18.sp,
+                text = "Último: " + lastSet.completeHourString(),
+                fontSize = 14.sp,
+                color = Color.White.copy(alpha = 0.7f),
                 modifier = Modifier
                     .padding(8.dp)
-                    .fillMaxWidth(0.7f)
+                    .weight(1f)
             )
         }
         if (!uiState.workout.isFinished) {
@@ -870,10 +871,9 @@ fun DigitalWatch(uiState: WorkoutsScreenState.WorkoutStarted, viewModel: Workout
 
             Text(
                 text = Date(actualDate).completeHourString(),
-                fontSize = 18.sp,
-                modifier = Modifier
-                    .padding(8.dp)
-                    .fillMaxWidth()
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(8.dp)
             )
         }
     }

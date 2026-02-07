@@ -1,59 +1,16 @@
 package com.mintocode.rutinapp.data.api.v1
 
-import com.mintocode.rutinapp.data.BASE_URL
-import com.mintocode.rutinapp.data.UserDetails
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
-import okhttp3.Interceptor
-import okhttp3.OkHttpClient
-import okhttp3.Response
-import okhttp3.logging.HttpLoggingInterceptor
-import java.util.concurrent.TimeUnit
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
-import javax.inject.Singleton
+/**
+ * @deprecated Replaced by [com.mintocode.rutinapp.data.api.v2.ApiV2Module].
+ *
+ * This module has been superseded by the v2 API module which provides
+ * correct endpoint mappings for the RutinApp API v2.
+ *
+ * All Hilt bindings (OkHttpClient, Retrofit, ApiService) are now provided
+ * by ApiV2Module. This file is kept only as a reference during migration.
+ *
+ * TODO: Remove this file once migration is confirmed complete.
+ */
 
-@Module
-@InstallIn(SingletonComponent::class)
-object ApiV1Module {
-
-    private class AuthInterceptor: Interceptor {
-        override fun intercept(chain: Interceptor.Chain): Response {
-            val original = chain.request()
-            val token = UserDetails.actualValue?.authToken
-            return if (!token.isNullOrBlank()) {
-                val req = original.newBuilder()
-                    .header("Authorization", "Bearer $token")
-                    .build()
-                chain.proceed(req)
-            } else chain.proceed(original)
-        }
-    }
-
-    @Provides
-    @Singleton
-    fun provideOkHttp(): OkHttpClient {
-        val logging = HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY }
-        return OkHttpClient.Builder()
-            .addInterceptor(logging)
-            .addInterceptor(AuthInterceptor())
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(20, TimeUnit.SECONDS)
-            .writeTimeout(20, TimeUnit.SECONDS)
-            .build()
-    }
-
-    @Provides
-    @Singleton
-    fun provideRetrofit(client: OkHttpClient): Retrofit = Retrofit.Builder()
-        .baseUrl(BASE_URL)
-        .client(client)
-        .addConverterFactory(GsonConverterFactory.create())
-        .build()
-
-    @Provides
-    @Singleton
-    fun provideApiV1(retrofit: Retrofit): ApiV1Service = retrofit.create(ApiV1Service::class.java)
-}
+// Hilt module annotation removed to prevent duplicate binding conflicts.
+// See com.mintocode.rutinapp.data.api.v2.ApiV2Module for the active module.

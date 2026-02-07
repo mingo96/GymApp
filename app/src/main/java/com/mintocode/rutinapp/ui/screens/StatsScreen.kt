@@ -105,11 +105,8 @@ fun ObservationContent(statsViewModel: StatsViewModel, exercises: List<ExerciseM
 
     AnimatedItem(enterAnimation = slideInHorizontally { it }, delay = 100) {
 
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Text(text = "Ejercicios", fontSize = 30.sp)
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(text = "Ejercicios", fontSize = 17.sp)
 
             var name by rememberSaveable { mutableStateOf("") }
             SearchTextField(
@@ -138,15 +135,15 @@ fun ObservationContent(statsViewModel: StatsViewModel, exercises: List<ExerciseM
 fun ExerciseItem(exercise: ExerciseModel, onClick: () -> Unit) {
 
     Column(modifier = Modifier
-        .border(4.dp, SecondaryColor, RoundedCornerShape(15.dp))
+        .border(1.5.dp, SecondaryColor, RoundedCornerShape(12.dp))
         .background(
-            TextFieldColor, RoundedCornerShape(15.dp)
+            TextFieldColor, RoundedCornerShape(12.dp)
         )
-        .padding(16.dp)
+        .padding(12.dp)
         .clickable { onClick() }) {
 
-        Text(text = exercise.name, fontSize = 20.sp)
-        Text(text = exercise.description.take(30), fontSize = 15.sp)
+        Text(text = exercise.name, fontSize = 15.sp)
+        Text(text = exercise.description.take(30), fontSize = 13.sp, color = Color.White.copy(alpha = 0.6f))
 
     }
 
@@ -159,8 +156,8 @@ fun ExerciseStats(uiState: StatsScreenState.StatsOfExercise, onExit: () -> Unit)
 
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
-            text = if (!uiState.hasBeenDone) "Aún no has hecho este ejercicio" else "Estadisticas de " + uiState.exercise.name,
-            fontSize = 30.sp,
+            text = if (!uiState.hasBeenDone) "Aún no has hecho este ejercicio" else "Estadísticas de " + uiState.exercise.name,
+            fontSize = 20.sp,
             modifier = Modifier.fillMaxWidth(0.8f),
             color = if (!uiState.hasBeenDone) Color.Red else ContentColor,
         )
@@ -222,8 +219,8 @@ fun TextContainer(modifier: Modifier = Modifier, text: String? = null, title: St
     Column(modifier) {
         Column(modifier = Modifier.padding(8.dp)) {
 
-            Text(text = title, fontSize = 20.sp)
-            if (text != null) Text(text = text, fontSize = 20.sp)
+            Text(text = title, fontSize = 14.sp, color = Color.White.copy(alpha = 0.6f))
+            if (text != null) Text(text = text, fontSize = 16.sp)
         }
     }
 }
@@ -246,8 +243,8 @@ fun WeightContainer(content: Triple<Double, Date, String>, title: String) {
             ) {
 
                 Column(Modifier.fillMaxWidth(0.8f)) {
-                    Text(text = title, fontSize = 20.sp)
-                    Text(text = "${content.first.truncatedToNDecimals(2)} kg", fontSize = 20.sp)
+                    Text(text = title, fontSize = 14.sp, color = Color.White.copy(alpha = 0.6f))
+                    Text(text = "${content.first.truncatedToNDecimals(2)} kg", fontSize = 16.sp)
                 }
                 IconButton(onClick = { isOpened = true }) {
                     Icon(
@@ -268,9 +265,9 @@ fun WeightContainer(content: Triple<Double, Date, String>, title: String) {
             Column(Modifier.fillMaxWidth()) {
                 Text(
                     text = content.second.dateString() + " " + content.second.timeString(),
-                    fontSize = 25.sp
+                    fontSize = 16.sp
                 )
-                Text(text = content.third, fontSize = 15.sp)
+                Text(text = content.third, fontSize = 13.sp, color = Color.White.copy(alpha = 0.6f))
             }
 
 

@@ -1,9 +1,9 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
-    //dagger
-    kotlin("kapt")
-    id("com.google.dagger.hilt.android")
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt.android)
     alias(libs.plugins.google.gms.google.services)
 }
 
@@ -34,17 +34,14 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "17"
     }
     buildFeatures {
         compose = true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
     }
     packaging {
         resources {
@@ -63,8 +60,6 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    implementation(libs.androidx.room.common)
-    implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.navigation.compose)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -74,37 +69,38 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    //Preferences DataStore
-    implementation("androidx.datastore:datastore-preferences:1.1.1")
+    // Preferences DataStore
+    implementation(libs.datastore.preferences)
 
-    implementation ("io.github.ehsannarmani:compose-charts:0.1.0")
+    // Compose Charts
+    implementation(libs.compose.charts)
 
-    //Dagger Hilt
-    implementation("com.google.dagger:hilt-android:2.51.1")
-    kapt("com.google.dagger:hilt-android-compiler:2.51.1")
-    implementation("androidx.compose.runtime:runtime-livedata:1.7.5")
-    //room
-    implementation("androidx.room:room-runtime:2.6.1")
+    // Dagger Hilt
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.android.compiler)
+
+    // Compose LiveData
+    implementation(libs.compose.runtime.livedata)
+
+    // Room
+    implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
-    annotationProcessor(libs.androidx.room.compiler)
+    ksp(libs.androidx.room.compiler)
 
-    //To use Kotlin annotation processing tool (kapt)
-    kapt("androidx.room:room-compiler:2.6.1")
-    implementation("com.google.android.gms:play-services-auth:21.1.1")
+    // Google Auth
+    implementation(libs.play.services.auth)
 
-    implementation("com.google.firebase:firebase-auth-ktx:23.0.0")
+    // Firebase
     implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth.ktx)
 
-    //ads
-    implementation("com.google.android.gms:play-services-ads:23.6.0")
+    // Ads
+    implementation(libs.play.services.ads)
 
-    implementation("com.google.code.gson:gson:2.10.1")
-    implementation ("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation ("com.squareup.retrofit2:converter-gson:2.6.4")
-    implementation("com.squareup.retrofit2:converter-scalars:2.9.0")
-    implementation ("com.squareup.okhttp3:logging-interceptor:4.9.3")
-}
-
-kapt {
-    correctErrorTypes = true
+    // Networking
+    implementation(libs.gson)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.gson)
+    implementation(libs.retrofit.converter.scalars)
+    implementation(libs.okhttp.logging.interceptor)
 }

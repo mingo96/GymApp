@@ -10,11 +10,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,7 +35,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.credentials.CredentialManager
 import androidx.navigation.NavHostController
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
@@ -64,10 +65,12 @@ fun SettinsScreen(navController: NavHostController, settingsViewModel: SettingsV
             val task = GoogleSignIn.getSignedInAccountFromIntent(it.data)
             try {
                 val account = task.getResult(ApiException::class.java)
-                val credential = GoogleAuthProvider.getCredential(account.idToken, null)
+                val googleIdToken = account.idToken
+                val credential = GoogleAuthProvider.getCredential(googleIdToken, null)
                 settingsViewModel.logInWithGoogle(
                     credential = credential,
-                    context = context)
+                    context = context,
+                    googleIdToken = googleIdToken ?: "")
             } catch (e: Exception) {
 
                 Toast.makeText(context, "Cuenta no valida", Toast.LENGTH_SHORT).show()
@@ -101,7 +104,9 @@ fun SettinsScreen(navController: NavHostController, settingsViewModel: SettingsV
     }) {
 
         Column(
-            Modifier.padding(it),
+            Modifier
+                .padding(it)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             when (uiState) {
@@ -149,42 +154,47 @@ fun UserLogInInput(
     )
 
     Row(
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth()
     ) {
 
         Row(
             modifier = Modifier
-                .background(TextFieldColor, RoundedCornerShape(20.dp))
+                .weight(1f)
+                .background(TextFieldColor, RoundedCornerShape(12.dp))
                 .padding(horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Button(
                 onClick = { settingsViewModel.tryToAuthenticate(mail, password, context) },
                 colors = rutinAppButtonsColours(),
-                modifier = Modifier.padding(8.dp)
+                modifier = Modifier.padding(vertical = 6.dp)
             ) {
                 AdjustableText(
                     text = if (uiState.isRegister) "Registrarse" else "Iniciar sesión",
-                    style = TextStyle(fontSize = 20.sp)
+                    style = TextStyle(fontSize = 15.sp)
                 )
             }
             IconButton(onClick = { settingsViewModel.toggleLogInState() }) {
                 Icon(painter = painterResource(R.drawable.swap), "swap register/log in")
             }
         }
-        IconButton(
+        Button(
             onClick = onGoogleClick,
-            modifier = Modifier
-                .background(TextFieldColor, RoundedCornerShape(20.dp))
-                .padding(8.dp),
-            colors = IconButtonDefaults.iconButtonColors(containerColor = Color.Transparent)
+            colors = rutinAppButtonsColours(),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.padding(vertical = 6.dp)
         ) {
             Image(
-                painter = painterResource(R.drawable.google), "google log in", modifier = Modifier
+                painter = painterResource(R.drawable.google),
+                contentDescription = "Google",
+                modifier = Modifier
+                    .size(24.dp)
+                    .padding(end = 4.dp)
             )
+            Text(text = "Google", fontSize = 14.sp)
         }
     }
 

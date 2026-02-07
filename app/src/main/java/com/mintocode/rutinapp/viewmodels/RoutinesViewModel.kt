@@ -90,7 +90,7 @@ class RoutinesViewModel @Inject constructor(
             if (token.isBlank()) return@launch
             _isLoading.postValue(true)
             try {
-                val remote = syncManager.downloadMyRoutines(token)
+                val remote = syncManager.downloadMyRoutines()
                 insertDownloaded(remote)
             } catch (e: Exception) { }
             finally { _isLoading.postValue(false) }
@@ -103,9 +103,48 @@ class RoutinesViewModel @Inject constructor(
             if (token.isBlank()) return@launch
             _isLoading.postValue(true)
             try {
-                val remote = syncManager.downloadOtherRoutines(token)
+                val remote = syncManager.downloadOtherRoutines()
                 insertDownloaded(remote)
             } catch (e: Exception) { }
+            finally { _isLoading.postValue(false) }
+        }
+    }
+
+    /**
+     * Sincroniza rutinas bidireccionalmente: sube las pendientes locales
+     * y descarga las del servidor según la pestaña actual.
+     */
+    fun syncRoutines() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val token = UserDetails.actualValue?.authToken ?: return@launch
+            if (token.isBlank()) return@launch
+            _isLoading.postValue(true)
+            try {
+                // 1. Subir rutinas nuevas (dirty)
+                val dirtyNew = routines.value.filter { it.isDirty && it.realId == 0 }
+                if (dirtyNew.isNotEmpty()) {
+                    val mappings = syncManager.syncNewRoutines(dirtyNew)
+                    mappings.forEach { (_, serverId) ->
+                        val local = dirtyNew.find { it.realId == 0 }
+                        if (local != null) {
+                            local.realId = serverId.toInt()
+                            local.isDirty = false
+                            updateRoutineUseCase(local)
+                        }
+                    }
+                }
+
+                // 2. Descargar según la pestaña actual
+                val showOthersNow = _showOthers.value ?: false
+                val remote = if (showOthersNow) {
+                    syncManager.downloadOtherRoutines()
+                } else {
+                    syncManager.downloadMyRoutines()
+                }
+
+                // 3. Merge descargados
+                insertDownloaded(remote)
+            } catch (_: Exception) { }
             finally { _isLoading.postValue(false) }
         }
     }
