@@ -218,7 +218,10 @@ fun ExercisesScreen(viewModel: ExercisesViewModel, navController: NavHostControl
             else -> {
                 val showOthers = viewModel.showOthers.observeAsState(false).value
                 val filtered = if (showOthers) exercises.filter { !it.isFromThisUser } else exercises.filter { it.isFromThisUser }
-                filtered.take(maxIndex)
+                val searched = if (name.isBlank()) filtered else filtered.filter {
+                    it.name.contains(name, ignoreCase = true) || it.targetedBodyPart.contains(name, ignoreCase = true)
+                }
+                searched.take(maxIndex)
             }
         }
 

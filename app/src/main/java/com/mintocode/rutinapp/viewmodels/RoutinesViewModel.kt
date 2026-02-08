@@ -65,20 +65,28 @@ class RoutinesViewModel @Inject constructor(
         return if (now - lastActionAt > debounceWindow()) { lastActionAt = now; true } else false
     }
 
-    // Insert routines from remote if new (by realId)
-    private fun insertDownloaded(routinesRemote: List<RoutineModel>) {
+    /**
+     * Inserta o actualiza rutinas descargadas del servidor en la base de datos local.
+     *
+     * Compara por realId: si no existe localmente, la crea; si existe y cambió, la actualiza.
+     * Es suspend para garantizar que las inserciones finalicen antes de continuar
+     * (evita race-condition con el estado de loading).
+     *
+     * @param routinesRemote Lista de rutinas descargadas del servidor
+     */
+    private suspend fun insertDownloaded(routinesRemote: List<RoutineModel>) {
         if (routinesRemote.isEmpty()) return
         val existing = routines.value.associateBy { it.realId }
         routinesRemote.forEach { r ->
             if (r.realId != 0 && existing[r.realId] == null) {
-                // mark not dirty (already server authoritative)
-                viewModelScope.launch(Dispatchers.IO) { createRoutineUseCase(r) }
+                // Rutina nueva del servidor — insertar directamente (await)
+                createRoutineUseCase(r)
             } else if (r.realId != 0) {
                 val current = existing[r.realId]
-                if (current != null && (current.name != r.name || current.targetedBodyPart != r.targetedBodyPart)) {
+                if (current != null && (current.name != r.name || current.targetedBodyPart != r.targetedBodyPart || current.isFromThisUser != r.isFromThisUser)) {
                     current.name = r.name
                     current.targetedBodyPart = r.targetedBodyPart
-                    viewModelScope.launch(Dispatchers.IO) { updateRoutineUseCase(current) }
+                    updateRoutineUseCase(current)
                 }
             }
         }

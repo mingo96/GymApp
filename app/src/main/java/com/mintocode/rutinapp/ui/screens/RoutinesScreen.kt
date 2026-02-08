@@ -134,6 +134,15 @@ fun RoutinesScreen(viewModel: RoutinesViewModel, navController: NavHostControlle
     ) {
         val showOthers by viewModel.showOthers.observeAsState(false)
         val loading by viewModel.isLoading.observeAsState(false)
+        var searchText by rememberSaveable { mutableStateOf("") }
+
+        // Campo de búsqueda reactivo
+        SearchTextField(
+            value = searchText,
+            onValueChange = { searchText = it },
+            onSearch = { /* no-op: filtrado reactivo */ },
+            modifier = Modifier.padding(top = it.calculateTopPadding())
+        )
 
         // Top actions row
         Row(
@@ -189,7 +198,12 @@ fun RoutinesScreen(viewModel: RoutinesViewModel, navController: NavHostControlle
             }
         }
 
-        val filtered = if (showOthers) routines.filter { !it.isFromThisUser } else routines.filter { it.isFromThisUser }
+        val filtered = run {
+            val byOwnership = if (showOthers) routines.filter { !it.isFromThisUser } else routines.filter { it.isFromThisUser }
+            if (searchText.isBlank()) byOwnership else byOwnership.filter {
+                it.name.contains(searchText, ignoreCase = true) || it.targetedBodyPart.contains(searchText, ignoreCase = true)
+            }
+        }
         if (!loading && filtered.isEmpty()) {
             Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(text = if (showOthers) "No hay rutinas de otros usuarios" else "No tienes rutinas aún")
