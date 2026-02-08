@@ -21,11 +21,16 @@ data class PlanningEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val date: Long,
     var routineId: Int?,
-    var bodyPart: String?
+    var bodyPart: String?,
+    var realId: Int = 0,
+    var isDirty: Boolean = false
 ) {
     fun toModel(): PlanningModel {
         return PlanningModel(
-            id = id, date = Date(date)
+            id = id,
+            realId = realId.toLong(),
+            date = Date(date),
+            isDirty = isDirty
         )
     }
 }

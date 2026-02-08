@@ -6,6 +6,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mintocode.rutinapp.data.UserDetails
 import com.mintocode.rutinapp.data.models.PlanningModel
 import com.mintocode.rutinapp.data.models.RoutineModel
 import com.mintocode.rutinapp.domain.addUseCases.AddPlanningUseCase
@@ -15,6 +16,7 @@ import com.mintocode.rutinapp.domain.getUseCases.GetRoutinesUseCase
 import com.mintocode.rutinapp.domain.updateUseCases.UpdatePlanningUseCase
 import com.mintocode.rutinapp.ui.screenStates.FieldBeingEdited
 import com.mintocode.rutinapp.ui.screenStates.MainScreenState
+import com.mintocode.rutinapp.sync.SyncManager
 import com.mintocode.rutinapp.utils.toSimpleDate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -34,7 +36,8 @@ class MainScreenViewModel @Inject constructor(
     private val getPlanningsUseCase: GetPlanningsUseCase,
     private val addPlanningUseCase: AddPlanningUseCase,
     private val updatePlanningUseCase: UpdatePlanningUseCase,
-    private val getRoutinesUseCase: GetRoutinesUseCase
+    private val getRoutinesUseCase: GetRoutinesUseCase,
+    private val syncManager: SyncManager
 ) : ViewModel() {
 
     private var _planningsFlow: StateFlow<List<PlanningModel>> =
@@ -66,6 +69,47 @@ class MainScreenViewModel @Inject constructor(
         MutableLiveData(MainScreenState.Observation)
 
     val uiState: LiveData<MainScreenState> = _uiState
+
+    /**
+     * Auto-refresh silencioso al entrar a la pantalla.
+     * Sube plannings dirty y descarga los del servidor sin mostrar toast.
+     */
+    fun autoSync() {
+        val token = UserDetails.actualValue?.authToken
+        if (token.isNullOrBlank()) return
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                // 1. Subir plannings pendientes (dirty con realId == 0)
+                val allPlannings = _plannings.value ?: emptyList()
+                val dirtyNew = allPlannings.filter { it.isDirty && it.realId == 0L }
+                if (dirtyNew.isNotEmpty()) {
+                    val mappings = syncManager.syncNewPlannings(dirtyNew)
+                    mappings.forEach { (localId, serverId) ->
+                        val local = dirtyNew.find { it.id.toString() == localId }
+                        if (local != null) {
+                            local.realId = serverId
+                            local.isDirty = false
+                            updatePlanningUseCase(local)
+                        }
+                    }
+                }
+
+                // 2. Descargar plannings del servidor y merge
+                val remote = syncManager.downloadMyPlanning()
+                if (remote.isNotEmpty()) {
+                    val existingByReal = allPlannings
+                        .filter { it.realId != 0L }
+                        .associateBy { it.realId }
+                    remote.forEach { incoming ->
+                        if (incoming.realId != 0L && existingByReal[incoming.realId] == null) {
+                            incoming.isDirty = false
+                            addPlanningUseCase(incoming)
+                        }
+                    }
+                }
+            } catch (_: Exception) { }
+        }
+    }
 
     fun changeDates(selectedStartMillis: Long?, selectedEndDateMillis: Long?) {
         if (selectedStartMillis == null || selectedEndDateMillis == null) return
@@ -122,7 +166,7 @@ class MainScreenViewModel @Inject constructor(
         }
         val actualState = _uiState.value as MainScreenState.PlanningOnMainFocus
 
-        val planning = actualState.planningModel.copy(statedBodyPart = it, statedRoutine = null)
+        val planning = actualState.planningModel.copy(statedBodyPart = it, statedRoutine = null, isDirty = true)
 
         viewModelScope.launch(Dispatchers.IO) {
             if (planning.id == 0) addPlanningUseCase(planning)
@@ -142,7 +186,7 @@ class MainScreenViewModel @Inject constructor(
     fun saveRoutine(it: RoutineModel) {
         val actualState = _uiState.value as MainScreenState.PlanningOnMainFocus
 
-        val planning = actualState.planningModel.copy(statedRoutine = it, statedBodyPart = null)
+        val planning = actualState.planningModel.copy(statedRoutine = it, statedBodyPart = null, isDirty = true)
 
         viewModelScope.launch(Dispatchers.IO) {
             if (planning.id == 0) addPlanningUseCase(planning)

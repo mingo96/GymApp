@@ -157,9 +157,11 @@ object DtoMapper {
      */
     fun toWorkoutModel(dto: WorkoutDto): WorkoutModel {
         return WorkoutModel(
+            realId = dto.id,
             date = parseDate(dto.date),
             title = dto.title,
-            isFinished = dto.isFinished
+            isFinished = dto.isFinished,
+            isDirty = false
         )
     }
 
@@ -199,10 +201,12 @@ object DtoMapper {
      */
     fun toPlanningModel(dto: PlanningDto): PlanningModel {
         return PlanningModel(
-            id = dto.id.toInt(),
+            id = 0,
+            realId = dto.id,
             date = parseDate(dto.date),
             statedRoutine = dto.routine?.let { toRoutineModel(it) },
-            statedBodyPart = dto.bodyPart
+            statedBodyPart = dto.bodyPart,
+            isDirty = false
         )
     }
 

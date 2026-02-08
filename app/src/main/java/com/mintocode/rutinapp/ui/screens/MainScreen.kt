@@ -79,6 +79,11 @@ fun MainScreen(
     navController: NavHostController, mainScreenViewModel: MainScreenViewModel
 ) {
 
+    // Auto-sync silencioso al entrar a la pantalla si el usuario está logueado
+    LaunchedEffect(Unit) {
+        mainScreenViewModel.autoSync()
+    }
+
     val plannings by mainScreenViewModel.plannings.observeAsState(emptyList())
 
     val uiState by mainScreenViewModel.uiState.observeAsState(MainScreenState.Observation)

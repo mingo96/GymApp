@@ -89,6 +89,11 @@ import kotlinx.coroutines.delay
 @Composable
 fun ExercisesScreen(viewModel: ExercisesViewModel, navController: NavHostController) {
 
+    // Auto-sync silencioso al entrar a la pantalla si el usuario está logueado
+    LaunchedEffect(Unit) {
+        viewModel.autoSync()
+    }
+
     val lifecycle = LocalLifecycleOwner.current.lifecycle
 
     val exercises by viewModel.exercisesState.collectAsStateWithLifecycle(

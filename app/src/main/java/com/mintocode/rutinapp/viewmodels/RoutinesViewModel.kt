@@ -155,6 +155,45 @@ class RoutinesViewModel @Inject constructor(
         if (newValue) downloadOtherRoutines() else downloadMyRoutines()
     }
 
+    /**
+     * Auto-refresh silencioso al entrar a la pantalla.
+     * Sube rutinas dirty y descarga las del servidor sin mostrar toast.
+     */
+    fun autoSync() {
+        val token = UserDetails.actualValue?.authToken
+        if (token.isNullOrBlank()) return
+        viewModelScope.launch(Dispatchers.IO) {
+            _isLoading.postValue(true)
+            try {
+                // 1. Subir rutinas nuevas (dirty)
+                val dirtyNew = routines.value.filter { it.isDirty && it.realId == 0 }
+                if (dirtyNew.isNotEmpty()) {
+                    val mappings = syncManager.syncNewRoutines(dirtyNew)
+                    mappings.forEach { (_, serverId) ->
+                        val local = dirtyNew.find { it.realId == 0 }
+                        if (local != null) {
+                            local.realId = serverId.toInt()
+                            local.isDirty = false
+                            updateRoutineUseCase(local)
+                        }
+                    }
+                }
+
+                // 2. Descargar según la pestaña actual
+                val showOthersNow = _showOthers.value ?: false
+                val remote = if (showOthersNow) {
+                    syncManager.downloadOtherRoutines()
+                } else {
+                    syncManager.downloadMyRoutines()
+                }
+
+                // 3. Merge descargados
+                insertDownloaded(remote)
+            } catch (_: Exception) { }
+            finally { _isLoading.postValue(false) }
+        }
+    }
+
     fun showOthers() {
     if (_showOthers.value == true || !canAct()) return
         _showOthers.postValue(true)

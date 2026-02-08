@@ -19,14 +19,18 @@ data class WorkOutEntity(
     @PrimaryKey(autoGenerate = true) val workOutId: Int,
     val date: Long,
     var title: String,
-    var isFinished: Boolean
+    var isFinished: Boolean,
+    var realId: Int = 0,
+    var isDirty: Boolean = false
 ){
     fun toModel(): WorkoutModel {
         return WorkoutModel(
             id = this.workOutId,
+            realId = this.realId.toLong(),
             date = Date(this.date),
             title = this.title,
-            isFinished = this.isFinished
+            isFinished = this.isFinished,
+            isDirty = this.isDirty
         )
     }
 }

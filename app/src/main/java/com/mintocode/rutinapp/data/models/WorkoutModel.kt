@@ -5,15 +5,22 @@ import java.util.Date
 
 data class WorkoutModel(
     var id: Int = 0,
+    var realId: Long = 0L,
     var baseRoutine: RoutineModel? = null,
     var exercisesAndSets: MutableList<Pair<ExerciseModel, MutableList<SetModel>>> = mutableListOf(),
     val date: Date,
     var title: String,
-    var isFinished: Boolean = false
+    var isFinished: Boolean = false,
+    var isDirty: Boolean = false
 ){
     fun toEntity(): WorkOutEntity {
         return WorkOutEntity(
-            workOutId = this.id, date = this.date.time, title = this.title, isFinished = isFinished
+            workOutId = this.id,
+            date = this.date.time,
+            title = this.title,
+            isFinished = isFinished,
+            realId = this.realId.toInt(),
+            isDirty = this.isDirty
         )
     }
 }

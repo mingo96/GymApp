@@ -85,6 +85,11 @@ import java.util.Date
 @Composable
 fun WorkoutsScreen(viewModel: WorkoutsViewModel, navController: NavHostController) {
 
+    // Auto-sync silencioso al entrar a la pantalla si el usuario está logueado
+    LaunchedEffect(Unit) {
+        viewModel.autoSync()
+    }
+
     val workoutScreenState by viewModel.workoutScreenStates.observeAsState(WorkoutsScreenState.Observe())
 
     val bottomButtonAction =

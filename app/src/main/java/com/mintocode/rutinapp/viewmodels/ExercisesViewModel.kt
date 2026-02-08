@@ -185,6 +185,75 @@ class ExercisesViewModel @Inject constructor(
     }
 
     /**
+     * Auto-refresh silencioso al entrar a la pantalla.
+     * Sube ejercicios dirty y descarga los del servidor sin mostrar toast.
+     */
+    fun autoSync() {
+        val token = UserDetails.actualValue?.authToken
+        if (token.isNullOrBlank()) return
+        viewModelScope.launch(Dispatchers.IO) {
+            _isLoading.postValue(true)
+            try {
+                // 1. Subir ejercicios nuevos (dirty con realId == 0)
+                val dirtyNew = exercisesState.value.filter { it.isDirty && it.realId == 0L }
+                if (dirtyNew.isNotEmpty()) {
+                    val mappings = syncManager.syncNewExercises(dirtyNew)
+                    mappings.forEach { (localId, serverId) ->
+                        val local = dirtyNew.find { it.id.toString() == localId || it.realId == 0L }
+                        if (local != null) {
+                            local.realId = serverId
+                            local.isDirty = false
+                            updateExerciseUseCase(local)
+                        }
+                    }
+                }
+
+                // 2. Subir ejercicios actualizados (dirty con realId > 0)
+                val dirtyUpdated = exercisesState.value.filter { it.isDirty && it.realId != 0L }
+                if (dirtyUpdated.isNotEmpty()) {
+                    syncManager.syncUpdatedExercises(dirtyUpdated)
+                    dirtyUpdated.forEach {
+                        it.isDirty = false
+                        updateExerciseUseCase(it)
+                    }
+                }
+
+                // 3. Descargar según la pestaña actual
+                val showOthersNow = _showOthers.value ?: false
+                val remote = if (showOthersNow) {
+                    syncManager.downloadOtherExercises()
+                } else {
+                    syncManager.downloadMyExercises()
+                }
+
+                // 4. Merge descargados
+                if (remote.isNotEmpty()) {
+                    val existingByReal = exercisesState.value.associateBy { it.realId }
+                    remote.forEach { incoming ->
+                        if (incoming.realId != 0L) {
+                            val existing = existingByReal[incoming.realId]
+                            if (existing == null) {
+                                addExerciseUseCase(incoming)
+                            } else if (existing.name != incoming.name ||
+                                existing.description != incoming.description ||
+                                existing.targetedBodyPart != incoming.targetedBodyPart ||
+                                existing.observations != incoming.observations
+                            ) {
+                                existing.name = incoming.name
+                                existing.description = incoming.description
+                                existing.targetedBodyPart = incoming.targetedBodyPart
+                                existing.observations = incoming.observations
+                                updateExerciseUseCase(existing)
+                            }
+                        }
+                    }
+                }
+            } catch (_: Exception) { }
+            finally { _isLoading.postValue(false) }
+        }
+    }
+
+    /**
      * Sincroniza ejercicios bidireccionalmente: sube los pendientes locales y
      * descarga los del servidor para la pestaña actual (propios o de otros).
      */

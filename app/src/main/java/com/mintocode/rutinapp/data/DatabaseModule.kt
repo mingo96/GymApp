@@ -88,8 +88,16 @@ class DatabaseModule {
             }
         }
 
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE WorkOutEntity ADD COLUMN isDirty INTEGER NOT NULL DEFAULT 0")
+                database.execSQL("ALTER TABLE PlanningEntity ADD COLUMN realId INTEGER NOT NULL DEFAULT 0")
+                database.execSQL("ALTER TABLE PlanningEntity ADD COLUMN isDirty INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
         return Room.databaseBuilder(appContext, RutinAppDatabase::class.java, "RutinAppDatabase.db")
-            .addMigrations(MIGRATION_2_3, MIGRATION_3_4)
+            .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
             .build()
     }
 

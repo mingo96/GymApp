@@ -6,6 +6,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mintocode.rutinapp.data.UserDetails
 import com.mintocode.rutinapp.data.models.ExerciseModel
 import com.mintocode.rutinapp.data.models.PlanningModel
 import com.mintocode.rutinapp.data.models.RoutineModel
@@ -22,6 +23,7 @@ import com.mintocode.rutinapp.domain.getUseCases.GetTodaysPlanningUseCase
 import com.mintocode.rutinapp.domain.getUseCases.GetWorkoutsUseCase
 import com.mintocode.rutinapp.domain.updateUseCases.UpdateSetUseCase
 import com.mintocode.rutinapp.domain.updateUseCases.UpdateWorkoutUseCase
+import com.mintocode.rutinapp.sync.SyncManager
 import com.mintocode.rutinapp.ui.screenStates.SetState
 import com.mintocode.rutinapp.ui.screenStates.WorkoutsScreenState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -53,6 +55,7 @@ class WorkoutsViewModel @Inject constructor(
     private val deleteWorkoutUseCase: DeleteWorkoutUseCase,
     private val updateWorkoutUseCase: UpdateWorkoutUseCase,
     private val getRelatedExercisesByBodyPartUseCase: GetRelatedExercisesByBodyPartUseCase,
+    private val syncManager: SyncManager,
 ) : ViewModel() {
 
     lateinit var exercisesViewModel: ExercisesViewModel
@@ -114,6 +117,46 @@ class WorkoutsViewModel @Inject constructor(
         adsViewModel = adViewModel
     }
 
+    /**
+     * Auto-refresh silencioso al entrar a la pantalla.
+     * Sube workouts dirty y descarga los del servidor sin mostrar toast.
+     */
+    fun autoSync() {
+        val token = UserDetails.actualValue?.authToken
+        if (token.isNullOrBlank()) return
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                // 1. Subir workouts pendientes (dirty con realId == 0)
+                val dirtyNew = workouts.value.filter { it.isDirty && it.realId == 0L }
+                if (dirtyNew.isNotEmpty()) {
+                    val mappings = syncManager.syncNewWorkouts(dirtyNew)
+                    mappings.forEach { (localId, serverId) ->
+                        val local = dirtyNew.find { it.id.toString() == localId }
+                        if (local != null) {
+                            local.realId = serverId
+                            local.isDirty = false
+                            updateWorkoutUseCase(local)
+                        }
+                    }
+                }
+
+                // 2. Descargar workouts del servidor y merge
+                val remote = syncManager.downloadMyWorkouts()
+                if (remote.isNotEmpty()) {
+                    val existingByReal = workouts.value
+                        .filter { it.realId != 0L }
+                        .associateBy { it.realId }
+                    remote.forEach { incoming ->
+                        if (incoming.realId != 0L && existingByReal[incoming.realId] == null) {
+                            incoming.isDirty = false
+                            addWorkoutUseCase(incoming)
+                        }
+                    }
+                }
+            } catch (_: Exception) { }
+        }
+    }
+
     fun startFromRoutine(routine: RoutineModel) {
 
         viewModelScope.launch(Dispatchers.IO) {
@@ -131,7 +174,8 @@ class WorkoutsViewModel @Inject constructor(
                     Pair<ExerciseModel, MutableList<SetModel>>(
                         it, mutableListOf()
                     )
-                }.toMutableList()
+                }.toMutableList(),
+                isDirty = true
             )
 
             val availableExercises =
@@ -156,7 +200,8 @@ class WorkoutsViewModel @Inject constructor(
             val newWorkout = WorkoutModel(
                 date = momentOfCreation,
                 title = "Entreno del " + momentOfCreation.toInstant().toString().substring(0, 10),
-                baseRoutine = null
+                baseRoutine = null,
+                isDirty = true
             )
 
             val availableExercises = exercises.first()
@@ -551,7 +596,8 @@ class WorkoutsViewModel @Inject constructor(
                         Pair<ExerciseModel, MutableList<SetModel>>(
                             it, mutableListOf()
                         )
-                    }.toMutableList()
+                    }.toMutableList(),
+                    isDirty = true
                 )
 
                 val availableExercises =
