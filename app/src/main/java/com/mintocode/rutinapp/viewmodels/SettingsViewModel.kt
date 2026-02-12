@@ -19,6 +19,7 @@ import com.mintocode.rutinapp.data.api.v2.ApiV2Service
 import com.mintocode.rutinapp.data.api.v2.dto.GoogleAuthRequest
 import com.mintocode.rutinapp.data.api.v2.dto.LoginRequest
 import com.mintocode.rutinapp.data.api.v2.dto.RegisterRequest
+import com.mintocode.rutinapp.data.notifications.NotificationHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import com.mintocode.rutinapp.ui.screenStates.SettingsScreenState
@@ -292,6 +293,50 @@ class SettingsViewModel @Inject constructor(
     }
 
     private fun registerUserOnServer(authResult: AuthResult) { /* deprecated: backend handles via /auth/google */ }
+
+    /** Instancia del helper de notificaciones, inicializada bajo demanda. */
+    private var notificationHelper: NotificationHelper? = null
+
+    /**
+     * Inicializa el helper de notificaciones.
+     *
+     * Debe llamarse con el contexto de la actividad para poder crear canales.
+     *
+     * @param context Contexto de la aplicación
+     */
+    fun initNotificationHelper(context: Context) {
+        if (notificationHelper == null) {
+            notificationHelper = NotificationHelper(context.applicationContext, apiV2)
+            notificationHelper?.createNotificationChannels()
+        }
+    }
+
+    /**
+     * Verifica si el permiso de notificaciones está concedido.
+     *
+     * @return true si concedido (o pre-Android 13)
+     */
+    fun hasNotificationPermission(): Boolean {
+        return notificationHelper?.hasNotificationPermission() ?: false
+    }
+
+    /**
+     * Registra el token FCM con el backend si el usuario está autenticado.
+     *
+     * Se invoca tras conceder el permiso de notificaciones o tras login exitoso.
+     */
+    fun registerFcmTokenIfNeeded() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val userData = _data.value
+                if (userData != null && userData.authToken.isNotBlank()) {
+                    notificationHelper?.registerTokenWithBackend()
+                }
+            } catch (e: Exception) {
+                Log.e("SettingsVM", "Error registrando FCM token", e)
+            }
+        }
+    }
 
 }
 

@@ -93,6 +93,7 @@ dependencies {
     // Firebase
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth.ktx)
+    implementation(libs.firebase.messaging)
 
     // Ads
     implementation(libs.play.services.ads)

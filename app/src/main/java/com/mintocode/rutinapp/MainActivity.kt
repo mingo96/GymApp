@@ -189,6 +189,9 @@ class MainActivity : ComponentActivity() {
 
         settingsViewModel.initiateDataStore(datastore)
 
+        // Inicializar notificaciones (crear canales)
+        settingsViewModel.initNotificationHelper(context)
+
         workoutsViewModel.provideAdsViewModel(adViewModel)
 
         statsViewModel.provideAdsViewModel(adViewModel)
@@ -202,6 +205,9 @@ class MainActivity : ComponentActivity() {
                 adViewModel.initiateObjects(this@MainActivity, DataStoreManager(context))
             }
         }
+
+        // Registrar token FCM con el backend si hay permiso y el usuario está autenticado
+        settingsViewModel.registerFcmTokenIfNeeded()
 
     }
 

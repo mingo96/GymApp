@@ -1,5 +1,7 @@
 package com.mintocode.rutinapp.ui.screens
 
+import android.Manifest
+import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -233,5 +235,85 @@ fun UserSettingsInput(
 
     }
 
+    // Sección de notificaciones
+    NotificationPermissionSection(settingsViewModel = settingsViewModel)
 
+}
+
+/**
+ * Sección de configuración de notificaciones push.
+ *
+ * Muestra el estado actual del permiso de notificaciones y permite
+ * al usuario activarlas si no lo ha hecho. En Android 13+ se solicita
+ * el permiso POST_NOTIFICATIONS explícitamente.
+ *
+ * @param settingsViewModel ViewModel de configuración
+ */
+@Composable
+fun NotificationPermissionSection(settingsViewModel: SettingsViewModel) {
+    val context = LocalContext.current
+
+    var hasPermission by rememberSaveable {
+        mutableStateOf(settingsViewModel.hasNotificationPermission())
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        hasPermission = granted
+        if (granted) {
+            settingsViewModel.registerFcmTokenIfNeeded()
+            Toast.makeText(context, "Notificaciones activadas", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(context, "Notificaciones denegadas", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(TextFieldColor, RoundedCornerShape(12.dp))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            text = "Notificaciones",
+            fontSize = 16.sp,
+            color = Color.White
+        )
+
+        if (hasPermission) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = "✓ Notificaciones activadas",
+                    fontSize = 14.sp,
+                    color = Color(0xFF4CAF50)
+                )
+            }
+        } else {
+            Text(
+                text = "Activa las notificaciones para recibir avisos sobre tus entrenamientos.",
+                fontSize = 13.sp,
+                color = Color.White.copy(alpha = 0.7f)
+            )
+
+            Button(
+                onClick = {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    } else {
+                        // Pre-Android 13: permiso ya concedido por defecto
+                        hasPermission = true
+                        settingsViewModel.registerFcmTokenIfNeeded()
+                    }
+                },
+                colors = rutinAppButtonsColours()
+            ) {
+                Text(text = "Activar notificaciones")
+            }
+        }
+    }
 }
