@@ -1,6 +1,5 @@
 package com.mintocode.rutinapp.data.notifications
 
-import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
@@ -11,13 +10,24 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.mintocode.rutinapp.MainActivity
 import com.mintocode.rutinapp.R
+import com.mintocode.rutinapp.data.daos.AppNotificationDao
+import com.mintocode.rutinapp.data.daos.AppNotificationEntity
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import java.time.Instant
+import javax.inject.Inject
 
 /**
  * Servicio de Firebase Cloud Messaging para recibir notificaciones push.
  *
- * Gestiona la recepción de mensajes push y la renovación del token FCM.
+ * Gestiona la recepción de mensajes push, la renovación del token FCM
+ * y la persistencia local de las notificaciones recibidas.
  * El canal de notificaciones se crea al iniciar la app en [NotificationHelper].
  */
+@AndroidEntryPoint
 class RutinAppMessagingService : FirebaseMessagingService() {
 
     companion object {
@@ -29,6 +39,11 @@ class RutinAppMessagingService : FirebaseMessagingService() {
         /** Nombre visible del canal general. */
         const val CHANNEL_NAME_GENERAL = "General"
     }
+
+    @Inject
+    lateinit var notificationDao: AppNotificationDao
+
+    private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     /**
      * Callback cuando se recibe un nuevo token FCM.
@@ -49,8 +64,8 @@ class RutinAppMessagingService : FirebaseMessagingService() {
     /**
      * Callback cuando se recibe un mensaje push.
      *
-     * Muestra una notificación local si el mensaje contiene datos de notificación.
-     * Si el mensaje es data-only, se puede procesar en [remoteMessage.data].
+     * Muestra una notificación local si el mensaje contiene datos de notificación
+     * y persiste la notificación en la base de datos Room.
      *
      * @param remoteMessage Mensaje recibido de Firebase
      */
@@ -66,8 +81,36 @@ class RutinAppMessagingService : FirebaseMessagingService() {
             ?: remoteMessage.data["body"]
             ?: ""
 
+        val type = remoteMessage.data["type"] ?: "info"
+
         if (body.isNotBlank()) {
             showNotification(title, body, remoteMessage.data)
+            persistNotification(title, body, type)
+        }
+    }
+
+    /**
+     * Persiste la notificación recibida en Room para que se muestre
+     * en la lista de notificaciones de la app.
+     */
+    private fun persistNotification(title: String, body: String, type: String) {
+        serviceScope.launch {
+            try {
+                val now = Instant.now().toString()
+                notificationDao.insert(
+                    AppNotificationEntity(
+                        serverId = 0, // Se sincronizará con el servidor después
+                        title = title,
+                        body = body,
+                        type = type,
+                        createdAt = now,
+                        updatedAt = now
+                    )
+                )
+                Log.d(TAG, "Notificación persistida localmente: $title")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error persistiendo notificación", e)
+            }
         }
     }
 

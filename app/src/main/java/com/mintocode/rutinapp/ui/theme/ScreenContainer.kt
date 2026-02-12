@@ -24,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.twotone.ArrowBack
 import androidx.compose.material.icons.automirrored.twotone.List
 import androidx.compose.material.icons.twotone.DateRange
+import androidx.compose.material.icons.twotone.Notifications
 import androidx.compose.material.icons.twotone.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -223,6 +224,11 @@ fun LateralMenu(
                 icon = { Icon(Icons.TwoTone.Settings, contentDescription = "settings", modifier = Modifier.size(24.dp)) },
                 label = "Configuración",
                 onClick = { navController.navigate("settings"); onClose() }
+            )
+            DrawerNavItem(
+                icon = { Icon(Icons.TwoTone.Notifications, contentDescription = "notifications", modifier = Modifier.size(24.dp)) },
+                label = "Notificaciones",
+                onClick = { navController.navigate("notifications"); onClose() }
             )
         }
     }

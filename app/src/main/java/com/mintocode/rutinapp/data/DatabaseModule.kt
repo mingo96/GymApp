@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.mintocode.rutinapp.data.daos.AppNotificationDao
 import com.mintocode.rutinapp.data.daos.ExerciseDao
 import com.mintocode.rutinapp.data.daos.ExerciseToExerciseDao
 import com.mintocode.rutinapp.data.daos.PlanningDao
@@ -64,6 +65,11 @@ class DatabaseModule {
     }
 
     @Provides
+    fun provideAppNotificationDao(database: RutinAppDatabase): AppNotificationDao {
+        return database.appNotificationDao()
+    }
+
+    @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext appContext: Context): RutinAppDatabase {
         // Migrations:
@@ -96,8 +102,28 @@ class DatabaseModule {
             }
         }
 
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `app_notifications` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `serverId` INTEGER NOT NULL DEFAULT 0,
+                        `title` TEXT NOT NULL,
+                        `body` TEXT NOT NULL DEFAULT '',
+                        `type` TEXT NOT NULL DEFAULT 'info',
+                        `data` TEXT,
+                        `readAt` TEXT,
+                        `createdAt` TEXT NOT NULL DEFAULT '',
+                        `updatedAt` TEXT NOT NULL DEFAULT ''
+                    )
+                """.trimIndent())
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_app_notifications_readAt` ON `app_notifications` (`readAt`)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_app_notifications_createdAt` ON `app_notifications` (`createdAt`)")
+            }
+        }
+
         return Room.databaseBuilder(appContext, RutinAppDatabase::class.java, "RutinAppDatabase.db")
-            .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+            .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
             .build()
     }
 

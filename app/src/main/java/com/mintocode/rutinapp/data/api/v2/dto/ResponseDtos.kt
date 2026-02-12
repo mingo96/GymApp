@@ -389,3 +389,30 @@ data class DevicePreferencesRequest(
     @SerializedName("push_enabled") val pushEnabled: Boolean,
     @SerializedName("email_notifications_enabled") val emailNotificationsEnabled: Boolean? = null
 )
+
+// ============================================================================
+// Notification DTOs
+// ============================================================================
+
+/**
+ * DTO representing a notification from the backend (GET /notifications).
+ */
+data class NotificationDto(
+    val id: Long,
+    @SerializedName("user_id") val userId: Long,
+    val title: String,
+    val body: String?,
+    val type: String,
+    val data: Map<String, String>?,
+    @SerializedName("read_at") val readAt: String?,
+    @SerializedName("is_read") val isRead: Boolean,
+    @SerializedName("created_at") val createdAt: String,
+    @SerializedName("updated_at") val updatedAt: String
+)
+
+/**
+ * Response for unread count endpoint (GET /notifications/unread-count).
+ */
+data class UnreadCountResponse(
+    @SerializedName("unread_count") val unreadCount: Int
+)

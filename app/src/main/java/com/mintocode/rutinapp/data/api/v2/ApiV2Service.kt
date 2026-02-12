@@ -370,4 +370,46 @@ interface ApiV2Service {
      */
     @PUT("device/preferences")
     suspend fun updateDevicePreferences(@Body body: DevicePreferencesRequest): MessageResponse
+
+    // ========================================================================
+    // Notifications
+    // ========================================================================
+
+    /**
+     * List notifications for the authenticated user (paginated).
+     *
+     * @param perPage Items per page (max 50)
+     * @param filter Optional filter: 'unread', 'read', or null for all
+     * @param page Page number
+     */
+    @GET("notifications")
+    suspend fun getNotifications(
+        @Query("per_page") perPage: Int? = null,
+        @Query("filter") filter: String? = null,
+        @Query("page") page: Int? = null
+    ): PaginatedResponse<NotificationDto>
+
+    /**
+     * Get the count of unread notifications.
+     */
+    @GET("notifications/unread-count")
+    suspend fun getUnreadNotificationCount(): UnreadCountResponse
+
+    /**
+     * Mark a specific notification as read.
+     */
+    @POST("notifications/{id}/read")
+    suspend fun markNotificationAsRead(@Path("id") id: Long): MessageResponse
+
+    /**
+     * Mark all notifications as read.
+     */
+    @POST("notifications/read-all")
+    suspend fun markAllNotificationsAsRead(): MessageResponse
+
+    /**
+     * Delete a specific notification.
+     */
+    @DELETE("notifications/{id}")
+    suspend fun deleteNotification(@Path("id") id: Long): Response<Unit>
 }

@@ -29,6 +29,7 @@ import com.google.android.gms.auth.api.identity.BeginSignInRequest
 import com.mintocode.rutinapp.ui.screens.ExercisesScreen
 import com.mintocode.rutinapp.ui.screens.LoadingScreen
 import com.mintocode.rutinapp.ui.screens.MainScreen
+import com.mintocode.rutinapp.ui.screens.NotificationsScreen
 import com.mintocode.rutinapp.ui.screens.RoutinesScreen
 import com.mintocode.rutinapp.ui.screens.SettinsScreen
 import com.mintocode.rutinapp.ui.screens.StatsScreen
@@ -42,6 +43,7 @@ import android.widget.Toast
 import com.mintocode.rutinapp.viewmodels.AdViewModel
 import com.mintocode.rutinapp.viewmodels.ExercisesViewModel
 import com.mintocode.rutinapp.viewmodels.MainScreenViewModel
+import com.mintocode.rutinapp.viewmodels.NotificationsViewModel
 import com.mintocode.rutinapp.viewmodels.RoutinesViewModel
 import com.mintocode.rutinapp.viewmodels.SettingsViewModel
 import com.mintocode.rutinapp.viewmodels.StatsViewModel
@@ -65,6 +67,7 @@ class MainActivity : ComponentActivity() {
     private val statsViewModel: StatsViewModel by viewModels()
     private val settingsViewModel: SettingsViewModel by viewModels()
     private val mainScreenViewModel: MainScreenViewModel by viewModels()
+    private val notificationsViewModel: NotificationsViewModel by viewModels()
     private val adViewModel: AdViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -171,6 +174,15 @@ class MainActivity : ComponentActivity() {
                             exitTransition = { onExit }) {
                             SettinsScreen(
                                 navController = navController, settingsViewModel = settingsViewModel
+                            )
+                        }
+
+                        composable("notifications",
+                            enterTransition = { onEnter },
+                            exitTransition = { onExit }) {
+                            NotificationsScreen(
+                                navController = navController,
+                                viewModel = notificationsViewModel
                             )
                         }
 
