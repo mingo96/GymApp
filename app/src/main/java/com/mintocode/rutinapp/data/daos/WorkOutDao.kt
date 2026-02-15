@@ -1,5 +1,6 @@
 package com.mintocode.rutinapp.data.daos
 
+import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Embedded
@@ -20,8 +21,8 @@ data class WorkOutEntity(
     val date: Long,
     var title: String,
     var isFinished: Boolean,
-    var realId: Int = 0,
-    var isDirty: Boolean = false
+    @ColumnInfo(defaultValue = "0") var realId: Int = 0,
+    @ColumnInfo(defaultValue = "0") var isDirty: Boolean = false
 ){
     fun toModel(): WorkoutModel {
         return WorkoutModel(

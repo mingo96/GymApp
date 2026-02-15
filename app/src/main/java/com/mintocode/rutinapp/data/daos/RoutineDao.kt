@@ -1,5 +1,6 @@
 package com.mintocode.rutinapp.data.daos
 
+import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Embedded
@@ -22,8 +23,8 @@ data class RoutineEntity(
     val routineId: Int,
     var name: String,
     var targetedBodyPart: String,
-    var realId: Int,
-    var isFromThisUser: Boolean = true
+    @ColumnInfo(defaultValue = "0") var realId: Int,
+    @ColumnInfo(defaultValue = "1") var isFromThisUser: Boolean = true
 ){
     fun toModel() = RoutineModel(
         id = routineId,

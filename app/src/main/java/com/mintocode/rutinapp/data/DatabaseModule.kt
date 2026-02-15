@@ -75,30 +75,37 @@ class DatabaseModule {
         // Migrations:
         // v2 -> v3: add realId columns (default 0) to Exercise, Routine, WorkOut tables
         // v3 -> v4: add isFromThisUser columns (default 1) to Exercise, Routine, WorkOut tables
-        // Direct v2 -> v4 supported by sequential application.
+        // v4 -> v5: add isDirty to WorkOut/Planning, realId to Planning
+        // v5 -> v6: create app_notifications table
+        // Note: MIGRATION_4_5 includes safety checks for realId columns in case
+        // earlier migrations (2→3) were skipped (e.g., fresh install at version 4).
 
         val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(database: SupportSQLiteDatabase) {
-                // Add realId columns if not exist (Room doesn't support IF NOT EXISTS inside ALTER properly, assume clean add)
-                database.execSQL("ALTER TABLE ExerciseEntity ADD COLUMN realId INTEGER NOT NULL DEFAULT 0")
-                database.execSQL("ALTER TABLE RoutineEntity ADD COLUMN realId INTEGER NOT NULL DEFAULT 0")
-                database.execSQL("ALTER TABLE WorkOutEntity ADD COLUMN realId INTEGER NOT NULL DEFAULT 0")
+                safeAddColumn(database, "ExerciseEntity", "realId", "INTEGER NOT NULL DEFAULT 0")
+                safeAddColumn(database, "RoutineEntity", "realId", "INTEGER NOT NULL DEFAULT 0")
+                safeAddColumn(database, "WorkOutEntity", "realId", "INTEGER NOT NULL DEFAULT 0")
             }
         }
 
         val MIGRATION_3_4 = object : Migration(3, 4) {
             override fun migrate(database: SupportSQLiteDatabase) {
-                database.execSQL("ALTER TABLE ExerciseEntity ADD COLUMN isFromThisUser INTEGER NOT NULL DEFAULT 1")
-                database.execSQL("ALTER TABLE RoutineEntity ADD COLUMN isFromThisUser INTEGER NOT NULL DEFAULT 1")
-                database.execSQL("ALTER TABLE WorkOutEntity ADD COLUMN isFromThisUser INTEGER NOT NULL DEFAULT 1")
+                safeAddColumn(database, "ExerciseEntity", "isFromThisUser", "INTEGER NOT NULL DEFAULT 1")
+                safeAddColumn(database, "RoutineEntity", "isFromThisUser", "INTEGER NOT NULL DEFAULT 1")
+                safeAddColumn(database, "WorkOutEntity", "isFromThisUser", "INTEGER NOT NULL DEFAULT 1")
             }
         }
 
         val MIGRATION_4_5 = object : Migration(4, 5) {
             override fun migrate(database: SupportSQLiteDatabase) {
-                database.execSQL("ALTER TABLE WorkOutEntity ADD COLUMN isDirty INTEGER NOT NULL DEFAULT 0")
-                database.execSQL("ALTER TABLE PlanningEntity ADD COLUMN realId INTEGER NOT NULL DEFAULT 0")
-                database.execSQL("ALTER TABLE PlanningEntity ADD COLUMN isDirty INTEGER NOT NULL DEFAULT 0")
+                // Safety: ensure realId exists on all tables (in case v2→v3 never ran)
+                safeAddColumn(database, "ExerciseEntity", "realId", "INTEGER NOT NULL DEFAULT 0")
+                safeAddColumn(database, "RoutineEntity", "realId", "INTEGER NOT NULL DEFAULT 0")
+                safeAddColumn(database, "WorkOutEntity", "realId", "INTEGER NOT NULL DEFAULT 0")
+                // New columns for v5
+                safeAddColumn(database, "WorkOutEntity", "isDirty", "INTEGER NOT NULL DEFAULT 0")
+                safeAddColumn(database, "PlanningEntity", "realId", "INTEGER NOT NULL DEFAULT 0")
+                safeAddColumn(database, "PlanningEntity", "isDirty", "INTEGER NOT NULL DEFAULT 0")
             }
         }
 
@@ -127,5 +134,28 @@ class DatabaseModule {
             .build()
     }
 
-
+    /**
+     * Safely adds a column to a table, ignoring the error if the column already exists.
+     *
+     * SQLite does not support ALTER TABLE ... ADD COLUMN IF NOT EXISTS,
+     * so we catch the exception for duplicate column names.
+     *
+     * @param db The SQLite database
+     * @param table Table name
+     * @param column Column name to add
+     * @param definition Column type and constraints (e.g. "INTEGER NOT NULL DEFAULT 0")
+     */
+    private fun safeAddColumn(
+        db: SupportSQLiteDatabase,
+        table: String,
+        column: String,
+        definition: String
+    ) {
+        try {
+            db.execSQL("ALTER TABLE $table ADD COLUMN $column $definition")
+        } catch (e: Exception) {
+            // Column already exists — safe to ignore
+            android.util.Log.d("DatabaseModule", "Column $column already exists in $table, skipping")
+        }
+    }
 }

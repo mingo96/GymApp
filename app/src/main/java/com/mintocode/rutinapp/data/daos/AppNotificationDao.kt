@@ -1,5 +1,6 @@
 package com.mintocode.rutinapp.data.daos
 
+import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Entity
 import androidx.room.Index
@@ -27,14 +28,14 @@ import kotlinx.coroutines.flow.Flow
 )
 data class AppNotificationEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val serverId: Long = 0,
+    @ColumnInfo(defaultValue = "0") val serverId: Long = 0,
     val title: String,
-    val body: String = "",
-    val type: String = "info",
+    @ColumnInfo(defaultValue = "") val body: String = "",
+    @ColumnInfo(defaultValue = "info") val type: String = "info",
     val data: String? = null,
     val readAt: String? = null,
-    val createdAt: String = "",
-    val updatedAt: String = ""
+    @ColumnInfo(defaultValue = "") val createdAt: String = "",
+    @ColumnInfo(defaultValue = "") val updatedAt: String = ""
 )
 
 /**

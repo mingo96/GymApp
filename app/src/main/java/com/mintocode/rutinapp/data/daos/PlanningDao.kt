@@ -1,5 +1,6 @@
 package com.mintocode.rutinapp.data.daos
 
+import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Entity
@@ -22,8 +23,8 @@ data class PlanningEntity(
     val date: Long,
     var routineId: Int?,
     var bodyPart: String?,
-    var realId: Int = 0,
-    var isDirty: Boolean = false
+    @ColumnInfo(defaultValue = "0") var realId: Int = 0,
+    @ColumnInfo(defaultValue = "0") var isDirty: Boolean = false
 ) {
     fun toModel(): PlanningModel {
         return PlanningModel(

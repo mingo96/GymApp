@@ -1,5 +1,6 @@
 package com.mintocode.rutinapp.data.daos
 
+import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Entity
@@ -21,8 +22,8 @@ class ExerciseEntity(
     var exerciseName: String = "",
     var exerciseDescription: String = "",
     var targetedBodyPart: String = "",
-    var realId: Int = 0,
-    val isFromThisUser: Boolean = true
+    @ColumnInfo(defaultValue = "0") var realId: Int = 0,
+    @ColumnInfo(defaultValue = "1") val isFromThisUser: Boolean = true
 ) {
     fun toModel() = ExerciseModel(
         this.exerciseId.toString(),
