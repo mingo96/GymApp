@@ -24,13 +24,22 @@ data class PlanningEntity(
     var routineId: Int?,
     var bodyPart: String?,
     @ColumnInfo(defaultValue = "0") var realId: Int = 0,
-    @ColumnInfo(defaultValue = "0") var isDirty: Boolean = false
+    @ColumnInfo(defaultValue = "0") var isDirty: Boolean = false,
+    @ColumnInfo(defaultValue = "") var reminderTime: String? = null
 ) {
+    /**
+     * Converts entity to domain model.
+     *
+     * Includes bodyPart and reminderTime. Routine must be resolved separately
+     * since the entity only stores routineId (FK).
+     */
     fun toModel(): PlanningModel {
         return PlanningModel(
             id = id,
             realId = realId.toLong(),
             date = Date(date),
+            statedBodyPart = bodyPart,
+            reminderTime = reminderTime,
             isDirty = isDirty
         )
     }

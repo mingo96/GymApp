@@ -171,7 +171,8 @@ data class SyncPlanningCreate(
     @SerializedName("local_id") val localId: String,
     val date: String,
     @SerializedName("routine_id") val routineId: Long? = null,
-    @SerializedName("body_part") val bodyPart: String? = null
+    @SerializedName("body_part") val bodyPart: String? = null,
+    @SerializedName("reminder_time") val reminderTime: String? = null
 )
 
 data class SyncPlanningUpdate(
@@ -179,6 +180,7 @@ data class SyncPlanningUpdate(
     val date: String? = null,
     @SerializedName("routine_id") val routineId: Long? = null,
     @SerializedName("body_part") val bodyPart: String? = null,
+    @SerializedName("reminder_time") val reminderTime: String? = null,
     @SerializedName("updated_at") val updatedAt: String
 )
 

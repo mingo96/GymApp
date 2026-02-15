@@ -293,6 +293,7 @@ data class PlanningDto(
     val date: String,
     @SerializedName("body_part") val bodyPart: String?,
     val routine: RoutineDto?,
+    @SerializedName("reminder_time") val reminderTime: String?,
     @SerializedName("created_at") val createdAt: String?,
     @SerializedName("updated_at") val updatedAt: String?
 )
@@ -303,7 +304,8 @@ data class PlanningDto(
 data class CreatePlanningRequest(
     val date: String,
     @SerializedName("routine_id") val routineId: Long? = null,
-    @SerializedName("body_part") val bodyPart: String? = null
+    @SerializedName("body_part") val bodyPart: String? = null,
+    @SerializedName("reminder_time") val reminderTime: String? = null
 )
 
 /**
@@ -312,7 +314,8 @@ data class CreatePlanningRequest(
 data class UpdatePlanningRequest(
     val date: String? = null,
     @SerializedName("routine_id") val routineId: Long? = null,
-    @SerializedName("body_part") val bodyPart: String? = null
+    @SerializedName("body_part") val bodyPart: String? = null,
+    @SerializedName("reminder_time") val reminderTime: String? = null
 )
 
 // ============================================================================

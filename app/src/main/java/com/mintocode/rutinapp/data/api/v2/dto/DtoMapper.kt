@@ -197,7 +197,8 @@ object DtoMapper {
     /**
      * Maps a PlanningDto from the API to a local PlanningModel.
      *
-     * Note: The routine reference needs to be resolved separately.
+     * Note: The routine reference has realId set but local id = 0.
+     * Caller must resolve the local routineId before persisting.
      */
     fun toPlanningModel(dto: PlanningDto): PlanningModel {
         return PlanningModel(
@@ -206,19 +207,26 @@ object DtoMapper {
             date = parseDate(dto.date),
             statedRoutine = dto.routine?.let { toRoutineModel(it) },
             statedBodyPart = dto.bodyPart,
+            reminderTime = dto.reminderTime,
             isDirty = false
         )
     }
 
     /**
      * Converts a local PlanningModel to a SyncPlanningCreate DTO.
+     *
+     * Uses the routine's server realId. If the routine has not been
+     * synced (realId == 0), sends null to avoid referencing a non-existent
+     * server resource.
      */
     fun toSyncPlanningCreate(model: PlanningModel): SyncPlanningCreate {
+        val routineServerId = model.statedRoutine?.realId?.toLong()
         return SyncPlanningCreate(
             localId = model.id.toString(),
             date = toDateString(model.date),
-            routineId = model.statedRoutine?.realId?.toLong(),
-            bodyPart = model.statedBodyPart
+            routineId = if (routineServerId != null && routineServerId != 0L) routineServerId else null,
+            bodyPart = model.statedBodyPart,
+            reminderTime = model.reminderTime
         )
     }
 }

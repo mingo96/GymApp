@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import java.util.Date
 import javax.inject.Inject
 
@@ -72,20 +73,29 @@ class MainScreenViewModel @Inject constructor(
 
     /**
      * Auto-refresh silencioso al entrar a la pantalla.
-     * Sube plannings dirty y descarga los del servidor sin mostrar toast.
+     *
+     * Sube plannings no sincronizados y descarga los del servidor sin mostrar toast.
+     * Resuelve las referencias de rutinas (realId → localId) para evitar
+     * violaciones de FK al insertar plannings descargados.
      */
     fun autoSync() {
         val token = UserDetails.actualValue?.authToken
         if (token.isNullOrBlank()) return
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                // 1. Subir plannings pendientes (dirty con realId == 0)
-                val allPlannings = _plannings.value ?: emptyList()
-                val dirtyNew = allPlannings.filter { it.isDirty && it.realId == 0L }
-                if (dirtyNew.isNotEmpty()) {
-                    val mappings = syncManager.syncNewPlannings(dirtyNew)
+                // Esperar hasta 3s a que se carguen los plannings desde Room
+                val allPlannings = withTimeoutOrNull(3000L) {
+                    _planningsFlow.first { it.isNotEmpty() }
+                } ?: (_plannings.value ?: emptyList())
+
+                // 1. Subir plannings no sincronizados (realId == 0 implica nunca subido)
+                // Incluimos todos los que no tienen realId, no solo los dirty,
+                // para sincronizar plannings creados antes de que existiera isDirty.
+                val unsynced = allPlannings.filter { it.realId == 0L }
+                if (unsynced.isNotEmpty()) {
+                    val mappings = syncManager.syncNewPlannings(unsynced)
                     mappings.forEach { (localId, serverId) ->
-                        val local = dirtyNew.find { it.id.toString() == localId }
+                        val local = unsynced.find { it.id.toString() == localId }
                         if (local != null) {
                             local.realId = serverId
                             local.isDirty = false
@@ -97,11 +107,28 @@ class MainScreenViewModel @Inject constructor(
                 // 2. Descargar plannings del servidor y merge
                 val remote = syncManager.downloadMyPlanning()
                 if (remote.isNotEmpty()) {
-                    val existingByReal = allPlannings
+                    // Refrescar lista tras posible upload
+                    val currentPlannings = _plannings.value ?: allPlannings
+                    val existingByReal = currentPlannings
                         .filter { it.realId != 0L }
                         .associateBy { it.realId }
+
+                    // Construir mapa realId → localId para resolver rutinas
+                    val routines = getRoutinesUseCase().first()
+                    val routineByRealId = routines.associateBy { it.realId }
+
                     remote.forEach { incoming ->
                         if (incoming.realId != 0L && existingByReal[incoming.realId] == null) {
+                            // Resolver routineId local desde realId del servidor
+                            if (incoming.statedRoutine != null) {
+                                val localRoutine = routineByRealId[incoming.statedRoutine!!.realId]
+                                if (localRoutine != null) {
+                                    incoming.statedRoutine!!.id = localRoutine.id
+                                } else {
+                                    // Rutina no sincronizada localmente, guardar sin rutina
+                                    incoming.statedRoutine = null
+                                }
+                            }
                             incoming.isDirty = false
                             addPlanningUseCase(incoming)
                         }

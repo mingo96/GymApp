@@ -23,7 +23,7 @@ import com.mintocode.rutinapp.data.daos.WorkoutRoutinesDao
 
 @Database(
     entities = [ExerciseEntity::class, WorkoutRoutineEntity::class, ExerciseToExerciseEntity::class, RoutineEntity::class, RoutineExerciseEntity::class, SetEntity::class, WorkOutEntity::class, PlanningEntity::class, AppNotificationEntity::class],
-    version = 6,
+    version = 7,
     exportSchema = true,
 )
 abstract class RutinAppDatabase : RoomDatabase() {
