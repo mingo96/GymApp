@@ -5,6 +5,7 @@ import androidx.room.Room
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.mintocode.rutinapp.data.daos.AppNotificationDao
+import com.mintocode.rutinapp.data.daos.CalendarPhaseDao
 import com.mintocode.rutinapp.data.daos.ExerciseDao
 import com.mintocode.rutinapp.data.daos.ExerciseToExerciseDao
 import com.mintocode.rutinapp.data.daos.PlanningDao
@@ -67,6 +68,11 @@ class DatabaseModule {
     @Provides
     fun provideAppNotificationDao(database: RutinAppDatabase): AppNotificationDao {
         return database.appNotificationDao()
+    }
+
+    @Provides
+    fun provideCalendarPhaseDao(database: RutinAppDatabase): CalendarPhaseDao {
+        return database.calendarPhaseDao()
     }
 
     @Provides
@@ -136,8 +142,34 @@ class DatabaseModule {
             }
         }
 
+        // v7 -> v8: create CalendarPhaseEntity table + add trainer metadata to PlanningEntity
+        val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // Create CalendarPhaseEntity table
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `CalendarPhaseEntity` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `name` TEXT NOT NULL,
+                        `color` TEXT NOT NULL,
+                        `startDate` INTEGER NOT NULL,
+                        `endDate` INTEGER NOT NULL,
+                        `notes` TEXT,
+                        `visibility` TEXT NOT NULL DEFAULT 'private',
+                        `serverId` INTEGER NOT NULL DEFAULT 0,
+                        `createdByUserId` INTEGER DEFAULT 0,
+                        `localId` TEXT DEFAULT '',
+                        `isDirty` INTEGER NOT NULL DEFAULT 0
+                    )
+                """.trimIndent())
+
+                // Add trainer metadata columns to PlanningEntity
+                safeAddColumn(database, "PlanningEntity", "createdByUserId", "INTEGER DEFAULT 0")
+                safeAddColumn(database, "PlanningEntity", "derivedFromPlanningId", "INTEGER DEFAULT 0")
+            }
+        }
+
         return Room.databaseBuilder(appContext, RutinAppDatabase::class.java, "RutinAppDatabase.db")
-            .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
+            .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
             .build()
     }
 

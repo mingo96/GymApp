@@ -11,8 +11,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -22,6 +25,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -238,6 +242,9 @@ fun UserSettingsInput(
     // Sección de notificaciones
     NotificationPermissionSection(settingsViewModel = settingsViewModel)
 
+    // Sección de entrenadores
+    TrainerManagementSection(settingsViewModel = settingsViewModel)
+
 }
 
 /**
@@ -314,6 +321,122 @@ fun NotificationPermissionSection(settingsViewModel: SettingsViewModel) {
             ) {
                 Text(text = "Activar notificaciones")
             }
+        }
+    }
+}
+
+/**
+ * Sección de gestión de entrenadores.
+ *
+ * Permite al usuario canjear un código de invitación de entrenador,
+ * ver la lista de entrenadores vinculados y revocar acceso.
+ *
+ * @param settingsViewModel ViewModel de configuración
+ */
+@Composable
+fun TrainerManagementSection(settingsViewModel: SettingsViewModel) {
+    val context = LocalContext.current
+    val trainers by settingsViewModel.trainers.observeAsState(emptyList())
+
+    var inviteCode by rememberSaveable { mutableStateOf("") }
+
+    LaunchedEffect(Unit) {
+        settingsViewModel.loadTrainers()
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(TextFieldColor, RoundedCornerShape(12.dp))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            text = "Entrenadores",
+            fontSize = 16.sp,
+            color = Color.White
+        )
+
+        Text(
+            text = "Canjea un código de invitación para vincular a tu entrenador.",
+            fontSize = 13.sp,
+            color = Color.White.copy(alpha = 0.7f)
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                TextFieldWithTitle(
+                    title = "Código de invitación",
+                    text = inviteCode,
+                    onWrite = { inviteCode = it }
+                )
+            }
+            Button(
+                onClick = {
+                    settingsViewModel.redeemInviteCode(inviteCode, context)
+                    inviteCode = ""
+                },
+                colors = rutinAppButtonsColours()
+            ) {
+                Text(text = "Canjear")
+            }
+        }
+
+        if (trainers.isNotEmpty()) {
+            Text(
+                text = "Entrenadores vinculados:",
+                fontSize = 14.sp,
+                color = Color.White.copy(alpha = 0.8f)
+            )
+
+            LazyColumn(
+                modifier = Modifier.heightIn(0.dp, 200.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                items(trainers) { trainer ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                Color.White.copy(alpha = 0.05f),
+                                RoundedCornerShape(8.dp)
+                            )
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Entrenador #${trainer.trainerUserId}",
+                                fontSize = 14.sp
+                            )
+                            Text(
+                                text = "Estado: ${trainer.status}",
+                                fontSize = 12.sp,
+                                color = Color.White.copy(alpha = 0.5f)
+                            )
+                        }
+                        Button(
+                            onClick = {
+                                settingsViewModel.revokeTrainer(trainer.id, context)
+                            },
+                            colors = rutinAppButtonsColours()
+                        ) {
+                            Text(text = "Revocar", fontSize = 12.sp)
+                        }
+                    }
+                }
+            }
+        } else {
+            Text(
+                text = "No hay entrenadores vinculados",
+                fontSize = 13.sp,
+                color = Color.White.copy(alpha = 0.5f)
+            )
         }
     }
 }

@@ -25,12 +25,15 @@ data class PlanningEntity(
     var bodyPart: String?,
     @ColumnInfo(defaultValue = "0") var realId: Int = 0,
     @ColumnInfo(defaultValue = "0") var isDirty: Boolean = false,
-    @ColumnInfo(defaultValue = "") var reminderTime: String? = null
+    @ColumnInfo(defaultValue = "") var reminderTime: String? = null,
+    @ColumnInfo(defaultValue = "0") var createdByUserId: Long? = null,
+    @ColumnInfo(defaultValue = "0") var derivedFromPlanningId: Long? = null
 ) {
     /**
      * Converts entity to domain model.
      *
-     * Includes bodyPart and reminderTime. Routine must be resolved separately
+     * Includes bodyPart, reminderTime, and trainer metadata.
+     * Routine and planningExercises must be resolved separately
      * since the entity only stores routineId (FK).
      */
     fun toModel(): PlanningModel {
@@ -40,7 +43,9 @@ data class PlanningEntity(
             date = Date(date),
             statedBodyPart = bodyPart,
             reminderTime = reminderTime,
-            isDirty = isDirty
+            isDirty = isDirty,
+            createdByUserId = createdByUserId,
+            derivedFromPlanningId = derivedFromPlanningId
         )
     }
 }

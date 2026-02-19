@@ -10,7 +10,10 @@ data class PlanningModel(
     var statedRoutine: RoutineModel? = null,
     var statedBodyPart: String? = null,
     var reminderTime: String? = null,
-    var isDirty: Boolean = false
+    var isDirty: Boolean = false,
+    val planningExercises: List<PlanningExerciseModel> = emptyList(),
+    val createdByUserId: Long? = null,
+    val derivedFromPlanningId: Long? = null
 ) {
     /**
      * Converts model to Room entity.
@@ -28,7 +31,15 @@ data class PlanningModel(
             bodyPart = statedBodyPart,
             realId = realId.toInt(),
             isDirty = isDirty,
-            reminderTime = reminderTime
+            reminderTime = reminderTime,
+            createdByUserId = createdByUserId,
+            derivedFromPlanningId = derivedFromPlanningId
         )
     }
+
+    /**
+     * Whether this planning was created by a trainer (not by the user themselves).
+     */
+    val isFromTrainer: Boolean
+        get() = createdByUserId != null && createdByUserId != 0L
 }

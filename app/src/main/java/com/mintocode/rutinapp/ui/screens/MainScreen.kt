@@ -22,6 +22,7 @@ import androidx.compose.material.icons.twotone.CheckCircle
 import androidx.compose.material.icons.twotone.Edit
 import androidx.compose.material.icons.twotone.KeyboardArrowDown
 import androidx.compose.material.icons.twotone.KeyboardArrowUp
+import androidx.compose.material.icons.twotone.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DateRangePicker
@@ -34,6 +35,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
@@ -55,6 +57,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavHostController
 import com.mintocode.rutinapp.R
+import com.mintocode.rutinapp.data.models.CalendarPhaseModel
 import com.mintocode.rutinapp.data.models.RoutineModel
 import com.mintocode.rutinapp.ui.premade.AdjustableText
 import com.mintocode.rutinapp.ui.premade.AnimatedItem
@@ -62,6 +65,7 @@ import com.mintocode.rutinapp.ui.premade.RutinAppCalendar
 import com.mintocode.rutinapp.ui.screenStates.FieldBeingEdited
 import com.mintocode.rutinapp.ui.screenStates.MainScreenState
 import com.mintocode.rutinapp.ui.theme.PrimaryColor
+import com.mintocode.rutinapp.ui.theme.SecondaryColor
 import com.mintocode.rutinapp.ui.theme.ScreenContainer
 import com.mintocode.rutinapp.ui.theme.TextFieldColor
 import com.mintocode.rutinapp.ui.theme.rutinAppButtonsColours
@@ -89,6 +93,8 @@ fun MainScreen(
     val uiState by mainScreenViewModel.uiState.observeAsState(MainScreenState.Observation)
 
     val todaysPlanning by mainScreenViewModel.todaysPlanning.observeAsState()
+
+    val calendarPhases by mainScreenViewModel.calendarPhases.collectAsState()
 
     when (uiState) {
         MainScreenState.Observation -> {
@@ -125,16 +131,83 @@ fun MainScreen(
                         if (todaysPlanning!!.statedBodyPart != null) todaysPlanning!!.statedBodyPart
                         else if (todaysPlanning!!.statedRoutine != null) todaysPlanning!!.statedRoutine!!.name
                         else "Nada planeado"
-                    AdjustableText("Objetivo: $content", TextStyle(fontSize = 16.sp))
 
-                    IconButton(
-                        onClick = { mainScreenViewModel.planningClicked(todaysPlanning!!) },
-                        modifier = Modifier
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.weight(1f)
                     ) {
-                        Icon(
-                            imageVector = if (content == null) Icons.TwoTone.Add else Icons.TwoTone.Edit,
-                            contentDescription = if (content == null) "add planning" else "edit planning"
+                        // Trainer badge when planning was created by a trainer
+                        if (todaysPlanning!!.isFromTrainer) {
+                            Icon(
+                                imageVector = Icons.TwoTone.Person,
+                                contentDescription = "Creado por entrenador",
+                                tint = SecondaryColor,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                        AdjustableText("Objetivo: $content", TextStyle(fontSize = 16.sp))
+                    }
+
+                    Row {
+                        // Start workout button when there's something planned
+                        if (content != "Nada planeado") {
+                            IconButton(
+                                onClick = { navController.navigate("workouts") }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.TwoTone.ArrowForward,
+                                    contentDescription = "Iniciar entrenamiento"
+                                )
+                            }
+                        }
+                        IconButton(
+                            onClick = { mainScreenViewModel.planningClicked(todaysPlanning!!) },
+                            modifier = Modifier
+                        ) {
+                            Icon(
+                                imageVector = if (content == null) Icons.TwoTone.Add else Icons.TwoTone.Edit,
+                                contentDescription = if (content == null) "add planning" else "edit planning"
+                            )
+                        }
+                    }
+                }
+
+                // Show planning exercises if present
+                if (todaysPlanning!!.planningExercises.isNotEmpty()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp)
+                            .background(TextFieldColor.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                            .padding(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = "Ejercicios planificados:",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.White.copy(alpha = 0.7f)
                         )
+                        todaysPlanning!!.planningExercises.sortedBy { it.position }.forEach { pe ->
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("•", fontSize = 12.sp, color = SecondaryColor)
+                                Text(
+                                    text = pe.exerciseName.ifBlank { "Ejercicio #${pe.exerciseId}" },
+                                    fontSize = 13.sp
+                                )
+                                if (!pe.expectationText.isNullOrBlank()) {
+                                    Text(
+                                        text = "· ${pe.expectationText}",
+                                        fontSize = 12.sp,
+                                        color = Color.White.copy(alpha = 0.5f)
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -192,7 +265,7 @@ fun MainScreen(
             )
 
 
-            RutinAppCalendar(plannings) {
+            RutinAppCalendar(plannings, calendarPhases) {
                 mainScreenViewModel.planningClicked(it)
             }
         }

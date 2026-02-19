@@ -1,14 +1,20 @@
 package com.mintocode.rutinapp.viewmodels
 
 import android.content.Context
+import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mintocode.rutinapp.data.UserDetails
+import com.mintocode.rutinapp.data.models.CalendarPhaseModel
+import com.mintocode.rutinapp.data.models.PlanningGrantModel
 import com.mintocode.rutinapp.data.models.PlanningModel
 import com.mintocode.rutinapp.data.models.RoutineModel
+import com.mintocode.rutinapp.data.models.TrainerRelationModel
+import com.mintocode.rutinapp.data.models.WorkoutVisibilityGrantModel
+import com.mintocode.rutinapp.data.repositories.CalendarPhaseRepository
 import com.mintocode.rutinapp.domain.addUseCases.AddPlanningUseCase
 import com.mintocode.rutinapp.domain.getUseCases.DAY_IN_MILLIS
 import com.mintocode.rutinapp.domain.getUseCases.GetPlanningsUseCase
@@ -38,8 +44,13 @@ class MainScreenViewModel @Inject constructor(
     private val addPlanningUseCase: AddPlanningUseCase,
     private val updatePlanningUseCase: UpdatePlanningUseCase,
     private val getRoutinesUseCase: GetRoutinesUseCase,
-    private val syncManager: SyncManager
+    private val syncManager: SyncManager,
+    private val calendarPhaseRepository: CalendarPhaseRepository
 ) : ViewModel() {
+
+    companion object {
+        private const val TAG = "MainScreenViewModel"
+    }
 
     private var _planningsFlow: StateFlow<List<PlanningModel>> =
         getPlanningsUseCase(
@@ -70,6 +81,32 @@ class MainScreenViewModel @Inject constructor(
         MutableLiveData(MainScreenState.Observation)
 
     val uiState: LiveData<MainScreenState> = _uiState
+
+    /**
+     * Calendar phases from the local Room database, observed as a reactive Flow.
+     */
+    val calendarPhases: StateFlow<List<CalendarPhaseModel>> =
+        calendarPhaseRepository.allPhases
+            .catch { Log.e(TAG, "Error loading calendar phases", it) }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    /**
+     * Trainer relations (read-only from server).
+     */
+    private val _trainerRelations = MutableLiveData<List<TrainerRelationModel>>(emptyList())
+    val trainerRelations: LiveData<List<TrainerRelationModel>> = _trainerRelations
+
+    /**
+     * Planning grants (read-only from server).
+     */
+    private val _planningGrants = MutableLiveData<List<PlanningGrantModel>>(emptyList())
+    val planningGrants: LiveData<List<PlanningGrantModel>> = _planningGrants
+
+    /**
+     * Workout visibility grants (read-only from server).
+     */
+    private val _workoutGrants = MutableLiveData<List<WorkoutVisibilityGrantModel>>(emptyList())
+    val workoutGrants: LiveData<List<WorkoutVisibilityGrantModel>> = _workoutGrants
 
     /**
      * Auto-refresh silencioso al entrar a la pantalla.
@@ -133,6 +170,23 @@ class MainScreenViewModel @Inject constructor(
                             addPlanningUseCase(incoming)
                         }
                     }
+                }
+
+                // 3. Sync calendar phases (upload local + download server)
+                try {
+                    calendarPhaseRepository.syncPhases()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Calendar phase sync failed", e)
+                }
+
+                // 4. Download trainer data (read-only)
+                try {
+                    val (relations, grants, wGrants) = syncManager.syncTrainerData()
+                    _trainerRelations.postValue(relations)
+                    _planningGrants.postValue(grants)
+                    _workoutGrants.postValue(wGrants)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Trainer data sync failed", e)
                 }
             } catch (_: Exception) { }
         }

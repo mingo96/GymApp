@@ -294,6 +294,9 @@ data class PlanningDto(
     @SerializedName("body_part") val bodyPart: String?,
     val routine: RoutineDto?,
     @SerializedName("reminder_time") val reminderTime: String?,
+    @SerializedName("created_by_user_id") val createdByUserId: Long?,
+    @SerializedName("derived_from_planning_id") val derivedFromPlanningId: Long?,
+    @SerializedName("planning_exercises") val planningExercises: List<PlanningExerciseDto>?,
     @SerializedName("created_at") val createdAt: String?,
     @SerializedName("updated_at") val updatedAt: String?
 )
@@ -418,4 +421,183 @@ data class NotificationDto(
  */
 data class UnreadCountResponse(
     @SerializedName("unread_count") val unreadCount: Int
+)
+
+// ============================================================================
+// Planning Exercise DTOs
+// ============================================================================
+
+/**
+ * DTO for an exercise expectation within a planning entry.
+ *
+ * Matches the inline object in PlanningResource->planning_exercises.
+ */
+data class PlanningExerciseDto(
+    val id: Long,
+    @SerializedName("exercise_id") val exerciseId: Long,
+    @SerializedName("expectation_text") val expectationText: String?,
+    val position: Int,
+    val notes: String?,
+    val exercise: PlanningExerciseExerciseDto?
+)
+
+/**
+ * Minimal exercise info nested within PlanningExerciseDto.
+ */
+data class PlanningExerciseExerciseDto(
+    val id: Long,
+    val name: String
+)
+
+// ============================================================================
+// Calendar Phase DTOs (matching CalendarPhaseResource)
+// ============================================================================
+
+/**
+ * Calendar phase DTO matching the backend CalendarPhaseResource response.
+ *
+ * Represents a named time period displayed on the calendar (e.g., "Volumen", "Definición").
+ */
+data class CalendarPhaseDto(
+    val id: Long,
+    @SerializedName("user_id") val userId: Long,
+    @SerializedName("created_by_user_id") val createdByUserId: Long?,
+    val name: String,
+    val color: String,
+    @SerializedName("start_date") val startDate: String,
+    @SerializedName("end_date") val endDate: String,
+    val notes: String?,
+    val visibility: String?,
+    @SerializedName("created_at") val createdAt: String?,
+    @SerializedName("updated_at") val updatedAt: String?
+)
+
+// ============================================================================
+// Trainer DTOs (matching backend Resources)
+// ============================================================================
+
+/**
+ * Trainer–client relationship DTO matching TrainerClientRelationResource.
+ *
+ * Read-only from client perspective; managed via dedicated endpoints.
+ */
+data class TrainerClientRelationDto(
+    val id: Long,
+    @SerializedName("trainer_user_id") val trainerUserId: Long,
+    @SerializedName("client_user_id") val clientUserId: Long,
+    val status: String,
+    @SerializedName("invited_via_code_id") val invitedViaCodeId: Long?,
+    val notes: String?,
+    @SerializedName("local_id") val localId: String?,
+    @SerializedName("synced_at") val syncedAt: String?,
+    @SerializedName("created_at") val createdAt: String?,
+    @SerializedName("updated_at") val updatedAt: String?
+)
+
+/**
+ * Planning grant DTO matching PlanningGrantResource.
+ *
+ * Represents permission for a trainer to view/edit client's planning.
+ */
+data class PlanningGrantDto(
+    val id: Long,
+    @SerializedName("client_user_id") val clientUserId: Long,
+    @SerializedName("trainer_user_id") val trainerUserId: Long,
+    @SerializedName("access_type") val accessType: String,
+    @SerializedName("date_from") val dateFrom: String?,
+    @SerializedName("date_to") val dateTo: String?,
+    @SerializedName("is_active") val isActive: Boolean,
+    @SerializedName("created_at") val createdAt: String?,
+    @SerializedName("updated_at") val updatedAt: String?
+)
+
+/**
+ * Workout visibility grant DTO matching WorkoutVisibilityGrantResource.
+ *
+ * Represents permission for a trainer to view client's workout results.
+ */
+data class WorkoutVisibilityGrantDto(
+    val id: Long,
+    @SerializedName("client_user_id") val clientUserId: Long,
+    @SerializedName("trainer_user_id") val trainerUserId: Long,
+    @SerializedName("can_view_results") val canViewResults: Boolean,
+    @SerializedName("date_from") val dateFrom: String?,
+    @SerializedName("date_to") val dateTo: String?,
+    @SerializedName("is_active") val isActive: Boolean,
+    @SerializedName("created_at") val createdAt: String?,
+    @SerializedName("updated_at") val updatedAt: String?
+)
+
+// ============================================================================
+// Trainer management request/response DTOs
+// ============================================================================
+
+/**
+ * Request body for redeeming a trainer invite code (POST /trainer/invite-codes/redeem).
+ */
+data class RedeemInviteCodeRequest(
+    val code: String
+)
+
+/**
+ * Request body for creating a planning grant (POST /my-trainers/{relation}/grants/planning).
+ */
+data class CreatePlanningGrantRequest(
+    @SerializedName("access_type") val accessType: String,
+    @SerializedName("date_from") val dateFrom: String? = null,
+    @SerializedName("date_to") val dateTo: String? = null
+)
+
+/**
+ * Request body for creating a workout visibility grant.
+ */
+data class CreateWorkoutVisibilityGrantRequest(
+    @SerializedName("can_view_results") val canViewResults: Boolean = false,
+    @SerializedName("date_from") val dateFrom: String? = null,
+    @SerializedName("date_to") val dateTo: String? = null
+)
+
+/**
+ * Request body for planning duplication preview (POST /planning/duplicate/preview).
+ */
+data class DuplicatePreviewRequest(
+    @SerializedName("planning_ids") val planningIds: List<Long>,
+    @SerializedName("target_user_id") val targetUserId: Long,
+    @SerializedName("date_offset") val dateOffset: Int? = null
+)
+
+/**
+ * Response from planning duplication preview.
+ */
+data class DuplicatePreviewResponse(
+    val preview: List<DuplicatePreviewItem>,
+    @SerializedName("target_user") val targetUser: UserDto
+)
+
+data class DuplicatePreviewItem(
+    @SerializedName("original_id") val originalId: Long,
+    @SerializedName("original_date") val originalDate: String,
+    @SerializedName("new_date") val newDate: String,
+    @SerializedName("body_part") val bodyPart: String?,
+    @SerializedName("routine_name") val routineName: String?
+)
+
+/**
+ * Request body for executing planning duplication (POST /planning/duplicate).
+ */
+data class DuplicateExecuteRequest(
+    @SerializedName("planning_ids") val planningIds: List<Long>,
+    @SerializedName("target_user_id") val targetUserId: Long,
+    @SerializedName("date_offset") val dateOffset: Int? = null
+)
+
+/**
+ * Response for exercise last-mark endpoint (GET /exercises/{id}/last-mark).
+ */
+data class LastMarkDto(
+    @SerializedName("exercise_id") val exerciseId: Long,
+    @SerializedName("last_weight") val lastWeight: Double?,
+    @SerializedName("last_reps") val lastReps: Int?,
+    @SerializedName("last_date") val lastDate: String?,
+    @SerializedName("max_weight") val maxWeight: Double?
 )

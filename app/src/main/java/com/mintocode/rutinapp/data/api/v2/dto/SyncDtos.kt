@@ -172,7 +172,8 @@ data class SyncPlanningCreate(
     val date: String,
     @SerializedName("routine_id") val routineId: Long? = null,
     @SerializedName("body_part") val bodyPart: String? = null,
-    @SerializedName("reminder_time") val reminderTime: String? = null
+    @SerializedName("reminder_time") val reminderTime: String? = null,
+    @SerializedName("planning_exercises") val planningExercises: List<SyncPlanningExercise>? = null
 )
 
 data class SyncPlanningUpdate(
@@ -181,7 +182,18 @@ data class SyncPlanningUpdate(
     @SerializedName("routine_id") val routineId: Long? = null,
     @SerializedName("body_part") val bodyPart: String? = null,
     @SerializedName("reminder_time") val reminderTime: String? = null,
-    @SerializedName("updated_at") val updatedAt: String
+    @SerializedName("updated_at") val updatedAt: String,
+    @SerializedName("planning_exercises") val planningExercises: List<SyncPlanningExercise>? = null
+)
+
+/**
+ * Exercise expectation within a planning sync payload.
+ */
+data class SyncPlanningExercise(
+    @SerializedName("exercise_id") val exerciseId: Long,
+    @SerializedName("expectation_text") val expectationText: String? = null,
+    val position: Int? = null,
+    val notes: String? = null
 )
 
 /**
@@ -204,4 +216,74 @@ data class SyncPlanningData(
 data class IdMapping(
     @SerializedName("local_id") val localId: String,
     @SerializedName("server_id") val serverId: Long
+)
+
+// ============================================================================
+// Sync Calendar Phase DTOs (matching backend SyncCalendarPhasesRequest / response)
+// ============================================================================
+
+/**
+ * Request body for POST /sync/calendar-phases.
+ *
+ * Sends local calendar phase changes to the server.
+ */
+data class SyncCalendarPhasesRequest(
+    @SerializedName("client_timestamp") val clientTimestamp: String,
+    val created: List<SyncCalendarPhaseCreate> = emptyList(),
+    val updated: List<SyncCalendarPhaseUpdate> = emptyList(),
+    @SerializedName("deleted_ids") val deletedIds: List<Long> = emptyList()
+)
+
+data class SyncCalendarPhaseCreate(
+    @SerializedName("local_id") val localId: String,
+    val name: String,
+    val color: String,
+    @SerializedName("start_date") val startDate: String,
+    @SerializedName("end_date") val endDate: String,
+    val notes: String? = null,
+    val visibility: String = "private"
+)
+
+data class SyncCalendarPhaseUpdate(
+    val id: Long,
+    val name: String? = null,
+    val color: String? = null,
+    @SerializedName("start_date") val startDate: String? = null,
+    @SerializedName("end_date") val endDate: String? = null,
+    val notes: String? = null,
+    val visibility: String? = null,
+    @SerializedName("updated_at") val updatedAt: String
+)
+
+/**
+ * Response from POST /sync/calendar-phases wrapped in { data: SyncCalendarPhasesData }.
+ */
+data class SyncCalendarPhasesData(
+    @SerializedName("created_mappings") val createdMappings: List<IdMapping>,
+    @SerializedName("server_updates") val serverUpdates: List<CalendarPhaseDto>,
+    @SerializedName("server_created") val serverCreated: List<CalendarPhaseDto>,
+    @SerializedName("confirmed_deletions") val confirmedDeletions: List<Long>
+)
+
+// ============================================================================
+// Sync Trainer Data DTOs (matching backend SyncTrainerDataRequest / response)
+// ============================================================================
+
+/**
+ * Request body for POST /sync/trainer-data.
+ *
+ * This endpoint is Server → Client (read-only). The client just sends
+ * its last known timestamp and receives all changes since then.
+ */
+data class SyncTrainerDataRequest(
+    @SerializedName("client_timestamp") val clientTimestamp: String
+)
+
+/**
+ * Response from POST /sync/trainer-data wrapped in { data: SyncTrainerDataData }.
+ */
+data class SyncTrainerDataData(
+    val relations: List<TrainerClientRelationDto>,
+    @SerializedName("planning_grants") val planningGrants: List<PlanningGrantDto>,
+    @SerializedName("workout_grants") val workoutGrants: List<WorkoutVisibilityGrantDto>
 )

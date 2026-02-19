@@ -107,6 +107,20 @@ interface ApiV2Service {
     @DELETE("exercises/{id}")
     suspend fun deleteExercise(@Path("id") id: Long): Response<Unit>
 
+    /**
+     * Get the last mark (last recorded set data) for an exercise.
+     *
+     * @return Last weight, reps, date, and max weight for the exercise
+     */
+    @GET("exercises/{id}/last-mark")
+    suspend fun getExerciseLastMark(@Path("id") id: Long): DataResponse<LastMarkDto>
+
+    /**
+     * Get exercises related to a specific exercise.
+     */
+    @GET("exercises/{id}/related")
+    suspend fun getRelatedExercises(@Path("id") id: Long): DataResponse<List<ExerciseDto>>
+
     // ========================================================================
     // Routines CRUD
     // ========================================================================
@@ -293,6 +307,27 @@ interface ApiV2Service {
     @DELETE("planning/{id}")
     suspend fun deletePlanning(@Path("id") id: Long): Response<Unit>
 
+    /**
+     * Preview planning duplication (for trainers).
+     *
+     * Returns a preview of what plannings would be created when duplicating
+     * to a target user.
+     */
+    @POST("planning/duplicate/preview")
+    suspend fun duplicatePlanningPreview(
+        @Body body: DuplicatePreviewRequest
+    ): DataResponse<DuplicatePreviewResponse>
+
+    /**
+     * Execute planning duplication (for trainers).
+     *
+     * Creates copies of the specified plannings for a target user.
+     */
+    @POST("planning/duplicate")
+    suspend fun duplicatePlanning(
+        @Body body: DuplicateExecuteRequest
+    ): DataResponse<List<PlanningDto>>
+
     // ========================================================================
     // Sync endpoints
     // ========================================================================
@@ -322,6 +357,24 @@ interface ApiV2Service {
      */
     @POST("sync/planning")
     suspend fun syncPlanning(@Body body: SyncPlanningRequest): DataResponse<SyncPlanningData>
+
+    /**
+     * Bidirectional sync of calendar phases.
+     *
+     * Sends local calendar phase changes and receives server changes since last sync.
+     */
+    @POST("sync/calendar-phases")
+    suspend fun syncCalendarPhases(@Body body: SyncCalendarPhasesRequest): DataResponse<SyncCalendarPhasesData>
+
+    /**
+     * Sync trainer data (read-only from client perspective).
+     *
+     * Downloads changes in trainer–client relations, planning grants,
+     * and workout visibility grants since last sync.
+     * Should be called BEFORE planning sync to resolve trainer-created plannings.
+     */
+    @POST("sync/trainer-data")
+    suspend fun syncTrainerData(@Body body: SyncTrainerDataRequest): DataResponse<SyncTrainerDataData>
 
     // ========================================================================
     // Statistics
@@ -412,4 +465,68 @@ interface ApiV2Service {
      */
     @DELETE("notifications/{id}")
     suspend fun deleteNotification(@Path("id") id: Long): Response<Unit>
+
+    // ========================================================================
+    // Trainer endpoints (client side — "my trainers")
+    // ========================================================================
+
+    /**
+     * List trainer–client relations for the authenticated user.
+     *
+     * Returns relations where the user is the client.
+     */
+    @GET("my-trainers")
+    suspend fun getMyTrainers(): DataResponse<List<TrainerClientRelationDto>>
+
+    /**
+     * Revoke a trainer–client relation (as client).
+     */
+    @POST("my-trainers/{relationId}/revoke")
+    suspend fun revokeTrainer(
+        @Path("relationId") relationId: Long
+    ): MessageResponse
+
+    /**
+     * Redeem a trainer invite code to establish a trainer–client relation.
+     */
+    @POST("trainer/invite-codes/redeem")
+    suspend fun redeemInviteCode(@Body body: RedeemInviteCodeRequest): DataResponse<TrainerClientRelationDto>
+
+    /**
+     * Create a planning grant for a trainer (as client).
+     */
+    @POST("my-trainers/{relationId}/grants/planning")
+    suspend fun createPlanningGrant(
+        @Path("relationId") relationId: Long,
+        @Body body: CreatePlanningGrantRequest
+    ): DataResponse<PlanningGrantDto>
+
+    /**
+     * Delete a planning grant.
+     */
+    @DELETE("my-trainers/grants/planning/{grantId}")
+    suspend fun deletePlanningGrant(@Path("grantId") grantId: Long): Response<Unit>
+
+    /**
+     * Create a workout visibility grant for a trainer (as client).
+     */
+    @POST("my-trainers/{relationId}/grants/workout-visibility")
+    suspend fun createWorkoutVisibilityGrant(
+        @Path("relationId") relationId: Long,
+        @Body body: CreateWorkoutVisibilityGrantRequest
+    ): DataResponse<WorkoutVisibilityGrantDto>
+
+    /**
+     * Delete a workout visibility grant.
+     */
+    @DELETE("my-trainers/grants/workout-visibility/{grantId}")
+    suspend fun deleteWorkoutVisibilityGrant(@Path("grantId") grantId: Long): Response<Unit>
+
+    /**
+     * Get calendar phases from a specific trainer relation.
+     */
+    @GET("my-trainers/{relationId}/calendar-phases")
+    suspend fun getTrainerCalendarPhases(
+        @Path("relationId") relationId: Long
+    ): DataResponse<List<CalendarPhaseDto>>
 }

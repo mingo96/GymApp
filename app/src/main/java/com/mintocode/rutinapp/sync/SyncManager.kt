@@ -3,10 +3,14 @@ package com.mintocode.rutinapp.sync
 import android.util.Log
 import com.mintocode.rutinapp.data.api.v2.ApiV2Service
 import com.mintocode.rutinapp.data.api.v2.dto.*
+import com.mintocode.rutinapp.data.models.CalendarPhaseModel
 import com.mintocode.rutinapp.data.models.ExerciseModel
+import com.mintocode.rutinapp.data.models.PlanningGrantModel
 import com.mintocode.rutinapp.data.models.PlanningModel
 import com.mintocode.rutinapp.data.models.RoutineModel
+import com.mintocode.rutinapp.data.models.TrainerRelationModel
 import com.mintocode.rutinapp.data.models.WorkoutModel
+import com.mintocode.rutinapp.data.models.WorkoutVisibilityGrantModel
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -295,28 +299,55 @@ class SyncManager @Inject constructor(
         val routineMappings: List<Pair<String, Long>> = emptyList(),
         val workoutMappings: List<Pair<String, Long>> = emptyList(),
         val planningMappings: List<Pair<String, Long>> = emptyList(),
+        val calendarPhaseMappings: List<Pair<String, Long>> = emptyList(),
+        val trainerRelations: List<TrainerRelationModel> = emptyList(),
+        val planningGrants: List<PlanningGrantModel> = emptyList(),
+        val workoutGrants: List<WorkoutVisibilityGrantModel> = emptyList(),
         val errors: List<String> = emptyList()
     )
 
     /**
      * Performs a full sync of all entity types.
      *
-     * Order matters: exercises first (routines reference them),
-     * then routines (workouts reference them), then workouts, then planning.
+     * Order matters:
+     * 1. Trainer data first (read-only, establishes context for planning)
+     * 2. Exercises (routines reference them)
+     * 3. Routines (workouts reference them)
+     * 4. Workouts
+     * 5. Planning
+     * 6. Calendar phases
      *
      * @param dirtyExercises Local exercises needing sync
      * @param dirtyRoutines Local routines needing sync
      * @param dirtyWorkouts Local workouts needing sync
      * @param dirtyPlannings Local planning entries needing sync
+     * @param dirtyCalendarPhases Local calendar phases needing sync
+     * @param updatedCalendarPhases Calendar phases with local edits (serverId > 0)
      */
     suspend fun fullSync(
         dirtyExercises: List<ExerciseModel> = emptyList(),
         dirtyRoutines: List<RoutineModel> = emptyList(),
         dirtyWorkouts: List<WorkoutModel> = emptyList(),
-        dirtyPlannings: List<PlanningModel> = emptyList()
+        dirtyPlannings: List<PlanningModel> = emptyList(),
+        dirtyCalendarPhases: List<CalendarPhaseModel> = emptyList(),
+        updatedCalendarPhases: List<CalendarPhaseModel> = emptyList()
     ): FullSyncResult {
         val errors = mutableListOf<String>()
 
+        // 1. Trainer data (read-only, before planning)
+        var trainerRelations = emptyList<TrainerRelationModel>()
+        var planningGrants = emptyList<PlanningGrantModel>()
+        var workoutGrants = emptyList<WorkoutVisibilityGrantModel>()
+        try {
+            val trainerResult = syncTrainerData()
+            trainerRelations = trainerResult.first
+            planningGrants = trainerResult.second
+            workoutGrants = trainerResult.third
+        } catch (e: Exception) {
+            errors.add("Trainer data sync: ${e.message}")
+        }
+
+        // 2. Exercises
         val exMappings = try {
             syncNewExercises(dirtyExercises)
         } catch (e: Exception) {
@@ -324,6 +355,7 @@ class SyncManager @Inject constructor(
             emptyList()
         }
 
+        // 3. Routines
         val rtMappings = try {
             syncNewRoutines(dirtyRoutines)
         } catch (e: Exception) {
@@ -331,6 +363,7 @@ class SyncManager @Inject constructor(
             emptyList()
         }
 
+        // 4. Workouts
         val woMappings = try {
             syncNewWorkouts(dirtyWorkouts)
         } catch (e: Exception) {
@@ -338,10 +371,19 @@ class SyncManager @Inject constructor(
             emptyList()
         }
 
+        // 5. Planning
         val plMappings = try {
             syncNewPlannings(dirtyPlannings)
         } catch (e: Exception) {
             errors.add("Planning sync: ${e.message}")
+            emptyList()
+        }
+
+        // 6. Calendar phases
+        val cpMappings = try {
+            syncCalendarPhases(dirtyCalendarPhases, updatedCalendarPhases)
+        } catch (e: Exception) {
+            errors.add("Calendar phase sync: ${e.message}")
             emptyList()
         }
 
@@ -350,7 +392,155 @@ class SyncManager @Inject constructor(
             routineMappings = rtMappings,
             workoutMappings = woMappings,
             planningMappings = plMappings,
+            calendarPhaseMappings = cpMappings,
+            trainerRelations = trainerRelations,
+            planningGrants = planningGrants,
+            workoutGrants = workoutGrants,
             errors = errors
         )
+    }
+
+    // ========================================================================
+    // Calendar Phase sync
+    // ========================================================================
+
+    /**
+     * Syncs calendar phases to the server.
+     *
+     * Sends newly created and locally updated phases.
+     *
+     * @param newPhases Phases not yet on server (serverId == 0)
+     * @param updatedPhases Phases with local edits (serverId > 0, isDirty)
+     * @return List of (localId, serverId) pairs for newly created phases
+     */
+    suspend fun syncCalendarPhases(
+        newPhases: List<CalendarPhaseModel> = emptyList(),
+        updatedPhases: List<CalendarPhaseModel> = emptyList()
+    ): List<Pair<String, Long>> {
+        if (newPhases.isEmpty() && updatedPhases.isEmpty()) return emptyList()
+        SyncStateHolder.start()
+        val body = SyncCalendarPhasesRequest(
+            clientTimestamp = DtoMapper.toIsoString(),
+            created = newPhases.map { DtoMapper.toSyncCalendarPhaseCreate(it) },
+            updated = updatedPhases.map { DtoMapper.toSyncCalendarPhaseUpdate(it) }
+        )
+        return try {
+            val res = api.syncCalendarPhases(body)
+            SyncStateHolder.success()
+            res.data?.createdMappings?.map { it.localId to it.serverId } ?: emptyList()
+        } catch (e: Exception) {
+            Log.e(TAG, "syncCalendarPhases failed", e)
+            SyncStateHolder.fail(e.message)
+            emptyList()
+        }
+    }
+
+    /**
+     * Downloads calendar phases from the server.
+     *
+     * Uses the sync endpoint with only a client_timestamp (no local changes)
+     * to receive all server-side phases.
+     *
+     * @return List of CalendarPhaseModels from server
+     */
+    suspend fun downloadCalendarPhases(): List<CalendarPhaseModel> {
+        SyncStateHolder.start()
+        return try {
+            val body = SyncCalendarPhasesRequest(
+                clientTimestamp = "2000-01-01T00:00:00",
+            )
+            val res = api.syncCalendarPhases(body)
+            val allPhases = mutableListOf<CalendarPhaseModel>()
+            res.data?.serverCreated?.forEach {
+                allPhases.add(DtoMapper.toCalendarPhaseModel(it))
+            }
+            res.data?.serverUpdates?.forEach {
+                allPhases.add(DtoMapper.toCalendarPhaseModel(it))
+            }
+            SyncStateHolder.success()
+            allPhases
+        } catch (e: Exception) {
+            Log.e(TAG, "downloadCalendarPhases failed", e)
+            SyncStateHolder.fail(e.message)
+            emptyList()
+        }
+    }
+
+    // ========================================================================
+    // Trainer Data sync (read-only from client)
+    // ========================================================================
+
+    /**
+     * Downloads trainer data changes from the server.
+     *
+     * Returns updated relations, planning grants, and workout grants.
+     * This is read-only: modifications happen via dedicated API endpoints.
+     *
+     * @return Triple of (relations, planningGrants, workoutGrants)
+     */
+    suspend fun syncTrainerData(): Triple<
+            List<TrainerRelationModel>,
+            List<PlanningGrantModel>,
+            List<WorkoutVisibilityGrantModel>
+    > {
+        SyncStateHolder.start()
+        return try {
+            val body = SyncTrainerDataRequest(
+                clientTimestamp = "2000-01-01T00:00:00"
+            )
+            val res = api.syncTrainerData(body)
+            val data = res.data
+            val relations = data?.relations?.map { DtoMapper.toTrainerRelationModel(it) } ?: emptyList()
+            val planningGrants = data?.planningGrants?.map { DtoMapper.toPlanningGrantModel(it) } ?: emptyList()
+            val workoutGrants = data?.workoutGrants?.map { DtoMapper.toWorkoutVisibilityGrantModel(it) } ?: emptyList()
+            SyncStateHolder.success()
+            Triple(relations, planningGrants, workoutGrants)
+        } catch (e: Exception) {
+            Log.e(TAG, "syncTrainerData failed", e)
+            SyncStateHolder.fail(e.message)
+            Triple(emptyList(), emptyList(), emptyList())
+        }
+    }
+
+    // ========================================================================
+    // Updated plannings sync
+    // ========================================================================
+
+    /**
+     * Syncs updated planning entries (already on server, with local changes).
+     *
+     * @param plannings List of plannings with realId > 0 and isDirty = true
+     */
+    suspend fun syncUpdatedPlannings(plannings: List<PlanningModel>) {
+        if (plannings.isEmpty()) return
+        SyncStateHolder.start()
+        val body = SyncPlanningRequest(
+            clientTimestamp = DtoMapper.toIsoString(),
+            updated = plannings.map {
+                SyncPlanningUpdate(
+                    id = it.realId,
+                    date = DtoMapper.toDateString(it.date),
+                    routineId = it.statedRoutine?.realId?.toLong()?.takeIf { id -> id != 0L },
+                    bodyPart = it.statedBodyPart,
+                    reminderTime = it.reminderTime,
+                    updatedAt = DtoMapper.toIsoString(),
+                    planningExercises = it.planningExercises.takeIf { pe -> pe.isNotEmpty() }?.map { pe ->
+                        SyncPlanningExercise(
+                            exerciseId = pe.exerciseId,
+                            expectationText = pe.expectationText,
+                            position = pe.position,
+                            notes = pe.notes
+                        )
+                    }
+                )
+            }
+        )
+        try {
+            api.syncPlanning(body)
+            SyncStateHolder.success()
+        } catch (e: Exception) {
+            Log.e(TAG, "syncUpdatedPlannings failed", e)
+            SyncStateHolder.fail(e.message)
+        }
     }
 }

@@ -1,10 +1,15 @@
 package com.mintocode.rutinapp.data.api.v2.dto
 
+import com.mintocode.rutinapp.data.models.CalendarPhaseModel
 import com.mintocode.rutinapp.data.models.ExerciseModel
+import com.mintocode.rutinapp.data.models.PlanningExerciseModel
+import com.mintocode.rutinapp.data.models.PlanningGrantModel
 import com.mintocode.rutinapp.data.models.PlanningModel
 import com.mintocode.rutinapp.data.models.RoutineModel
 import com.mintocode.rutinapp.data.models.SetModel
+import com.mintocode.rutinapp.data.models.TrainerRelationModel
 import com.mintocode.rutinapp.data.models.WorkoutModel
+import com.mintocode.rutinapp.data.models.WorkoutVisibilityGrantModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -199,6 +204,7 @@ object DtoMapper {
      *
      * Note: The routine reference has realId set but local id = 0.
      * Caller must resolve the local routineId before persisting.
+     * Includes planning exercises and trainer metadata if present.
      */
     fun toPlanningModel(dto: PlanningDto): PlanningModel {
         return PlanningModel(
@@ -208,7 +214,10 @@ object DtoMapper {
             statedRoutine = dto.routine?.let { toRoutineModel(it) },
             statedBodyPart = dto.bodyPart,
             reminderTime = dto.reminderTime,
-            isDirty = false
+            isDirty = false,
+            planningExercises = dto.planningExercises?.map { toPlanningExerciseModel(it) } ?: emptyList(),
+            createdByUserId = dto.createdByUserId,
+            derivedFromPlanningId = dto.derivedFromPlanningId
         )
     }
 
@@ -217,7 +226,7 @@ object DtoMapper {
      *
      * Uses the routine's server realId. If the routine has not been
      * synced (realId == 0), sends null to avoid referencing a non-existent
-     * server resource.
+     * server resource. Includes planning exercises if present.
      */
     fun toSyncPlanningCreate(model: PlanningModel): SyncPlanningCreate {
         val routineServerId = model.statedRoutine?.realId?.toLong()
@@ -226,7 +235,133 @@ object DtoMapper {
             date = toDateString(model.date),
             routineId = if (routineServerId != null && routineServerId != 0L) routineServerId else null,
             bodyPart = model.statedBodyPart,
-            reminderTime = model.reminderTime
+            reminderTime = model.reminderTime,
+            planningExercises = model.planningExercises.takeIf { it.isNotEmpty() }?.map {
+                SyncPlanningExercise(
+                    exerciseId = it.exerciseId,
+                    expectationText = it.expectationText,
+                    position = it.position,
+                    notes = it.notes
+                )
+            }
+        )
+    }
+
+    // ========================================================================
+    // Planning Exercise mapping
+    // ========================================================================
+
+    /**
+     * Maps a PlanningExerciseDto from the API to a PlanningExerciseModel.
+     */
+    fun toPlanningExerciseModel(dto: PlanningExerciseDto): PlanningExerciseModel {
+        return PlanningExerciseModel(
+            id = dto.id,
+            exerciseId = dto.exerciseId,
+            exerciseName = dto.exercise?.name ?: "",
+            expectationText = dto.expectationText,
+            position = dto.position,
+            notes = dto.notes
+        )
+    }
+
+    // ========================================================================
+    // Calendar Phase mapping
+    // ========================================================================
+
+    /**
+     * Maps a CalendarPhaseDto from the API to a local CalendarPhaseModel.
+     */
+    fun toCalendarPhaseModel(dto: CalendarPhaseDto): CalendarPhaseModel {
+        return CalendarPhaseModel(
+            id = 0,
+            serverId = dto.id,
+            name = dto.name,
+            color = dto.color,
+            startDate = parseDate(dto.startDate),
+            endDate = parseDate(dto.endDate),
+            notes = dto.notes,
+            visibility = dto.visibility ?: "private",
+            createdByUserId = dto.createdByUserId,
+            isDirty = false
+        )
+    }
+
+    /**
+     * Converts a local CalendarPhaseModel to a SyncCalendarPhaseCreate DTO.
+     */
+    fun toSyncCalendarPhaseCreate(model: CalendarPhaseModel): SyncCalendarPhaseCreate {
+        return SyncCalendarPhaseCreate(
+            localId = model.id.toString(),
+            name = model.name,
+            color = model.color,
+            startDate = toDateString(model.startDate),
+            endDate = toDateString(model.endDate),
+            notes = model.notes,
+            visibility = model.visibility
+        )
+    }
+
+    /**
+     * Converts a local CalendarPhaseModel to a SyncCalendarPhaseUpdate DTO.
+     */
+    fun toSyncCalendarPhaseUpdate(model: CalendarPhaseModel): SyncCalendarPhaseUpdate {
+        return SyncCalendarPhaseUpdate(
+            id = model.serverId,
+            name = model.name,
+            color = model.color,
+            startDate = toDateString(model.startDate),
+            endDate = toDateString(model.endDate),
+            notes = model.notes,
+            visibility = model.visibility,
+            updatedAt = toIsoString()
+        )
+    }
+
+    // ========================================================================
+    // Trainer data mapping
+    // ========================================================================
+
+    /**
+     * Maps a TrainerClientRelationDto to a domain TrainerRelationModel.
+     */
+    fun toTrainerRelationModel(dto: TrainerClientRelationDto): TrainerRelationModel {
+        return TrainerRelationModel(
+            id = dto.id,
+            trainerUserId = dto.trainerUserId,
+            clientUserId = dto.clientUserId,
+            status = dto.status,
+            notes = dto.notes
+        )
+    }
+
+    /**
+     * Maps a PlanningGrantDto to a domain PlanningGrantModel.
+     */
+    fun toPlanningGrantModel(dto: PlanningGrantDto): PlanningGrantModel {
+        return PlanningGrantModel(
+            id = dto.id,
+            clientUserId = dto.clientUserId,
+            trainerUserId = dto.trainerUserId,
+            accessType = dto.accessType,
+            dateFrom = dto.dateFrom,
+            dateTo = dto.dateTo,
+            isActive = dto.isActive
+        )
+    }
+
+    /**
+     * Maps a WorkoutVisibilityGrantDto to a domain WorkoutVisibilityGrantModel.
+     */
+    fun toWorkoutVisibilityGrantModel(dto: WorkoutVisibilityGrantDto): WorkoutVisibilityGrantModel {
+        return WorkoutVisibilityGrantModel(
+            id = dto.id,
+            clientUserId = dto.clientUserId,
+            trainerUserId = dto.trainerUserId,
+            canViewResults = dto.canViewResults,
+            dateFrom = dto.dateFrom,
+            dateTo = dto.dateTo,
+            isActive = dto.isActive
         )
     }
 }

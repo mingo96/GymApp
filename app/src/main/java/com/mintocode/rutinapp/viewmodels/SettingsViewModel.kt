@@ -18,7 +18,10 @@ import com.mintocode.rutinapp.data.UserDetails.Companion.actualValue
 import com.mintocode.rutinapp.data.api.v2.ApiV2Service
 import com.mintocode.rutinapp.data.api.v2.dto.GoogleAuthRequest
 import com.mintocode.rutinapp.data.api.v2.dto.LoginRequest
+import com.mintocode.rutinapp.data.api.v2.dto.RedeemInviteCodeRequest
 import com.mintocode.rutinapp.data.api.v2.dto.RegisterRequest
+import com.mintocode.rutinapp.data.models.TrainerRelationModel
+import com.mintocode.rutinapp.data.api.v2.dto.DtoMapper
 import com.mintocode.rutinapp.data.notifications.NotificationHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -334,6 +337,95 @@ class SettingsViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 Log.e("SettingsVM", "Error registrando FCM token", e)
+            }
+        }
+    }
+
+    // ========================================================================
+    // Trainer management
+    // ========================================================================
+
+    private val _trainers = MutableLiveData<List<TrainerRelationModel>>(emptyList())
+
+    /**
+     * Active trainer relations for the current user.
+     */
+    val trainers: LiveData<List<TrainerRelationModel>> = _trainers
+
+    /**
+     * Loads the list of trainers linked to the current user.
+     *
+     * Fetches from the GET /my-trainers endpoint and maps to domain models.
+     */
+    fun loadTrainers() {
+        val token = actualValue?.authToken
+        if (token.isNullOrBlank()) return
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val res = apiV2.getMyTrainers()
+                _trainers.postValue(res.data?.map { DtoMapper.toTrainerRelationModel(it) } ?: emptyList())
+            } catch (e: Exception) {
+                Log.e("SettingsVM", "Error loading trainers", e)
+            }
+        }
+    }
+
+    /**
+     * Redeems a trainer invite code to establish a trainer-client relationship.
+     *
+     * @param code The invite code to redeem
+     * @param context Android context for Toast messages
+     */
+    fun redeemInviteCode(code: String, context: Context) {
+        if (code.isBlank()) {
+            Toast.makeText(context, "Introduce un código válido", Toast.LENGTH_SHORT).show()
+            return
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                apiV2.redeemInviteCode(RedeemInviteCodeRequest(code = code))
+                loadTrainers()
+                launch(Dispatchers.Main) {
+                    Toast.makeText(context, "Código canjeado correctamente", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Log.e("SettingsVM", "Error redeeming invite code", e)
+                val msg = when (e) {
+                    is retrofit2.HttpException -> when (e.code()) {
+                        404 -> "Código no encontrado"
+                        409 -> "Código ya utilizado"
+                        422 -> "Código inválido"
+                        else -> "Error HTTP ${e.code()}"
+                    }
+                    is IOException -> "Sin conexión"
+                    else -> "Error al canjear código"
+                }
+                launch(Dispatchers.Main) {
+                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    /**
+     * Revokes access from a trainer.
+     *
+     * @param trainerId The server ID of the trainer relation to revoke
+     * @param context Android context for Toast messages
+     */
+    fun revokeTrainer(trainerId: Long, context: Context) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                apiV2.revokeTrainer(trainerId)
+                loadTrainers()
+                launch(Dispatchers.Main) {
+                    Toast.makeText(context, "Entrenador revocado", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Log.e("SettingsVM", "Error revoking trainer", e)
+                launch(Dispatchers.Main) {
+                    Toast.makeText(context, "Error al revocar entrenador", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
