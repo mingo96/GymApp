@@ -13,7 +13,9 @@ data class ExerciseModel(
     var setsAndReps: String = "",
     var observations: String = "",
     val isFromThisUser : Boolean = true,
-    var isDirty: Boolean = false // local change not yet synced (create/update)
+    var isDirty: Boolean = false,
+    var repsType: String = "base",
+    var weightType: String = "base"
 ){
 
     fun toEntity(): ExerciseEntity{
@@ -23,7 +25,9 @@ data class ExerciseModel(
             exerciseDescription = description,
             targetedBodyPart = targetedBodyPart,
             realId = realId.toInt(),
-            isFromThisUser = isFromThisUser
+            isFromThisUser = isFromThisUser,
+            repsType = repsType,
+            weightType = weightType
             )
     }
 
@@ -37,7 +41,9 @@ data class ExerciseModel(
             equivalentExercises = equivalentExercises.map { it.id.toInt() },
             setsAndReps = setsAndReps,
             observations = observations,
-            isFromThisUser = isFromThisUser
+            isFromThisUser = isFromThisUser,
+            repsType = repsType,
+            weightType = weightType
         )
     }
 }

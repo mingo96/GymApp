@@ -22,8 +22,10 @@ class ExerciseEntity(
     var exerciseName: String = "",
     var exerciseDescription: String = "",
     var targetedBodyPart: String = "",
-    @ColumnInfo(defaultValue = "0") var realId: Int = 0,
-    @ColumnInfo(defaultValue = "1") val isFromThisUser: Boolean = true
+    var realId: Int = 0,
+    val isFromThisUser: Boolean = true,
+    @ColumnInfo(defaultValue = "base") var repsType: String = "base",
+    @ColumnInfo(defaultValue = "base") var weightType: String = "base"
 ) {
     fun toModel() = ExerciseModel(
         this.exerciseId.toString(),
@@ -34,7 +36,9 @@ class ExerciseEntity(
         emptyList(),
         "",
         "",
-        this.isFromThisUser
+        this.isFromThisUser,
+        repsType = this.repsType,
+        weightType = this.weightType
     )
 }
 

@@ -17,7 +17,9 @@ data class Exercise(
     var equivalentExercises: List<Int> = emptyList(),
     var setsAndReps: String = "",
     var observations: String = "",
-    val isFromThisUser : Boolean = true
+    val isFromThisUser : Boolean = true,
+    var repsType: String = "base",
+    var weightType: String = "base"
 ) {
     fun toModel(): ExerciseModel {
         return ExerciseModel(
@@ -28,7 +30,9 @@ data class Exercise(
             targetedBodyPart = targetedBodyPart,
             setsAndReps = setsAndReps,
             observations = observations,
-            isFromThisUser = isFromThisUser
+            isFromThisUser = isFromThisUser,
+            repsType = repsType,
+            weightType = weightType
             )
     }
 }

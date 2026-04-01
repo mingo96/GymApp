@@ -497,6 +497,8 @@ fun ModifyExerciseDialog(viewModel: ExercisesViewModel, uiState: ExercisesState.
     var name by rememberSaveable { mutableStateOf(uiState.exerciseModel.name) }
     var description by rememberSaveable { mutableStateOf(uiState.exerciseModel.description) }
     var targetedBodyPart by rememberSaveable { mutableStateOf(uiState.exerciseModel.targetedBodyPart) }
+    var repsType by rememberSaveable { mutableStateOf(uiState.exerciseModel.repsType) }
+    var weightType by rememberSaveable { mutableStateOf(uiState.exerciseModel.weightType) }
     Dialog(onDismissRequest = { viewModel.backToObserve() }) {
 
         DialogContainer {
@@ -506,7 +508,7 @@ fun ModifyExerciseDialog(viewModel: ExercisesViewModel, uiState: ExercisesState.
                 text = name,
                 sendFunction = {
                     viewModel.updateExercise(
-                        name, description, targetedBodyPart, context
+                        name, description, targetedBodyPart, context, repsType, weightType
                     )
                 })
             TextFieldWithTitle(title = "Descripción",
@@ -514,7 +516,7 @@ fun ModifyExerciseDialog(viewModel: ExercisesViewModel, uiState: ExercisesState.
                 text = description,
                 sendFunction = {
                     viewModel.updateExercise(
-                        name, description, targetedBodyPart, context
+                        name, description, targetedBodyPart, context, repsType, weightType
                     )
                 })
             TextFieldWithTitle(title = "Parte del cuerpo",
@@ -522,9 +524,15 @@ fun ModifyExerciseDialog(viewModel: ExercisesViewModel, uiState: ExercisesState.
                 text = targetedBodyPart,
                 sendFunction = {
                     viewModel.updateExercise(
-                        name, description, targetedBodyPart, context
+                        name, description, targetedBodyPart, context, repsType, weightType
                     )
                 })
+            ExerciseTypeSelectors(
+                repsType = repsType,
+                weightType = weightType,
+                onRepsTypeChange = { repsType = it },
+                onWeightTypeChange = { weightType = it }
+            )
 
 
             Text(text = "Ejercicios relacionados")
@@ -573,7 +581,7 @@ fun ModifyExerciseDialog(viewModel: ExercisesViewModel, uiState: ExercisesState.
             ) {
                 Button(onClick = {
                     viewModel.updateExercise(
-                        name, description, targetedBodyPart, context
+                        name, description, targetedBodyPart, context, repsType, weightType
                     )
                 }, colors = rutinAppButtonsColours()) {
                     Text(text = "Guardar")
@@ -597,6 +605,8 @@ fun CreateExerciseDialog(viewModel: ExercisesViewModel, onExit: (() -> Unit)? = 
     var name by rememberSaveable { mutableStateOf("") }
     var description by rememberSaveable { mutableStateOf("") }
     var targetedBodyPart by rememberSaveable { mutableStateOf("") }
+    var repsType by rememberSaveable { mutableStateOf("base") }
+    var weightType by rememberSaveable { mutableStateOf("base") }
     Dialog(onDismissRequest = { viewModel.backToObserve() }) {
         DialogContainer {
 
@@ -609,13 +619,19 @@ fun CreateExerciseDialog(viewModel: ExercisesViewModel, onExit: (() -> Unit)? = 
                 text = targetedBodyPart,
                 sendFunction = {
                     viewModel.addExercise(
-                        name, description, targetedBodyPart, context
+                        name, description, targetedBodyPart, context, repsType, weightType
                     )
                 })
+            ExerciseTypeSelectors(
+                repsType = repsType,
+                weightType = weightType,
+                onRepsTypeChange = { repsType = it },
+                onWeightTypeChange = { weightType = it }
+            )
             Button(
                 onClick = {
                     viewModel.addExercise(
-                        name, description, targetedBodyPart, context
+                        name, description, targetedBodyPart, context, repsType, weightType
                     )
                     if (onExit != null) onExit()
                 },
@@ -645,6 +661,13 @@ fun ObserveExerciseDialog(viewModel: ExercisesViewModel, uiState: ExercisesState
                 title = "Parte del cuerpo",
                 text = uiState.exercise.targetedBodyPart,
                 editing = false
+            )
+            ExerciseTypeSelectors(
+                repsType = uiState.exercise.repsType,
+                weightType = uiState.exercise.weightType,
+                onRepsTypeChange = {},
+                onWeightTypeChange = {},
+                enabled = false
             )
             if (uiState.exercise.equivalentExercises.isNotEmpty()) {
                 Text(text = "Ejercicios relacionados")
@@ -702,5 +725,61 @@ fun ObserveExerciseDialog(viewModel: ExercisesViewModel, uiState: ExercisesState
 
         }
 
+    }
+}
+
+@Composable
+fun ExerciseTypeSelectors(
+    repsType: String,
+    weightType: String,
+    onRepsTypeChange: (String) -> Unit,
+    onWeightTypeChange: (String) -> Unit,
+    enabled: Boolean = true
+) {
+    val repsOptions = listOf("base" to "Repeticiones", "seconds" to "Segundos")
+    val weightOptions = listOf("base" to "Normal", "unilateral" to "Unilateral")
+
+    Text(text = "Tipo de repeticiones")
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        repsOptions.forEach { (value, label) ->
+            FilterChip(
+                selected = repsType == value,
+                onClick = { if (enabled) onRepsTypeChange(value) },
+                label = { Text(label, fontSize = 13.sp) },
+                enabled = enabled,
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = SecondaryColor,
+                    selectedLabelColor = Color.White,
+                    disabledSelectedContainerColor = SecondaryColor.copy(alpha = 0.7f),
+                    disabledContainerColor = Color.Transparent,
+                    disabledLabelColor = Color.White.copy(alpha = 0.8f)
+                )
+            )
+        }
+    }
+
+    Text(text = "Tipo de peso")
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        weightOptions.forEach { (value, label) ->
+            FilterChip(
+                selected = weightType == value,
+                onClick = { if (enabled) onWeightTypeChange(value) },
+                label = { Text(label, fontSize = 13.sp) },
+                enabled = enabled,
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = SecondaryColor,
+                    selectedLabelColor = Color.White,
+                    disabledSelectedContainerColor = SecondaryColor.copy(alpha = 0.7f),
+                    disabledContainerColor = Color.Transparent,
+                    disabledLabelColor = Color.White.copy(alpha = 0.8f)
+                )
+            )
+        }
     }
 }

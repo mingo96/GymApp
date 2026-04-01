@@ -84,7 +84,9 @@ object DtoMapper {
             isFromThisUser = dto.isMine,
             equivalentExercises = emptyList(),
             setsAndReps = "",
-            isDirty = false
+            isDirty = false,
+            repsType = dto.repsType ?: "base",
+            weightType = dto.weightType ?: "base"
         )
     }
 
@@ -97,7 +99,9 @@ object DtoMapper {
             name = model.name,
             description = model.description.ifBlank { null },
             targetedBodyPart = model.targetedBodyPart.ifBlank { null },
-            observations = model.observations.ifBlank { null }
+            observations = model.observations.ifBlank { null },
+            repsType = model.repsType.takeIf { it != "base" },
+            weightType = model.weightType.takeIf { it != "base" }
         )
     }
 
@@ -110,7 +114,9 @@ object DtoMapper {
             name = model.name,
             description = model.description.ifBlank { null },
             targetedBodyPart = model.targetedBodyPart.ifBlank { null },
-            observations = model.observations.ifBlank { null }
+            observations = model.observations.ifBlank { null },
+            repsType = model.repsType,
+            weightType = model.weightType
         )
     }
 

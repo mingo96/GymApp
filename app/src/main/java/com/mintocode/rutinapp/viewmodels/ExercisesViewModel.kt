@@ -80,12 +80,16 @@ class ExercisesViewModel @Inject constructor(
                                 if (existing.name != incoming.name ||
                                     existing.description != incoming.description ||
                                     existing.targetedBodyPart != incoming.targetedBodyPart ||
-                                    existing.observations != incoming.observations
+                                    existing.observations != incoming.observations ||
+                                    existing.repsType != incoming.repsType ||
+                                    existing.weightType != incoming.weightType
                                 ) {
                                     existing.name = incoming.name
                                     existing.description = incoming.description
                                     existing.targetedBodyPart = incoming.targetedBodyPart
                                     existing.observations = incoming.observations
+                                    existing.repsType = incoming.repsType
+                                    existing.weightType = incoming.weightType
                                     updateExerciseUseCase(existing)
                                 }
                             }
@@ -126,12 +130,16 @@ class ExercisesViewModel @Inject constructor(
                                 if (existing.name != incoming.name ||
                                     existing.description != incoming.description ||
                                     existing.targetedBodyPart != incoming.targetedBodyPart ||
-                                    existing.observations != incoming.observations
+                                    existing.observations != incoming.observations ||
+                                    existing.repsType != incoming.repsType ||
+                                    existing.weightType != incoming.weightType
                                 ) {
                                     existing.name = incoming.name
                                     existing.description = incoming.description
                                     existing.targetedBodyPart = incoming.targetedBodyPart
                                     existing.observations = incoming.observations
+                                    existing.repsType = incoming.repsType
+                                    existing.weightType = incoming.weightType
                                     updateExerciseUseCase(existing)
                                 }
                             }
@@ -162,12 +170,13 @@ class ExercisesViewModel @Inject constructor(
         )
     }
 
-    fun addExercise(name: String, description: String, targetedBodyPart: String, context: Context) {
+    fun addExercise(name: String, description: String, targetedBodyPart: String, context: Context, repsType: String = "base", weightType: String = "base") {
         if (name.isNotEmpty() && description.isNotEmpty() && targetedBodyPart.isNotEmpty()) viewModelScope.launch(
             context = Dispatchers.IO
         ) {
             val exercise = ExerciseModel(
-                name = name, description = description, targetedBodyPart = targetedBodyPart
+                name = name, description = description, targetedBodyPart = targetedBodyPart,
+                repsType = repsType, weightType = weightType
             ).apply { this.isDirty = true }
             addExerciseUseCase(
                 exercise
@@ -237,12 +246,16 @@ class ExercisesViewModel @Inject constructor(
                             } else if (existing.name != incoming.name ||
                                 existing.description != incoming.description ||
                                 existing.targetedBodyPart != incoming.targetedBodyPart ||
-                                existing.observations != incoming.observations
+                                existing.observations != incoming.observations ||
+                                existing.repsType != incoming.repsType ||
+                                existing.weightType != incoming.weightType
                             ) {
                                 existing.name = incoming.name
                                 existing.description = incoming.description
                                 existing.targetedBodyPart = incoming.targetedBodyPart
                                 existing.observations = incoming.observations
+                                existing.repsType = incoming.repsType
+                                existing.weightType = incoming.weightType
                                 updateExerciseUseCase(existing)
                             }
                         }
@@ -309,12 +322,16 @@ class ExercisesViewModel @Inject constructor(
                             } else if (existing.name != incoming.name ||
                                 existing.description != incoming.description ||
                                 existing.targetedBodyPart != incoming.targetedBodyPart ||
-                                existing.observations != incoming.observations
+                                existing.observations != incoming.observations ||
+                                existing.repsType != incoming.repsType ||
+                                existing.weightType != incoming.weightType
                             ) {
                                 existing.name = incoming.name
                                 existing.description = incoming.description
                                 existing.targetedBodyPart = incoming.targetedBodyPart
                                 existing.observations = incoming.observations
+                                existing.repsType = incoming.repsType
+                                existing.weightType = incoming.weightType
                                 updateExerciseUseCase(existing)
                             }
                         }
@@ -389,7 +406,8 @@ class ExercisesViewModel @Inject constructor(
     }
 
     fun updateExercise(
-        name: String, description: String, targetedBodyPart: String, context: Context
+        name: String, description: String, targetedBodyPart: String, context: Context,
+        repsType: String = "base", weightType: String = "base"
     ) {
         if (name.isNotEmpty() && description.isNotEmpty() && targetedBodyPart.isNotEmpty())
 
@@ -400,6 +418,8 @@ class ExercisesViewModel @Inject constructor(
                     selected.name = name
                     selected.description = description
                     selected.targetedBodyPart = targetedBodyPart
+                    selected.repsType = repsType
+                    selected.weightType = weightType
                     selected.isDirty = true
                     updateExerciseUseCase(selected)
                     _uiState.postValue(ExercisesState.Observe(selected))

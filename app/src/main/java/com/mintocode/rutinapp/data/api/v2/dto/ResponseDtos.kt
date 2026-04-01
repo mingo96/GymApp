@@ -110,6 +110,8 @@ data class ExerciseDto(
     @SerializedName("is_mine") val isMine: Boolean,
     @SerializedName("user_id") val userId: Long,
     @SerializedName("related_exercises_count") val relatedExercisesCount: Int?,
+    @SerializedName("reps_type") val repsType: String?,
+    @SerializedName("weight_type") val weightType: String?,
     @SerializedName("created_at") val createdAt: String?,
     @SerializedName("updated_at") val updatedAt: String?
 )

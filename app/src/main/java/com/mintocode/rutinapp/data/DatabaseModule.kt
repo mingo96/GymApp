@@ -168,8 +168,24 @@ class DatabaseModule {
             }
         }
 
+        // v8 -> v9: add repsType and weightType columns to ExerciseEntity
+        val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                safeAddColumn(database, "ExerciseEntity", "repsType", "TEXT NOT NULL DEFAULT 'base'")
+                safeAddColumn(database, "ExerciseEntity", "weightType", "TEXT NOT NULL DEFAULT 'base'")
+            }
+        }
+
+        // v9 -> v10: schema annotation cleanup (removed @ColumnInfo defaultValue from legacy columns)
+        // No SQL changes needed — Room identity hash update only
+        val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // No-op: annotations changed but actual SQL schema unchanged
+            }
+        }
+
         return Room.databaseBuilder(appContext, RutinAppDatabase::class.java, "RutinAppDatabase.db")
-            .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
+            .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
             .build()
     }
 

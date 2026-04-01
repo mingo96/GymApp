@@ -24,7 +24,9 @@ data class SyncExerciseCreate(
     val description: String? = null,
     @SerializedName("targeted_body_part") val targetedBodyPart: String? = null,
     val observations: String? = null,
-    @SerializedName("is_public") val isPublic: Boolean = false
+    @SerializedName("is_public") val isPublic: Boolean = false,
+    @SerializedName("reps_type") val repsType: String? = null,
+    @SerializedName("weight_type") val weightType: String? = null
 )
 
 data class SyncExerciseUpdate(
@@ -34,6 +36,8 @@ data class SyncExerciseUpdate(
     @SerializedName("targeted_body_part") val targetedBodyPart: String? = null,
     val observations: String? = null,
     @SerializedName("is_public") val isPublic: Boolean? = null,
+    @SerializedName("reps_type") val repsType: String? = null,
+    @SerializedName("weight_type") val weightType: String? = null,
     @SerializedName("updated_at") val updatedAt: String? = null
 )
 
