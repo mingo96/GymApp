@@ -89,12 +89,16 @@ fun TrainPage(
         initialValue = emptyList(), lifecycle = lifecycle
     )
     val workoutState by workoutsViewModel.workoutScreenStates.observeAsState(WorkoutsScreenState.Observe())
+    var lastHandledWorkoutId by rememberSaveable { mutableIntStateOf(-1) }
 
-    // If a workout was started, open the ActiveWorkout sheet
+    // If a workout was started, open the ActiveWorkout sheet (guarded against re-triggers)
     LaunchedEffect(workoutState) {
         if (workoutState is WorkoutsScreenState.WorkoutStarted) {
             val ws = workoutState as WorkoutsScreenState.WorkoutStarted
-            navigator.open(SheetDestination.ActiveWorkout(ws.workout.id))
+            if (ws.workout.id != lastHandledWorkoutId) {
+                lastHandledWorkoutId = ws.workout.id
+                navigator.open(SheetDestination.ActiveWorkout(ws.workout.id))
+            }
         }
     }
 
