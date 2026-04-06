@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "skills": {
+    "android-gradle-build-logic": {
+      "source": "krutikJain/android-agent-skills",
+      "sourceType": "github",
+      "computedHash": "b73691e7c706b91d09c9b9b4321c6f47629110ba4e3d2711c48b32efbc5b9949"
+    },
+    "android-networking-retrofit-okhttp": {
+      "source": "krutikJain/android-agent-skills",
+      "sourceType": "github",
+      "computedHash": "9b7b9bff71d7455e24746b8818a462b080d279c70f3cc6258de2cdce52c9cf53"
+    },
+    "android-testing-unit": {
+      "source": "krutikJain/android-agent-skills",
+      "sourceType": "github",
+      "computedHash": "acec553c02577fa391e36fb2dfe698ca769cfa78f13988223e9f6a03072ef402"
+    },
+    "java-coding-standards": {
+      "source": "affaan-m/everything-claude-code",
+      "sourceType": "github",
+      "computedHash": "12a3449a8209f3d8a007f925cc0ffddcd977f7e5ba3e92e5588e7d5a29ede1da"
+    },
+    "java-docs": {
+      "source": "github/awesome-copilot",
+      "sourceType": "github",
+      "computedHash": "76cf49efcd6e99d95031c78e56615dbaf641a756e852acf7e87f9197dfab43e0"
+    }
+  }
+}
