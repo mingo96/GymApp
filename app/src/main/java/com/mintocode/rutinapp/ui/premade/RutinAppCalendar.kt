@@ -23,6 +23,7 @@ import androidx.compose.material.icons.twotone.Edit
 import androidx.compose.material.icons.twotone.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -42,9 +43,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mintocode.rutinapp.data.models.CalendarPhaseModel
 import com.mintocode.rutinapp.data.models.PlanningModel
-import com.mintocode.rutinapp.ui.theme.PrimaryColor
-import com.mintocode.rutinapp.ui.theme.SecondaryColor
-import com.mintocode.rutinapp.ui.theme.TextFieldColor
 import com.mintocode.rutinapp.utils.dayAndMonthString
 import com.mintocode.rutinapp.utils.toSimpleDate
 import kotlinx.coroutines.delay
@@ -128,7 +126,7 @@ fun PhaseIndicator(phase: CalendarPhaseModel) {
     val phaseColor = try {
         Color(android.graphics.Color.parseColor(phase.color))
     } catch (_: Exception) {
-        SecondaryColor
+        MaterialTheme.colorScheme.secondary
     }
 
     Box(
@@ -170,7 +168,7 @@ fun DateVerticalItem(
             modifier = Modifier
                 .width(2.dp)
                 .fillMaxHeight()
-                .background(SecondaryColor)
+                .background(MaterialTheme.colorScheme.secondary)
         )
         Row(
             modifier = Modifier
@@ -178,7 +176,9 @@ fun DateVerticalItem(
                 .background(
                     brush = Brush.horizontalGradient(
                         listOf(
-                            TextFieldColor, TextFieldColor, PrimaryColor
+                            MaterialTheme.colorScheme.surfaceVariant,
+                            MaterialTheme.colorScheme.surfaceVariant,
+                            MaterialTheme.colorScheme.primaryContainer
                         )
                     )
                 )
@@ -196,7 +196,7 @@ fun DateVerticalItem(
                     Icon(
                         imageVector = Icons.TwoTone.Person,
                         contentDescription = "Creado por entrenador",
-                        tint = SecondaryColor,
+                        tint = MaterialTheme.colorScheme.secondary,
                         modifier = Modifier.height(16.dp)
                     )
                 }

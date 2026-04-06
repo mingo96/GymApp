@@ -1,9 +1,5 @@
 package com.mintocode.rutinapp
 
-import android.app.Application
-import android.content.Context
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -11,31 +7,38 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.google.android.gms.ads.MobileAds
-import com.google.android.gms.auth.api.identity.BeginSignInRequest
+import com.mintocode.rutinapp.ui.components.RutinAppBottomBar
+import com.mintocode.rutinapp.ui.navigation.Routes
+import com.mintocode.rutinapp.ui.navigation.topLevelDestinations
 import com.mintocode.rutinapp.ui.screens.ExercisesScreen
 import com.mintocode.rutinapp.ui.screens.LoadingScreen
 import com.mintocode.rutinapp.ui.screens.MainScreen
 import com.mintocode.rutinapp.ui.screens.NotificationsScreen
 import com.mintocode.rutinapp.ui.screens.RoutinesScreen
-import com.mintocode.rutinapp.ui.screens.SettinsScreen
+import com.mintocode.rutinapp.ui.screens.SettingsScreen
 import com.mintocode.rutinapp.ui.screens.StatsScreen
 import com.mintocode.rutinapp.ui.screens.WorkoutsScreen
-import com.mintocode.rutinapp.ui.theme.ContentColor
-import com.mintocode.rutinapp.ui.theme.PrimaryColor
 import com.mintocode.rutinapp.ui.theme.RutinAppTheme
 import com.mintocode.rutinapp.utils.DataStoreManager
 import com.mintocode.rutinapp.sync.SyncStateHolder
@@ -49,14 +52,10 @@ import com.mintocode.rutinapp.viewmodels.SettingsViewModel
 import com.mintocode.rutinapp.viewmodels.StatsViewModel
 import com.mintocode.rutinapp.viewmodels.WorkoutsViewModel
 import dagger.hilt.android.AndroidEntryPoint
-import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-
-@HiltAndroidApp
-class RutinAppApplication : Application()
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -79,163 +78,184 @@ class MainActivity : ComponentActivity() {
 
         start()
 
-        // Screen transitions
-        val onEnter = slideInHorizontally { -it } + scaleIn()
-        val onExit = slideOutHorizontally {
-            it
-        } + scaleOut()
-
         setContent {
-            RutinAppTheme {
+            val userDetails by settingsViewModel.data.observeAsState()
+            val isDarkTheme = userDetails?.isDarkTheme ?: true
+
+            RutinAppTheme(darkTheme = isDarkTheme) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = PrimaryColor,
-                    contentColor = ContentColor
+                    color = MaterialTheme.colorScheme.background
                 ) {
-
                     val navController = rememberNavController()
+                    RutinAppNavHost(navController = navController)
+                }
+            }
+        }
+    }
 
-                    val syncing by SyncStateHolder.isSyncing.collectAsState()
-                    val lastError by SyncStateHolder.lastError.collectAsState()
+    /**
+     * Main navigation host with bottom nav bar.
+     *
+     * Shows bottom bar only on top-level destinations (Home, Exercises, Train, Stats, Profile).
+     * Loading screen and secondary screens (Settings, Notifications, Routines) hide the bar.
+     */
+    @Composable
+    private fun RutinAppNavHost(navController: NavHostController) {
+        val navBackStackEntry by navController.currentBackStackEntryAsState()
+        val currentRoute = navBackStackEntry?.destination?.route
 
-                    LaunchedEffect(lastError) {
-                        if (lastError != null) {
-                            Toast.makeText(this@MainActivity, "Sync error: ${lastError}", Toast.LENGTH_SHORT).show()
+        val topLevelRoutes = topLevelDestinations.map { it.route }
+        val showBottomBar = currentRoute in topLevelRoutes
+
+        val syncing by SyncStateHolder.isSyncing.collectAsState()
+        val lastError by SyncStateHolder.lastError.collectAsState()
+
+        LaunchedEffect(lastError) {
+            if (lastError != null) {
+                Toast.makeText(this@MainActivity, "Sync error: $lastError", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        Scaffold(
+            containerColor = MaterialTheme.colorScheme.background,
+            bottomBar = {
+                if (showBottomBar) {
+                    RutinAppBottomBar(
+                        currentRoute = currentRoute,
+                        onNavigate = { route ->
+                            navController.navigate(route) {
+                                popUpTo(Routes.HOME) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    )
+                }
+            }
+        ) { innerPadding ->
+            val animDuration = 300
+
+            NavHost(
+                navController = navController,
+                startDestination = Routes.LOADING,
+                modifier = Modifier.padding(innerPadding),
+                enterTransition = {
+                    slideIntoContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Start,
+                        animationSpec = tween(animDuration)
+                    ) + fadeIn(animationSpec = tween(animDuration))
+                },
+                exitTransition = {
+                    slideOutOfContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Start,
+                        animationSpec = tween(animDuration)
+                    ) + fadeOut(animationSpec = tween(animDuration))
+                },
+                popEnterTransition = {
+                    slideIntoContainer(
+                        AnimatedContentTransitionScope.SlideDirection.End,
+                        animationSpec = tween(animDuration)
+                    ) + fadeIn(animationSpec = tween(animDuration))
+                },
+                popExitTransition = {
+                    slideOutOfContainer(
+                        AnimatedContentTransitionScope.SlideDirection.End,
+                        animationSpec = tween(animDuration)
+                    ) + fadeOut(animationSpec = tween(animDuration))
+                }
+            ) {
+                // Loading / splash
+                composable(Routes.LOADING) {
+                    LaunchedEffect(true) {
+                        while (!settingsViewModel.hasLoaded) {
+                            delay(100)
+                        }
+                        exercisesViewModel.syncPendingExercises()
+                        routinesViewModel.syncPendingRoutines()
+                        navController.navigate(Routes.HOME) {
+                            popUpTo(Routes.LOADING) { inclusive = true }
                         }
                     }
+                    LoadingScreen()
+                }
 
-                    NavHost(navController = navController, startDestination = "loadingScreen") {
+                // ── Top-level destinations ──
 
-                        composable("loadingScreen", exitTransition = { onExit }) {
-                            LaunchedEffect(true) {
-                                while (!settingsViewModel.hasLoaded) {
-                                    delay(100)
-                                }
-                                // Trigger background sync of pending local items once user/token loaded
-                                exercisesViewModel.syncPendingExercises()
-                                routinesViewModel.syncPendingRoutines()
-                                navController.navigate("start")
-                            }
+                composable(Routes.HOME) {
+                    BackHandler { moveTaskToBack(true) }
+                    MainScreen(
+                        onNavigateToTrain = { navController.navigate(Routes.TRAIN) },
+                        mainScreenViewModel = mainScreenViewModel
+                    )
+                }
 
-                            LoadingScreen()
-                        }
+                composable(Routes.EXERCISES) {
+                    ExercisesScreen(
+                        viewModel = exercisesViewModel
+                    )
+                }
 
-                        composable("start",
-                            enterTransition = { onEnter },
-                            exitTransition = { onExit }) {
-                            BackHandler {
-                                moveTaskToBack(true)
-                            }
+                composable(Routes.TRAIN) {
+                    WorkoutsScreen(
+                        viewModel = workoutsViewModel,
+                        onNavigateToExercises = { navController.navigate(Routes.EXERCISES) }
+                    )
+                }
 
-                            MainScreen(
-                                navController = navController,
-                                mainScreenViewModel = mainScreenViewModel
-                            )
-                            if (syncing) {
-                                // Very lightweight indicator (could be improved with Compose Snackbar/Overlay)
-                                Toast.makeText(this@MainActivity, "Sincronizando...", Toast.LENGTH_SHORT).show()
-                            }
-                        }
+                composable(Routes.STATS) {
+                    StatsScreen(
+                        statsViewModel = statsViewModel
+                    )
+                }
 
-                        composable("exercises",
-                            enterTransition = { onEnter },
-                            exitTransition = { onExit }) {
-                            ExercisesScreen(
-                                viewModel = exercisesViewModel, navController = navController
-                            )
-                        }
+                composable(Routes.PROFILE) {
+                    SettingsScreen(
+                        settingsViewModel = settingsViewModel
+                    )
+                }
 
-                        composable("routines",
-                            enterTransition = { onEnter },
-                            exitTransition = { onExit }) {
-                            RoutinesScreen(
-                                viewModel = routinesViewModel, navController = navController
-                            )
-                        }
+                // ── Secondary screens ──
 
-                        composable("workouts",
-                            enterTransition = { onEnter },
-                            exitTransition = { onExit }) {
-                            WorkoutsScreen(
-                                viewModel = workoutsViewModel, navController = navController
-                            )
-                        }
+                composable(Routes.SETTINGS) {
+                    SettingsScreen(
+                        settingsViewModel = settingsViewModel
+                    )
+                }
 
-                        composable("stats",
-                            enterTransition = { onEnter },
-                            exitTransition = { onExit }) {
-                            StatsScreen(
-                                navController = navController, statsViewModel = statsViewModel
-                            )
-                        }
+                composable(Routes.ROUTINES) {
+                    RoutinesScreen(
+                        viewModel = routinesViewModel
+                    )
+                }
 
-                        composable("settings",
-                            enterTransition = { onEnter },
-                            exitTransition = { onExit }) {
-                            SettinsScreen(
-                                navController = navController, settingsViewModel = settingsViewModel
-                            )
-                        }
-
-                        composable("notifications",
-                            enterTransition = { onEnter },
-                            exitTransition = { onExit }) {
-                            NotificationsScreen(
-                                navController = navController,
-                                viewModel = notificationsViewModel
-                            )
-                        }
-
-                    }
-
+                composable(Routes.NOTIFICATIONS) {
+                    NotificationsScreen(
+                        viewModel = notificationsViewModel
+                    )
                 }
             }
         }
     }
 
     private fun start() {
-
         val context = this.baseContext
-
         val datastore = DataStoreManager(context)
 
         settingsViewModel.initiateDataStore(datastore)
-
-        // Inicializar notificaciones (crear canales)
         settingsViewModel.initNotificationHelper(context)
 
         workoutsViewModel.provideAdsViewModel(adViewModel)
-
         statsViewModel.provideAdsViewModel(adViewModel)
-
         workoutsViewModel.exercisesViewModel = exercisesViewModel
 
         val backgroundScope = CoroutineScope(Dispatchers.IO)
         backgroundScope.launch {
-            // Initialize the Google Mobile Ads SDK on a background thread.
             MobileAds.initialize(this@MainActivity) {
                 adViewModel.initiateObjects(this@MainActivity, DataStoreManager(context))
             }
         }
 
-        // Registrar token FCM con el backend si hay permiso y el usuario está autenticado
         settingsViewModel.registerFcmTokenIfNeeded()
-
     }
-
-}
-
-fun isConnectedToInternet(context: Context): Boolean {
-    var isConnected = false
-    val connectivityManager =
-        context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager?
-
-    if (connectivityManager != null) {
-        val network = connectivityManager.activeNetwork
-        val capabilities = connectivityManager.getNetworkCapabilities(network)
-        isConnected =
-            capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
-    }
-
-    return isConnected
 }

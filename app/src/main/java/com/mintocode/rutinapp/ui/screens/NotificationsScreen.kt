@@ -21,7 +21,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Delete
@@ -38,6 +37,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -51,13 +51,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavHostController
 import com.mintocode.rutinapp.data.daos.AppNotificationEntity
-import com.mintocode.rutinapp.ui.theme.ContentColor
-import com.mintocode.rutinapp.ui.theme.PrimaryColor
-import com.mintocode.rutinapp.ui.theme.ScreenContainer
-import com.mintocode.rutinapp.ui.theme.SecondaryColor
-import com.mintocode.rutinapp.ui.theme.TextFieldColor
 import com.mintocode.rutinapp.ui.theme.rutinAppButtonsColours
 import com.mintocode.rutinapp.viewmodels.NotificationFilter
 import com.mintocode.rutinapp.viewmodels.NotificationsViewModel
@@ -72,7 +66,6 @@ import java.time.Instant
  */
 @Composable
 fun NotificationsScreen(
-    navController: NavHostController,
     viewModel: NotificationsViewModel
 ) {
     val allNotifications by viewModel.notifications.collectAsState()
@@ -87,45 +80,41 @@ fun NotificationsScreen(
         NotificationFilter.READ -> allNotifications.filter { it.readAt != null }
     }
 
-    ScreenContainer(
-        title = "Notificaciones",
-        navController = navController
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize()
-        ) {
-            // ---- Header con filtros y acciones ----
-            NotificationHeader(
-                filter = filter,
-                unreadCount = unreadCount,
-                isSyncing = isSyncing,
-                onFilterChange = { viewModel.setFilter(it) },
-                onMarkAllRead = { viewModel.markAllAsRead() },
-                onRefresh = { viewModel.syncNotifications() }
-            )
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .padding(16.dp)
+    ) {
+        // ---- Header con filtros y acciones ----
+        NotificationHeader(
+            filter = filter,
+            unreadCount = unreadCount,
+            isSyncing = isSyncing,
+            onFilterChange = { viewModel.setFilter(it) },
+            onMarkAllRead = { viewModel.markAllAsRead() },
+            onRefresh = { viewModel.syncNotifications() }
+        )
 
-            Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(12.dp))
 
-            // ---- Lista de notificaciones ----
-            if (filteredNotifications.isEmpty()) {
-                EmptyNotificationsState(filter)
-            } else {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(bottom = 16.dp)
-                ) {
-                    items(
-                        items = filteredNotifications,
-                        key = { it.id }
-                    ) { notification ->
-                        NotificationCard(
-                            notification = notification,
-                            onMarkAsRead = { viewModel.markAsRead(notification) },
-                            onDelete = { viewModel.deleteNotification(notification) }
-                        )
-                    }
+        // ---- Lista de notificaciones ----
+        if (filteredNotifications.isEmpty()) {
+            EmptyNotificationsState(filter)
+        } else {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(bottom = 16.dp)
+            ) {
+                items(
+                    items = filteredNotifications,
+                    key = { it.id }
+                ) { notification ->
+                    NotificationCard(
+                        notification = notification,
+                        onMarkAsRead = { viewModel.markAsRead(notification) },
+                        onDelete = { viewModel.deleteNotification(notification) }
+                    )
                 }
             }
         }
@@ -182,7 +171,7 @@ private fun NotificationHeader(
                 Button(
                     onClick = onMarkAllRead,
                     colors = rutinAppButtonsColours(),
-                    shape = RoundedCornerShape(8.dp)
+                    shape = MaterialTheme.shapes.extraSmall
                 ) {
                     Icon(
                         Icons.Outlined.CheckCircle,
@@ -200,7 +189,7 @@ private fun NotificationHeader(
                 CircularProgressIndicator(
                     modifier = Modifier.size(20.dp),
                     strokeWidth = 2.dp,
-                    color = SecondaryColor
+                    color = MaterialTheme.colorScheme.secondary
                 )
             }
         }
@@ -221,14 +210,14 @@ private fun NotificationFilterChip(
         onClick = onClick,
         label = { Text(label, fontSize = 13.sp) },
         colors = FilterChipDefaults.filterChipColors(
-            containerColor = TextFieldColor,
-            selectedContainerColor = SecondaryColor.copy(alpha = 0.3f),
-            labelColor = ContentColor,
-            selectedLabelColor = ContentColor
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            selectedContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f),
+            labelColor = MaterialTheme.colorScheme.onSurface,
+            selectedLabelColor = MaterialTheme.colorScheme.onSurface
         ),
         border = FilterChipDefaults.filterChipBorder(
-            borderColor = SecondaryColor.copy(alpha = 0.3f),
-            selectedBorderColor = SecondaryColor,
+            borderColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f),
+            selectedBorderColor = MaterialTheme.colorScheme.secondary,
             enabled = true,
             selected = selected
         )
@@ -250,9 +239,12 @@ private fun NotificationCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = if (isRead) TextFieldColor.copy(alpha = 0.6f) else TextFieldColor
+            containerColor = if (isRead)
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+            else
+                MaterialTheme.colorScheme.surfaceVariant
         ),
-        shape = RoundedCornerShape(12.dp)
+        shape = MaterialTheme.shapes.small
     ) {
         Row(
             modifier = Modifier
@@ -301,7 +293,7 @@ private fun NotificationCard(
                             modifier = Modifier
                                 .size(8.dp)
                                 .clip(CircleShape)
-                                .background(SecondaryColor)
+                                .background(MaterialTheme.colorScheme.secondary)
                         )
                     }
                 }
@@ -310,7 +302,7 @@ private fun NotificationCard(
                     Text(
                         text = notification.body,
                         fontSize = 13.sp,
-                        color = ContentColor.copy(alpha = 0.7f),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -324,7 +316,7 @@ private fun NotificationCard(
                     Text(
                         text = timeAgo(notification.createdAt),
                         fontSize = 11.sp,
-                        color = ContentColor.copy(alpha = 0.5f)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -337,7 +329,7 @@ private fun NotificationCard(
                                     Icons.TwoTone.Check,
                                     contentDescription = "Marcar como leída",
                                     modifier = Modifier.size(18.dp),
-                                    tint = SecondaryColor
+                                    tint = MaterialTheme.colorScheme.secondary
                                 )
                             }
                         }
@@ -350,7 +342,7 @@ private fun NotificationCard(
                                 Icons.Outlined.Delete,
                                 contentDescription = "Eliminar",
                                 modifier = Modifier.size(18.dp),
-                                tint = Color.Red.copy(alpha = 0.7f)
+                                tint = MaterialTheme.colorScheme.error
                             )
                         }
                     }
@@ -376,7 +368,7 @@ private fun EmptyNotificationsState(filter: NotificationFilter) {
             Icons.Outlined.Notifications,
             contentDescription = null,
             modifier = Modifier.size(64.dp),
-            tint = ContentColor.copy(alpha = 0.3f)
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(Modifier.height(16.dp))
         Text(
@@ -386,7 +378,7 @@ private fun EmptyNotificationsState(filter: NotificationFilter) {
                 NotificationFilter.READ -> "No tienes notificaciones leídas"
             },
             fontSize = 16.sp,
-            color = ContentColor.copy(alpha = 0.5f)
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
