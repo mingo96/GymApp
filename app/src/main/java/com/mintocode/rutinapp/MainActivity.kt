@@ -1,48 +1,49 @@
 package com.mintocode.rutinapp
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.compose.animation.AnimatedContentTransitionScope
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
 import com.google.android.gms.ads.MobileAds
-import com.mintocode.rutinapp.ui.components.RutinAppBottomBar
-import com.mintocode.rutinapp.ui.navigation.Routes
-import com.mintocode.rutinapp.ui.navigation.topLevelDestinations
-import com.mintocode.rutinapp.ui.screens.ExercisesScreen
+import com.mintocode.rutinapp.sync.SyncStateHolder
+import com.mintocode.rutinapp.ui.navigation.LocalSheetNavigator
+import com.mintocode.rutinapp.ui.navigation.SheetDestination
+import com.mintocode.rutinapp.ui.navigation.SheetHost
+import com.mintocode.rutinapp.ui.navigation.SheetNavigator
 import com.mintocode.rutinapp.ui.screens.LoadingScreen
-import com.mintocode.rutinapp.ui.screens.MainScreen
-import com.mintocode.rutinapp.ui.screens.NotificationsScreen
-import com.mintocode.rutinapp.ui.screens.RoutinesScreen
-import com.mintocode.rutinapp.ui.screens.SettingsScreen
-import com.mintocode.rutinapp.ui.screens.StatsScreen
-import com.mintocode.rutinapp.ui.screens.WorkoutsScreen
+import com.mintocode.rutinapp.ui.screens.root.HomePage
+import com.mintocode.rutinapp.ui.screens.root.ProfilePage
+import com.mintocode.rutinapp.ui.screens.root.RootPager
+import com.mintocode.rutinapp.ui.screens.root.TrainPage
+import com.mintocode.rutinapp.ui.screens.sheets.ActiveWorkoutSheet
+import com.mintocode.rutinapp.ui.screens.sheets.AuthSheet
+import com.mintocode.rutinapp.ui.screens.sheets.ExerciseListSheet
+import com.mintocode.rutinapp.ui.screens.sheets.NotificationsSheet
+import com.mintocode.rutinapp.ui.screens.sheets.PlanningEditSheet
+import com.mintocode.rutinapp.ui.screens.sheets.RoutineListSheet
+import com.mintocode.rutinapp.ui.screens.sheets.SettingsSheet
+import com.mintocode.rutinapp.ui.screens.sheets.StatsSheet
+import com.mintocode.rutinapp.ui.screens.sheets.TrainerManagementSheet
+import com.mintocode.rutinapp.ui.screens.sheets.WorkoutHistorySheet
 import com.mintocode.rutinapp.ui.theme.RutinAppTheme
 import com.mintocode.rutinapp.utils.DataStoreManager
-import com.mintocode.rutinapp.sync.SyncStateHolder
-import android.widget.Toast
 import com.mintocode.rutinapp.viewmodels.AdViewModel
 import com.mintocode.rutinapp.viewmodels.ExercisesViewModel
 import com.mintocode.rutinapp.viewmodels.MainScreenViewModel
@@ -87,157 +88,177 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val navController = rememberNavController()
-                    RutinAppNavHost(navController = navController)
+                    RutinAppContent()
                 }
             }
         }
     }
 
     /**
-     * Main navigation host with bottom nav bar.
+     * Main content using Trade Republic-style navigation.
      *
-     * Shows bottom bar only on top-level destinations (Home, Exercises, Train, Stats, Profile).
-     * Loading screen and secondary screens (Settings, Notifications, Routines) hide the bar.
+     * Shows a loading screen until settings are loaded, then displays a
+     * HorizontalPager with 3 root pages (Home, Train, Profile) and a
+     * SheetHost for stacking ModalBottomSheets.
+     *
+     * Back press closes the topmost sheet. If no sheets are open,
+     * the app goes to background.
      */
     @Composable
-    private fun RutinAppNavHost(navController: NavHostController) {
-        val navBackStackEntry by navController.currentBackStackEntryAsState()
-        val currentRoute = navBackStackEntry?.destination?.route
+    private fun RutinAppContent() {
+        val sheetNavigator = remember { SheetNavigator() }
+        var isLoaded by remember { mutableStateOf(false) }
 
-        val topLevelRoutes = topLevelDestinations.map { it.route }
-        val showBottomBar = currentRoute in topLevelRoutes
-
-        val syncing by SyncStateHolder.isSyncing.collectAsState()
+        // Sync error toast
         val lastError by SyncStateHolder.lastError.collectAsState()
-
         LaunchedEffect(lastError) {
             if (lastError != null) {
                 Toast.makeText(this@MainActivity, "Sync error: $lastError", Toast.LENGTH_SHORT).show()
             }
         }
 
-        Scaffold(
-            containerColor = MaterialTheme.colorScheme.background,
-            bottomBar = {
-                if (showBottomBar) {
-                    RutinAppBottomBar(
-                        currentRoute = currentRoute,
-                        onNavigate = { route ->
-                            navController.navigate(route) {
-                                popUpTo(Routes.HOME) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        }
-                    )
-                }
+        // Wait for settings to load
+        LaunchedEffect(Unit) {
+            while (!settingsViewModel.hasLoaded) {
+                delay(100)
             }
-        ) { innerPadding ->
-            val animDuration = 300
+            exercisesViewModel.syncPendingExercises()
+            routinesViewModel.syncPendingRoutines()
+            isLoaded = true
+        }
 
-            NavHost(
-                navController = navController,
-                startDestination = Routes.LOADING,
-                modifier = Modifier.padding(innerPadding),
-                enterTransition = {
-                    slideIntoContainer(
-                        AnimatedContentTransitionScope.SlideDirection.Start,
-                        animationSpec = tween(animDuration)
-                    ) + fadeIn(animationSpec = tween(animDuration))
+        if (!isLoaded) {
+            LoadingScreen()
+            return
+        }
+
+        // Back handler: close topmost sheet, or move app to background
+        BackHandler {
+            if (sheetNavigator.hasSheets) {
+                sheetNavigator.close()
+            } else {
+                moveTaskToBack(true)
+            }
+        }
+
+        CompositionLocalProvider(LocalSheetNavigator provides sheetNavigator) {
+            RootPager(
+                page0 = { HomePage(viewModel = mainScreenViewModel) },
+                page1 = {
+                    TrainPage(
+                        workoutsViewModel = workoutsViewModel,
+                        exercisesViewModel = exercisesViewModel,
+                        routinesViewModel = routinesViewModel
+                    )
                 },
-                exitTransition = {
-                    slideOutOfContainer(
-                        AnimatedContentTransitionScope.SlideDirection.Start,
-                        animationSpec = tween(animDuration)
-                    ) + fadeOut(animationSpec = tween(animDuration))
-                },
-                popEnterTransition = {
-                    slideIntoContainer(
-                        AnimatedContentTransitionScope.SlideDirection.End,
-                        animationSpec = tween(animDuration)
-                    ) + fadeIn(animationSpec = tween(animDuration))
-                },
-                popExitTransition = {
-                    slideOutOfContainer(
-                        AnimatedContentTransitionScope.SlideDirection.End,
-                        animationSpec = tween(animDuration)
-                    ) + fadeOut(animationSpec = tween(animDuration))
-                }
-            ) {
-                // Loading / splash
-                composable(Routes.LOADING) {
-                    LaunchedEffect(true) {
-                        while (!settingsViewModel.hasLoaded) {
-                            delay(100)
-                        }
-                        exercisesViewModel.syncPendingExercises()
-                        routinesViewModel.syncPendingRoutines()
-                        navController.navigate(Routes.HOME) {
-                            popUpTo(Routes.LOADING) { inclusive = true }
-                        }
-                    }
-                    LoadingScreen()
-                }
+                page2 = { ProfilePage(settingsViewModel = settingsViewModel) }
+            )
 
-                // ── Top-level destinations ──
-
-                composable(Routes.HOME) {
-                    BackHandler { moveTaskToBack(true) }
-                    MainScreen(
-                        onNavigateToTrain = { navController.navigate(Routes.TRAIN) },
-                        mainScreenViewModel = mainScreenViewModel
-                    )
-                }
-
-                composable(Routes.EXERCISES) {
-                    ExercisesScreen(
-                        viewModel = exercisesViewModel
-                    )
-                }
-
-                composable(Routes.TRAIN) {
-                    WorkoutsScreen(
-                        viewModel = workoutsViewModel,
-                        onNavigateToExercises = { navController.navigate(Routes.EXERCISES) }
-                    )
-                }
-
-                composable(Routes.STATS) {
-                    StatsScreen(
-                        statsViewModel = statsViewModel
-                    )
-                }
-
-                composable(Routes.PROFILE) {
-                    SettingsScreen(
-                        settingsViewModel = settingsViewModel
-                    )
-                }
-
-                // ── Secondary screens ──
-
-                composable(Routes.SETTINGS) {
-                    SettingsScreen(
-                        settingsViewModel = settingsViewModel
-                    )
-                }
-
-                composable(Routes.ROUTINES) {
-                    RoutinesScreen(
-                        viewModel = routinesViewModel
-                    )
-                }
-
-                composable(Routes.NOTIFICATIONS) {
-                    NotificationsScreen(
-                        viewModel = notificationsViewModel
-                    )
-                }
+            SheetHost(navigator = sheetNavigator) { destination ->
+                SheetContent(destination)
             }
         }
     }
 
+    /**
+     * Maps each [SheetDestination] to its composable content.
+     *
+     * Each sheet delegates to the corresponding sheet composable,
+     * passing the appropriate ViewModel.
+     */
+    @Composable
+    private fun SheetContent(destination: SheetDestination) {
+        val navigator = LocalSheetNavigator.current
+
+        when (destination) {
+            is SheetDestination.ExerciseList -> {
+                ExerciseListSheet(viewModel = exercisesViewModel)
+            }
+
+            is SheetDestination.RoutineList -> {
+                RoutineListSheet(viewModel = routinesViewModel)
+            }
+
+            is SheetDestination.WorkoutHistory -> {
+                WorkoutHistorySheet(viewModel = workoutsViewModel)
+            }
+
+            is SheetDestination.ActiveWorkout -> {
+                ActiveWorkoutSheet(
+                    viewModel = workoutsViewModel,
+                    onNavigateToExercises = {
+                        navigator.open(SheetDestination.ExerciseList)
+                    }
+                )
+            }
+
+            is SheetDestination.StartWorkout -> {
+                // Start workout then show active workout sheet
+                LaunchedEffect(destination) {
+                    if (destination.routineId != null) {
+                        // RoutineId-based start handled by ViewModel
+                    } else {
+                        workoutsViewModel.startFromEmpty()
+                    }
+                }
+                ActiveWorkoutSheet(
+                    viewModel = workoutsViewModel,
+                    onNavigateToExercises = {
+                        navigator.open(SheetDestination.ExerciseList)
+                    }
+                )
+            }
+
+            is SheetDestination.PlanningEdit -> {
+                PlanningEditSheet(viewModel = mainScreenViewModel)
+            }
+
+            is SheetDestination.Settings -> {
+                SettingsSheet(viewModel = settingsViewModel)
+            }
+
+            is SheetDestination.Auth -> {
+                AuthSheet(viewModel = settingsViewModel)
+            }
+
+            is SheetDestination.Notifications -> {
+                NotificationsSheet(viewModel = notificationsViewModel)
+            }
+
+            is SheetDestination.TrainerManagement -> {
+                TrainerManagementSheet(viewModel = settingsViewModel)
+            }
+
+            is SheetDestination.StatsOverview -> {
+                StatsSheet(viewModel = statsViewModel)
+            }
+
+            // Detail/create/edit sheets reuse the list sheets with ViewModel state
+            is SheetDestination.ExerciseDetail,
+            is SheetDestination.ExerciseCreate,
+            is SheetDestination.ExerciseEdit -> {
+                ExerciseListSheet(viewModel = exercisesViewModel)
+            }
+
+            is SheetDestination.RoutineDetail,
+            is SheetDestination.RoutineCreate,
+            is SheetDestination.RoutineEdit -> {
+                RoutineListSheet(viewModel = routinesViewModel)
+            }
+
+            is SheetDestination.WorkoutDetail -> {
+                WorkoutHistorySheet(viewModel = workoutsViewModel)
+            }
+
+            is SheetDestination.ExerciseStats -> {
+                StatsSheet(viewModel = statsViewModel)
+            }
+        }
+    }
+
+    /**
+     * Initializes datastores, ad SDKs, and cross-ViewModel dependencies.
+     */
     private fun start() {
         val context = this.baseContext
         val datastore = DataStoreManager(context)
