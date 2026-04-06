@@ -1,4 +1,4 @@
-﻿package com.mintocode.rutinapp.ui.screens
+package com.mintocode.rutinapp.ui.screens.sheets
 
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.foundation.BorderStroke
@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.twotone.Add
 import androidx.compose.material.icons.twotone.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -47,63 +48,58 @@ import com.mintocode.rutinapp.ui.components.SearchTextField
 import com.mintocode.rutinapp.ui.components.rememberStaggeredRevealIndex
 import com.mintocode.rutinapp.ui.premade.AnimatedItem
 import com.mintocode.rutinapp.ui.screenStates.RoutinesScreenState
+import com.mintocode.rutinapp.ui.screens.CreateRoutineDialog
+import com.mintocode.rutinapp.ui.screens.EditRoutineDialog
+import com.mintocode.rutinapp.ui.screens.ObserveRoutineDialog
 import com.mintocode.rutinapp.ui.theme.rutinAppButtonsColours
 import com.mintocode.rutinapp.ui.theme.rutinappCardColors
 import com.mintocode.rutinapp.viewmodels.RoutinesViewModel
 import java.util.Locale
 
 /**
- * Routines screen with search, filter, create, edit, and observe functionality.
+ * Routine list sheet content.
  *
- * @param viewModel ViewModel managing routine state
+ * Shows routines grouped by body part with search, filters, and CRUD.
+ * Replaces the old RoutinesScreen — now rendered inside a ModalBottomSheet.
+ *
+ * @param viewModel RoutinesViewModel for data and actions
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun RoutinesScreen(viewModel: RoutinesViewModel) {
-
-    LaunchedEffect(Unit) {
-        viewModel.autoSync()
-    }
-
+fun RoutineListSheet(viewModel: RoutinesViewModel) {
     val lifecycle = LocalLifecycleOwner.current.lifecycle
 
-    val routines by viewModel.routines.collectAsStateWithLifecycle(
-        lifecycle = lifecycle
-    )
+    LaunchedEffect(Unit) { viewModel.autoSync() }
 
+    val routines by viewModel.routines.collectAsStateWithLifecycle(lifecycle = lifecycle)
     val uiState by viewModel.uiState.observeAsState()
+    val showOthers by viewModel.showOthers.observeAsState(false)
+    val loading by viewModel.isLoading.observeAsState(false)
 
-    val maxIndex = rememberStaggeredRevealIndex(
-        key = routines,
-        totalSize = routines.size
-    )
+    val maxIndex = rememberStaggeredRevealIndex(key = routines, totalSize = routines.size)
 
+    // Existing dialog states
     when (uiState) {
-        is RoutinesScreenState.Creating -> {
-            CreateRoutineDialog(viewModel)
-        }
-
-        is RoutinesScreenState.Editing -> {
-            EditRoutineDialog(uiState = uiState as RoutinesScreenState.Editing, viewModel)
-        }
-
-        is RoutinesScreenState.Observe -> {
-            ObserveRoutineDialog(uiState = uiState as RoutinesScreenState.Observe, viewModel)
-        }
-
-        null -> {}
-        RoutinesScreenState.Overview -> {}
+        is RoutinesScreenState.Creating -> CreateRoutineDialog(viewModel)
+        is RoutinesScreenState.Editing -> EditRoutineDialog(uiState = uiState as RoutinesScreenState.Editing, viewModel)
+        is RoutinesScreenState.Observe -> ObserveRoutineDialog(uiState = uiState as RoutinesScreenState.Observe, viewModel)
+        null, RoutinesScreenState.Overview -> {}
     }
+
+    var searchText by rememberSaveable { mutableStateOf("") }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(16.dp)
+            .padding(horizontal = 16.dp)
     ) {
-        val showOthers by viewModel.showOthers.observeAsState(false)
-        val loading by viewModel.isLoading.observeAsState(false)
-        var searchText by rememberSaveable { mutableStateOf("") }
+        Text(
+            text = "Rutinas",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
 
         SearchTextField(
             value = searchText,
@@ -124,9 +120,7 @@ fun RoutinesScreen(viewModel: RoutinesViewModel) {
                 onShowMine = { viewModel.showMine() },
                 onShowOthers = { viewModel.showOthers() }
             )
-
-            Spacer(modifier = Modifier.weight(1f))
-
+            Spacer(Modifier.weight(1f))
             IconButton(
                 onClick = { viewModel.syncRoutines() },
                 modifier = Modifier.size(36.dp)
@@ -139,46 +133,54 @@ fun RoutinesScreen(viewModel: RoutinesViewModel) {
             }
         }
 
-        if (loading) {
-            LoadingIndicator()
-        }
+        if (loading) { LoadingIndicator() }
 
         val filtered = run {
-            val byOwnership = if (showOthers) routines.filter { !it.isFromThisUser } else routines.filter { it.isFromThisUser }
+            val byOwnership = if (showOthers) routines.filter { !it.isFromThisUser }
+            else routines.filter { it.isFromThisUser }
             if (searchText.isBlank()) byOwnership else byOwnership.filter {
-                it.name.contains(searchText, ignoreCase = true) || it.targetedBodyPart.contains(searchText, ignoreCase = true)
+                it.name.contains(searchText, ignoreCase = true) ||
+                        it.targetedBodyPart.contains(searchText, ignoreCase = true)
             }
         }
+
         if (!loading && filtered.isEmpty()) {
             EmptyStateMessage(
-                text = if (showOthers) "No hay rutinas de otros usuarios" else "No tienes rutinas aÃºn"
+                text = if (showOthers) "No hay rutinas de otros" else "No tienes rutinas aún"
             )
         }
 
-        LazyColumn(modifier = Modifier.fillMaxWidth()) {
-            items(filtered.map {
-                it.targetedBodyPart.replaceFirstChar {
-                    if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString()
-                }
-            }.distinct().take(maxIndex)) { thisBodyPart ->
+        LazyColumn(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(
+                filtered.map {
+                    it.targetedBodyPart.replaceFirstChar { c ->
+                        if (c.isLowerCase()) c.titlecase(Locale.ROOT) else c.toString()
+                    }
+                }.distinct().take(maxIndex)
+            ) { bodyPart ->
                 AnimatedItem(enterAnimation = slideInHorizontally(), delay = 100) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(
-                            text = thisBodyPart,
+                            text = bodyPart,
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 16.sp,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         LazyRow {
                             items(filtered.filter {
-                                it.targetedBodyPart.replaceFirstChar {
-                                    if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString()
-                                } == thisBodyPart
-                            }) {
-                                RoutineCard(
-                                    routine = it, modifier = Modifier.combinedClickable(onClick = {
-                                        viewModel.clickObserveRoutine(it)
-                                    }, onLongClick = { viewModel.clickEditRoutine(it) })
+                                it.targetedBodyPart.replaceFirstChar { c ->
+                                    if (c.isLowerCase()) c.titlecase(Locale.ROOT) else c.toString()
+                                } == bodyPart
+                            }) { routine ->
+                                RoutineCardItem(
+                                    routine = routine,
+                                    modifier = Modifier.combinedClickable(
+                                        onClick = { viewModel.clickObserveRoutine(routine) },
+                                        onLongClick = { viewModel.clickEditRoutine(routine) }
+                                    )
                                 )
                             }
                         }
@@ -192,17 +194,16 @@ fun RoutinesScreen(viewModel: RoutinesViewModel) {
             colors = rutinAppButtonsColours(),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 16.dp)
+                .padding(vertical = 16.dp)
         ) {
-            Text(text = "Crear nueva rutina")
+            Icon(Icons.TwoTone.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+            Text(text = "  Crear rutina")
         }
     }
 }
 
-
-
 @Composable
-private fun RoutineCard(routine: RoutineModel, modifier: Modifier) {
+private fun RoutineCardItem(routine: RoutineModel, modifier: Modifier) {
     Card(
         shape = MaterialTheme.shapes.small,
         colors = rutinappCardColors(),

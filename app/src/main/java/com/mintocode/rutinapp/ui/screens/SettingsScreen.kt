@@ -10,6 +10,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -17,11 +18,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,7 +34,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -41,23 +41,26 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavHostController
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
 import com.google.firebase.auth.GoogleAuthProvider
 import com.mintocode.rutinapp.R
 import com.mintocode.rutinapp.data.UserDetails
-import com.mintocode.rutinapp.isConnectedToInternet
+import com.mintocode.rutinapp.utils.isConnectedToInternet
+import com.mintocode.rutinapp.ui.components.TextFieldWithTitle
 import com.mintocode.rutinapp.ui.premade.AdjustableText
 import com.mintocode.rutinapp.ui.screenStates.SettingsScreenState
-import com.mintocode.rutinapp.ui.theme.ScreenContainer
-import com.mintocode.rutinapp.ui.theme.TextFieldColor
 import com.mintocode.rutinapp.ui.theme.rutinAppButtonsColours
 import com.mintocode.rutinapp.viewmodels.SettingsViewModel
 
+/**
+ * Settings screen with user data editing and login/registration.
+ *
+ * @param settingsViewModel ViewModel managing settings state
+ */
 @Composable
-fun SettinsScreen(navController: NavHostController, settingsViewModel: SettingsViewModel) {
+fun SettingsScreen(settingsViewModel: SettingsViewModel) {
 
     val data by settingsViewModel.data.observeAsState()
 
@@ -101,38 +104,40 @@ fun SettinsScreen(navController: NavHostController, settingsViewModel: SettingsV
         }
     }
 
-    ScreenContainer(title = "Configuración", navController = navController, floatingActionButton = {
-        Button(onClick = {
-            settingsViewModel.toggleUiState()
-        }, colors = rutinAppButtonsColours()) {
-            Text(if (uiState is SettingsScreenState.LogIn) "Datos del usuario" else "Inicio de sesión")
-        }
-    }) {
-
-        Column(
-            Modifier
-                .padding(it)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End
         ) {
-            when (uiState) {
-
-                SettingsScreenState.UserData -> {
-                    UserSettingsInput(
-                        settingsViewModel = settingsViewModel, data = data!!
-                    )
-                }
-
-                is SettingsScreenState.LogIn -> {
-                    UserLogInInput(
-                        settingsViewModel = settingsViewModel,
-                        uiState = (uiState as SettingsScreenState.LogIn),
-                        onGoogleClick = onGoogleClick
-                    )
-                }
+            Button(onClick = {
+                settingsViewModel.toggleUiState()
+            }, colors = rutinAppButtonsColours()) {
+                Text(if (uiState is SettingsScreenState.LogIn) "Datos del usuario" else "Inicio de sesión")
             }
         }
 
+        when (uiState) {
+            SettingsScreenState.UserData -> {
+                UserSettingsInput(
+                    settingsViewModel = settingsViewModel, data = data!!
+                )
+            }
+
+            is SettingsScreenState.LogIn -> {
+                UserLogInInput(
+                    settingsViewModel = settingsViewModel,
+                    uiState = (uiState as SettingsScreenState.LogIn),
+                    onGoogleClick = onGoogleClick
+                )
+            }
+        }
     }
 }
 
@@ -168,7 +173,7 @@ fun UserLogInInput(
         Row(
             modifier = Modifier
                 .weight(1f)
-                .background(TextFieldColor, RoundedCornerShape(12.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.small)
                 .padding(horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -190,7 +195,7 @@ fun UserLogInInput(
         Button(
             onClick = onGoogleClick,
             colors = rutinAppButtonsColours(),
-            shape = RoundedCornerShape(12.dp),
+            shape = MaterialTheme.shapes.small,
             modifier = Modifier.padding(vertical = 6.dp)
         ) {
             Image(
@@ -279,14 +284,14 @@ fun NotificationPermissionSection(settingsViewModel: SettingsViewModel) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(TextFieldColor, RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.small)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(
             text = "Notificaciones",
             fontSize = 16.sp,
-            color = Color.White
+            color = MaterialTheme.colorScheme.onSurface
         )
 
         if (hasPermission) {
@@ -297,14 +302,14 @@ fun NotificationPermissionSection(settingsViewModel: SettingsViewModel) {
                 Text(
                     text = "✓ Notificaciones activadas",
                     fontSize = 14.sp,
-                    color = Color(0xFF4CAF50)
+                    color = MaterialTheme.colorScheme.tertiary
                 )
             }
         } else {
             Text(
                 text = "Activa las notificaciones para recibir avisos sobre tus entrenamientos.",
                 fontSize = 13.sp,
-                color = Color.White.copy(alpha = 0.7f)
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             Button(
@@ -347,20 +352,20 @@ fun TrainerManagementSection(settingsViewModel: SettingsViewModel) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(TextFieldColor, RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.small)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(
             text = "Entrenadores",
             fontSize = 16.sp,
-            color = Color.White
+            color = MaterialTheme.colorScheme.onSurface
         )
 
         Text(
             text = "Canjea un código de invitación para vincular a tu entrenador.",
             fontSize = 13.sp,
-            color = Color.White.copy(alpha = 0.7f)
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
         Row(
@@ -390,7 +395,7 @@ fun TrainerManagementSection(settingsViewModel: SettingsViewModel) {
             Text(
                 text = "Entrenadores vinculados:",
                 fontSize = 14.sp,
-                color = Color.White.copy(alpha = 0.8f)
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             LazyColumn(
@@ -402,8 +407,8 @@ fun TrainerManagementSection(settingsViewModel: SettingsViewModel) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(
-                                Color.White.copy(alpha = 0.05f),
-                                RoundedCornerShape(8.dp)
+                                MaterialTheme.colorScheme.surface,
+                                MaterialTheme.shapes.small
                             )
                             .padding(horizontal = 12.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -417,7 +422,7 @@ fun TrainerManagementSection(settingsViewModel: SettingsViewModel) {
                             Text(
                                 text = "Estado: ${trainer.status}",
                                 fontSize = 12.sp,
-                                color = Color.White.copy(alpha = 0.5f)
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         Button(
@@ -435,7 +440,7 @@ fun TrainerManagementSection(settingsViewModel: SettingsViewModel) {
             Text(
                 text = "No hay entrenadores vinculados",
                 fontSize = 13.sp,
-                color = Color.White.copy(alpha = 0.5f)
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }

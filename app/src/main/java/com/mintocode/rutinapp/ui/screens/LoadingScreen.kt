@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -19,16 +20,21 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.mintocode.rutinapp.R
-import com.mintocode.rutinapp.ui.theme.PurpleGrey80
 
+/**
+ * Splash/loading screen shown while user data loads from DataStore.
+ * Displays the app logo with a circular progress indicator and radial gradient mask.
+ */
 @Composable
 fun LoadingScreen() {
+    val bgColor = MaterialTheme.colorScheme.background
+    val progressColor = MaterialTheme.colorScheme.primary
 
-    val originalColor = PurpleGrey80
     BoxWithConstraints(
         Modifier
             .fillMaxSize()
-            .background(originalColor), contentAlignment = Alignment.Center
+            .background(bgColor),
+        contentAlignment = Alignment.Center
     ) {
         val smallest = if (maxHeight < maxWidth) maxHeight else maxWidth
         Box(Modifier.size(smallest - 100.dp)) {
@@ -36,7 +42,7 @@ fun LoadingScreen() {
                 modifier = Modifier
                     .width(smallest)
                     .zIndex(2f),
-                color = Color(0xFF121217).copy(0.5f),
+                color = progressColor.copy(alpha = 0.7f),
                 strokeWidth = 15.dp
             )
             Box(
@@ -49,14 +55,12 @@ fun LoadingScreen() {
                             colors = listOf(
                                 Color.Transparent,
                                 Color.Transparent,
-                                originalColor,
-                                originalColor,
+                                bgColor,
+                                bgColor,
                             )
                         )
                     )
-            ) {
-
-            }
+            )
             Image(
                 painter = painterResource(R.drawable.icon_for_a_notes_app_for_gym__name_is_rutinapp__3_),
                 contentDescription = "logo",

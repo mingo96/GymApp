@@ -1,4 +1,4 @@
-﻿package com.mintocode.rutinapp.ui.screens
+package com.mintocode.rutinapp.ui.screens.sheets
 
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.foundation.background
@@ -8,21 +8,18 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.twotone.Add
 import androidx.compose.material.icons.twotone.Edit
 import androidx.compose.material.icons.twotone.Refresh
 import androidx.compose.material3.Button
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -51,74 +48,76 @@ import com.mintocode.rutinapp.ui.components.EmptyStateMessage
 import com.mintocode.rutinapp.ui.components.LoadingIndicator
 import com.mintocode.rutinapp.ui.components.OwnershipFilterRow
 import com.mintocode.rutinapp.ui.components.SearchTextField
+import com.mintocode.rutinapp.ui.navigation.LocalSheetNavigator
+import com.mintocode.rutinapp.ui.navigation.SheetDestination
 import com.mintocode.rutinapp.ui.premade.AnimatedItem
 import com.mintocode.rutinapp.ui.screenStates.ExercisesState
 import com.mintocode.rutinapp.ui.theme.rutinAppButtonsColours
 import com.mintocode.rutinapp.viewmodels.ExercisesViewModel
 import kotlinx.coroutines.delay
 
-
 /**
- * Exercise list screen with search, filters and CRUD dialogs.
+ * Exercise list sheet content.
  *
- * Displays the user's exercises in a scrollable list with animated item entry.
- * Supports filtering by ownership (mine/others), server exploration, and sync.
+ * Shows the full exercise list with search, filter, and CRUD entry points.
+ * Replaces the old ExercisesScreen — now rendered inside a ModalBottomSheet.
  *
- * @param viewModel ExercisesViewModel for exercise data and actions
+ * @param viewModel ExercisesViewModel for data and actions
  */
 @Composable
-fun ExercisesScreen(viewModel: ExercisesViewModel) {
-
-    LaunchedEffect(Unit) {
-        viewModel.autoSync()
-    }
-
+fun ExerciseListSheet(viewModel: ExercisesViewModel) {
+    val navigator = LocalSheetNavigator.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val context = LocalContext.current
+
+    LaunchedEffect(Unit) { viewModel.autoSync() }
 
     val exercises by viewModel.exercisesState.collectAsStateWithLifecycle(
         initialValue = emptyList(), lifecycle = lifecycle
     )
-
     val uiState by viewModel.uiState.observeAsState()
+    val showOthers by viewModel.showOthers.observeAsState(false)
+    val loading by viewModel.isLoading.observeAsState(false)
 
+    var name by rememberSaveable { mutableStateOf("") }
     var maxIndex by rememberSaveable { mutableIntStateOf(0) }
-
     var stateOfSearch: Boolean? by rememberSaveable { mutableStateOf(null) }
 
+    // Dialog states still handled via ViewModel for create/edit/observe
     when (uiState) {
         is ExercisesState.Modifying -> {
-            ModifyExerciseDialog(viewModel, uiState as ExercisesState.Modifying)
+            com.mintocode.rutinapp.ui.screens.ModifyExerciseDialog(viewModel, uiState as ExercisesState.Modifying)
         }
         is ExercisesState.Creating -> {
-            CreateExerciseDialog(viewModel = viewModel)
+            com.mintocode.rutinapp.ui.screens.CreateExerciseDialog(viewModel = viewModel)
         }
         is ExercisesState.Observe -> {
             stateOfSearch = null
             if ((uiState as ExercisesState.Observe).exercise != null) {
-                ObserveExerciseDialog(viewModel, uiState as ExercisesState.Observe)
+                com.mintocode.rutinapp.ui.screens.ObserveExerciseDialog(viewModel, uiState as ExercisesState.Observe)
             }
         }
         is ExercisesState.AddingRelations -> {
-            AddRelationsDialog(viewModel, uiState as ExercisesState.AddingRelations)
+            com.mintocode.rutinapp.ui.screens.AddRelationsDialog(viewModel, uiState as ExercisesState.AddingRelations)
         }
-        is ExercisesState.SearchingForExercise -> {
-            stateOfSearch = false
-        }
+        is ExercisesState.SearchingForExercise -> { stateOfSearch = false }
+        is ExercisesState.ExploringExercises -> { stateOfSearch = true }
         null -> {}
-        is ExercisesState.ExploringExercises -> {
-            stateOfSearch = true
-        }
     }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .padding(horizontal = 16.dp)
     ) {
-        var name by rememberSaveable { mutableStateOf("") }
-        val showOthers by viewModel.showOthers.observeAsState(false)
-        val loading by viewModel.isLoading.observeAsState(false)
+        // ── Header ──
+        Text(
+            text = "Ejercicios",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
 
         SearchTextField(
             value = name,
@@ -129,20 +128,16 @@ fun ExercisesScreen(viewModel: ExercisesViewModel) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 0.dp, vertical = 6.dp),
+                .padding(vertical = 6.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val context = LocalContext.current
-
             OwnershipFilterRow(
                 showOthers = showOthers,
                 onShowMine = { viewModel.showMine(context) },
                 onShowOthers = { viewModel.showOthers(context) }
             )
-
             Spacer(Modifier.weight(1f))
-
             IconButton(
                 onClick = { viewModel.changeToUploadedExercises() },
                 modifier = Modifier.size(36.dp),
@@ -153,7 +148,7 @@ fun ExercisesScreen(viewModel: ExercisesViewModel) {
             ) {
                 Icon(
                     painter = painterResource(R.drawable.hente),
-                    contentDescription = "Explorar ejercicios",
+                    contentDescription = "Explorar",
                     modifier = Modifier.size(20.dp),
                     tint = MaterialTheme.colorScheme.onSurface
                 )
@@ -164,7 +159,7 @@ fun ExercisesScreen(viewModel: ExercisesViewModel) {
             ) {
                 Icon(
                     imageVector = Icons.TwoTone.Refresh,
-                    contentDescription = "Sincronizar ejercicios",
+                    contentDescription = "Sincronizar",
                     modifier = Modifier.size(20.dp),
                     tint = MaterialTheme.colorScheme.onSurface
                 )
@@ -179,10 +174,11 @@ fun ExercisesScreen(viewModel: ExercisesViewModel) {
                 (uiState as ExercisesState.ExploringExercises).possibleValues.take(maxIndex)
             }
             else -> {
-                val othersFlag = viewModel.showOthers.observeAsState(false).value
-                val filtered = if (othersFlag) exercises.filter { !it.isFromThisUser } else exercises.filter { it.isFromThisUser }
+                val filtered = if (showOthers) exercises.filter { !it.isFromThisUser }
+                else exercises.filter { it.isFromThisUser }
                 val searched = if (name.isBlank()) filtered else filtered.filter {
-                    it.name.contains(name, ignoreCase = true) || it.targetedBodyPart.contains(name, ignoreCase = true)
+                    it.name.contains(name, ignoreCase = true) ||
+                            it.targetedBodyPart.contains(name, ignoreCase = true)
                 }
                 searched.take(maxIndex)
             }
@@ -200,24 +196,21 @@ fun ExercisesScreen(viewModel: ExercisesViewModel) {
             }
         }
 
-        if (loading) {
-            LoadingIndicator()
-        }
-
+        if (loading) { LoadingIndicator() }
         if (items.isEmpty() && !loading) {
             EmptyStateMessage(
-                text = if (showOthers) "No hay ejercicios de otros usuarios" else "No tienes ejercicios aÃºn"
+                text = if (showOthers) "No hay ejercicios de otros" else "No tienes ejercicios aún"
             )
         }
 
         LazyColumn(
-            Modifier.fillMaxHeight(),
-            contentPadding = PaddingValues(top = 8.dp, bottom = 80.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            modifier = Modifier.weight(1f),
+            contentPadding = PaddingValues(top = 8.dp, bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(items) { exercise ->
                 AnimatedItem(enterAnimation = slideInHorizontally { +it }, delay = 50) {
-                    ExerciseItem(
+                    ExerciseListItem(
                         item = exercise,
                         onEditClick = { viewModel.clickToEdit(exercise) },
                         onClick = { viewModel.clickToObserve(exercise) }
@@ -226,23 +219,22 @@ fun ExercisesScreen(viewModel: ExercisesViewModel) {
             }
         }
 
-        // Create FAB
+        // ── Create button ──
         Button(
             onClick = { viewModel.clickToCreate() },
             colors = rutinAppButtonsColours(),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 8.dp)
+                .padding(bottom = 16.dp)
         ) {
-            Text(text = "Crear un ejercicio")
+            Icon(Icons.TwoTone.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+            Text(text = "  Crear ejercicio")
         }
     }
 }
 
-
 @Composable
-private fun ExerciseItem(item: ExerciseModel, onEditClick: () -> Unit, onClick: () -> Unit = {}) {
-
+private fun ExerciseListItem(item: ExerciseModel, onEditClick: () -> Unit, onClick: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -269,72 +261,14 @@ private fun ExerciseItem(item: ExerciseModel, onEditClick: () -> Unit, onClick: 
                 )
             }
         }
-        if (item.isFromThisUser) Icon(
-            imageVector = Icons.TwoTone.Edit,
-            contentDescription = "editar",
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier
-                .size(22.dp)
-                .clickable { onEditClick() }
-        )
-    }
-}
-
-/**
- * Dialog for editing an existing exercise.
- */
-
-@Composable
-fun ExerciseTypeSelectors(
-    repsType: String,
-    weightType: String,
-    onRepsTypeChange: (String) -> Unit,
-    onWeightTypeChange: (String) -> Unit,
-    enabled: Boolean = true
-) {
-    val repsOptions = listOf("base" to "Repeticiones", "seconds" to "Segundos")
-    val weightOptions = listOf("base" to "Normal", "unilateral" to "Unilateral")
-
-    Text(text = "Tipo de repeticiones", color = MaterialTheme.colorScheme.onSurface)
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        repsOptions.forEach { (value, label) ->
-            FilterChip(
-                selected = repsType == value,
-                onClick = { if (enabled) onRepsTypeChange(value) },
-                label = { Text(label, fontSize = 13.sp) },
-                enabled = enabled,
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = MaterialTheme.colorScheme.secondary,
-                    selectedLabelColor = MaterialTheme.colorScheme.onSecondary,
-                    disabledSelectedContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.7f),
-                    disabledContainerColor = MaterialTheme.colorScheme.surface,
-                    disabledLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
-                )
-            )
-        }
-    }
-
-    Text(text = "Tipo de peso", color = MaterialTheme.colorScheme.onSurface)
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        weightOptions.forEach { (value, label) ->
-            FilterChip(
-                selected = weightType == value,
-                onClick = { if (enabled) onWeightTypeChange(value) },
-                label = { Text(label, fontSize = 13.sp) },
-                enabled = enabled,
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = MaterialTheme.colorScheme.secondary,
-                    selectedLabelColor = MaterialTheme.colorScheme.onSecondary,
-                    disabledSelectedContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.7f),
-                    disabledContainerColor = MaterialTheme.colorScheme.surface,
-                    disabledLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
-                )
+        if (item.isFromThisUser) {
+            Icon(
+                imageVector = Icons.TwoTone.Edit,
+                contentDescription = "editar",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .size(22.dp)
+                    .clickable { onEditClick() }
             )
         }
     }

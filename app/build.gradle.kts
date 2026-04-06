@@ -78,6 +78,10 @@ dependencies {
     // Dagger Hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.android.compiler)
+    implementation(libs.hilt.navigation.compose)
+
+    // Material Icons Extended
+    implementation(libs.androidx.material.icons.extended)
 
     // Compose LiveData
     implementation(libs.compose.runtime.livedata)

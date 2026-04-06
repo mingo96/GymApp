@@ -4,7 +4,6 @@ import android.content.Context
 import android.widget.Toast
 import android.util.Log
 import android.util.Patterns
-import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -26,10 +25,6 @@ import com.mintocode.rutinapp.data.notifications.NotificationHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import com.mintocode.rutinapp.ui.screenStates.SettingsScreenState
-import com.mintocode.rutinapp.ui.theme.ContentColor
-import com.mintocode.rutinapp.ui.theme.PrimaryColor
-import com.mintocode.rutinapp.ui.theme.SecondaryColor
-import com.mintocode.rutinapp.ui.theme.TextFieldColor
 import com.mintocode.rutinapp.utils.DataStoreManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -89,13 +84,6 @@ class SettingsViewModel @Inject constructor(
     private suspend fun getUserDetails() {
         _data.postValue(dataStoreManager.data())
         delay(1000)
-
-        if (_data.value != null) {
-            val isDarkTheme = dataStoreManager.data().isDarkTheme
-            if (!isDarkTheme) {
-                changeToClearTheme()
-            }
-        }
         hasLoaded = true
     }
 
@@ -119,30 +107,9 @@ class SettingsViewModel @Inject constructor(
 
     fun toggleRutinAppTheme() {
         if (_data.value != null) {
-            if (_data.value!!.isDarkTheme) {
-                changeToClearTheme()
-            } else {
-                changeToDarkTheme()
-            }
+            val newIsDark = !_data.value!!.isDarkTheme
+            updateUserDetails(isDarkTheme = newIsDark)
         }
-    }
-
-    private fun changeToClearTheme() {
-        PrimaryColor = Color.White
-        SecondaryColor = Color.DarkGray
-        ContentColor = Color.Black
-        TextFieldColor = Color(40, 40, 58).copy(0.3f)
-
-        updateUserDetails(isDarkTheme = false)
-    }
-
-    private fun changeToDarkTheme() {
-        PrimaryColor = Color(0xFF121217)
-        SecondaryColor = Color(0xFF1212ED)
-        ContentColor = Color.White
-        TextFieldColor = Color(40, 40, 58).copy(0.5f)
-
-        updateUserDetails(isDarkTheme = true)
     }
 
     fun toggleLogInState() {
