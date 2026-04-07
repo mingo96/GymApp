@@ -1,16 +1,16 @@
 package com.mintocode.rutinapp.ui.navigation
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -20,8 +20,10 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.mintocode.rutinapp.ui.theme.LocalRutinAppColors
 
 /**
  * Renders the sheet stack managed by [SheetNavigator].
@@ -30,9 +32,7 @@ import com.mintocode.rutinapp.ui.theme.LocalRutinAppColors
  * that stacks on top of the previous one. The user can swipe down to dismiss
  * the topmost sheet, revealing the one below.
  *
- * Uses [LocalRutinAppColors] surfaceElevated as container color to create
- * visual depth between sheets and root pages. Includes a back button header
- * alongside the drag handle for non-swipe users.
+ * This creates the Trade Republic-style stacking navigation pattern.
  *
  * @param navigator The [SheetNavigator] managing the sheet stack
  * @param content Lambda mapping each [SheetDestination] to its composable content
@@ -43,6 +43,8 @@ fun SheetHost(
     navigator: SheetNavigator,
     content: @Composable (SheetDestination) -> Unit
 ) {
+    val borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+
     for (destination in navigator.stack) {
         val sheetState = rememberModalBottomSheetState(
             skipPartiallyExpanded = true
@@ -51,58 +53,45 @@ fun SheetHost(
         ModalBottomSheet(
             onDismissRequest = { navigator.close() },
             sheetState = sheetState,
-            containerColor = LocalRutinAppColors.current.surfaceElevated,
-            tonalElevation = 2.dp,
-            shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
-            dragHandle = null,
-            contentWindowInsets = { WindowInsets.systemBars }
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+            scrimColor = Color.Black.copy(alpha = 0.5f),
+            dragHandle = {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                        .drawBehind {
+                            drawLine(
+                                color = borderColor,
+                                start = Offset(0f, size.height),
+                                end = Offset(size.width, size.height),
+                                strokeWidth = 1.dp.toPx()
+                            )
+                        }
+                        .padding(start = 4.dp, end = 16.dp, top = 4.dp, bottom = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    IconButton(onClick = { navigator.close() }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Volver",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    BottomSheetDefaults.DragHandle(
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                    )
+                    // Spacer to balance the row layout (same width as IconButton)
+                    IconButton(onClick = {}, enabled = false) {
+                        // Invisible placeholder for symmetry
+                    }
+                }
+            },
+            contentWindowInsets = { WindowInsets.navigationBars }
         ) {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                SheetHeader(onClose = { navigator.close() })
-                content(destination)
-            }
-        }
-    }
-}
-
-/**
- * Header bar for bottom sheets with a centered drag handle and a back button.
- *
- * Provides both drag (swipe-down) and tap (back arrow) affordances for closing sheets.
- *
- * @param onClose Callback invoked when the back button is tapped
- */
-@Composable
-private fun SheetHeader(onClose: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 6.dp)
-    ) {
-        // Centered drag handle indicator
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 4.dp)
-                .size(width = 32.dp, height = 4.dp)
-                .background(
-                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                    RoundedCornerShape(2.dp)
-                )
-        )
-        // Back button (left-aligned)
-        IconButton(
-            onClick = onClose,
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .padding(start = 4.dp)
-        ) {
-            Icon(
-                Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Volver",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(22.dp)
-            )
+            content(destination)
         }
     }
 }

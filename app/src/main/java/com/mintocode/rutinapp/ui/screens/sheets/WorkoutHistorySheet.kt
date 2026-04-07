@@ -75,13 +75,8 @@ fun WorkoutHistorySheet(viewModel: WorkoutsViewModel) {
         while (maxRoutines < routines.size) { delay(100); maxRoutines++ }
     }
 
-    // If workout started, open ActiveWorkout sheet
-    LaunchedEffect(workoutState) {
-        if (workoutState is WorkoutsScreenState.WorkoutStarted) {
-            val ws = workoutState as WorkoutsScreenState.WorkoutStarted
-            navigator.open(SheetDestination.ActiveWorkout(ws.workout.id))
-        }
-    }
+    // WorkoutStarted navigation is handled by TrainPage (always alive in pager)
+    // to avoid double sheet opens from both TrainPage and this sheet.
 
     Column(
         modifier = Modifier

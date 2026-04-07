@@ -35,6 +35,7 @@ import com.mintocode.rutinapp.ui.screens.root.TrainPage
 import com.mintocode.rutinapp.ui.screens.sheets.ActiveWorkoutSheet
 import com.mintocode.rutinapp.ui.screens.sheets.AuthSheet
 import com.mintocode.rutinapp.ui.screens.sheets.ExerciseListSheet
+import com.mintocode.rutinapp.ui.screens.sheets.ExerciseStatsSheet
 import com.mintocode.rutinapp.ui.screens.sheets.NotificationsSheet
 import com.mintocode.rutinapp.ui.screens.sheets.PlanningEditSheet
 import com.mintocode.rutinapp.ui.screens.sheets.RoutineListSheet
@@ -251,7 +252,7 @@ class MainActivity : ComponentActivity() {
             }
 
             is SheetDestination.ExerciseStats -> {
-                StatsSheet(viewModel = statsViewModel)
+                ExerciseStatsSheet(viewModel = statsViewModel)
             }
         }
     }

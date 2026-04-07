@@ -23,7 +23,12 @@ class SheetNavigator {
     /** Whether any sheets are currently open. */
     val hasSheets: Boolean get() = _stack.isNotEmpty()
 
-    /** Open a new sheet on top of the stack. Ignores duplicate consecutive opens. */
+    /**
+     * Open a new sheet on top of the stack.
+     *
+     * If the topmost sheet is already the same destination, the call is ignored
+     * to prevent duplicate sheets from rapid taps or multiple LaunchedEffects.
+     */
     fun open(destination: SheetDestination) {
         if (_stack.lastOrNull() == destination) return
         _stack.add(destination)

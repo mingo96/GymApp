@@ -76,17 +76,11 @@ fun HomePage(viewModel: MainScreenViewModel) {
     val todaysPlanning by viewModel.todaysPlanning.observeAsState()
     val calendarPhases by viewModel.calendarPhases.collectAsState()
 
-    var lastHandledPlanningDate by rememberSaveable { mutableStateOf(-1L) }
-
-    // Handle planning edition as a sheet instead of dialog (guarded against re-triggers)
+    // Handle planning edition as a sheet instead of dialog
     LaunchedEffect(uiState) {
         if (uiState is MainScreenState.PlanningOnMainFocus) {
             val state = uiState as MainScreenState.PlanningOnMainFocus
-            val dateMillis = state.planningModel.date.time
-            if (dateMillis != lastHandledPlanningDate) {
-                lastHandledPlanningDate = dateMillis
-                navigator.open(SheetDestination.PlanningEdit(dateMillis))
-            }
+            navigator.open(SheetDestination.PlanningEdit(state.planningModel.date.time))
         }
     }
 

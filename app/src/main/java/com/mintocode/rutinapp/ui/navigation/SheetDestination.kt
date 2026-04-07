@@ -78,6 +78,6 @@ sealed class SheetDestination {
     /** Global stats overview. */
     data object StatsOverview : SheetDestination()
 
-    /** Stats for a specific exercise. */
-    data class ExerciseStats(val exerciseId: Int) : SheetDestination()
+    /** Stats detail for the currently selected exercise (set via StatsViewModel). */
+    data object ExerciseStats : SheetDestination()
 }
