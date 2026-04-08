@@ -418,6 +418,17 @@ class WorkoutsViewModel @Inject constructor(
         refreshPlanning()
     }
 
+    /**
+     * Deletes a workout from history.
+     *
+     * @param workout The workout to delete
+     */
+    fun deleteWorkout(workout: WorkoutModel) {
+        viewModelScope.launch(Dispatchers.IO) {
+            deleteWorkoutUseCase(workout)
+        }
+    }
+
     fun moveExercise(first: ExerciseModel, upOrDown: Boolean) {
 
         val actualState = _workoutScreenStates.value as WorkoutsScreenState.WorkoutStarted

@@ -12,6 +12,7 @@ import com.mintocode.rutinapp.data.models.RoutineModel
 import com.mintocode.rutinapp.domain.addUseCases.AddRoutineExerciseRelationUseCase
 import com.mintocode.rutinapp.domain.addUseCases.AddRoutineUseCase
 import com.mintocode.rutinapp.domain.deleteUseCases.DeleteRoutineExerciseRelationUseCase
+import com.mintocode.rutinapp.domain.deleteUseCases.DeleteRoutineUseCase
 import com.mintocode.rutinapp.domain.getUseCases.GetExercisesUseCase
 import com.mintocode.rutinapp.domain.getUseCases.GetRoutinesUseCase
 import com.mintocode.rutinapp.domain.updateUseCases.UpdateRoutineExerciseRelationUseCase
@@ -35,6 +36,7 @@ class RoutinesViewModel @Inject constructor(
     getExercisesUseCase: GetExercisesUseCase,
     private val addRoutineExerciseRelationUseCase: AddRoutineExerciseRelationUseCase,
     private val deleteRoutineExerciseRelationUseCase: DeleteRoutineExerciseRelationUseCase,
+    private val deleteRoutineUseCase: DeleteRoutineUseCase,
     private val updateRoutineExerciseRelationUseCase: UpdateRoutineExerciseRelationUseCase,
     private val updateRoutineUseCase: UpdateRoutineUseCase,
     private val syncManager: SyncManager
@@ -229,6 +231,18 @@ class RoutinesViewModel @Inject constructor(
 
     fun backToObserve() {
         _uiState.postValue(RoutinesScreenState.Overview)
+    }
+
+    /**
+     * Deletes a routine from the local database.
+     *
+     * @param routine The routine to delete
+     */
+    fun deleteRoutine(routine: RoutineModel) {
+        viewModelScope.launch(Dispatchers.IO) {
+            deleteRoutineUseCase(routine)
+            _uiState.postValue(RoutinesScreenState.Overview)
+        }
     }
 
     fun createRoutine(name: String, targetedBodyPart: String, context: Context) {

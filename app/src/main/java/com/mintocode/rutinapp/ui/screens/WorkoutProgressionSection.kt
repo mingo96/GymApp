@@ -79,12 +79,12 @@ fun WorkoutProgression(
 
     if (uiState.setBeingCreated != null) {
         if (uiState.setBeingCreated is SetState.CreatingSet) {
-            SetEditionDialog(viewModel = viewModel, set = uiState.setBeingCreated.set)
+            SetEditionSheet(viewModel = viewModel, set = uiState.setBeingCreated.set)
         } else {
-            SetOptionsDialog(viewModel = viewModel, uiState = uiState)
+            SetOptionsSheet(viewModel = viewModel, uiState = uiState)
         }
     } else if (uiState.exerciseBeingSwapped != null) {
-        ExerciseSwapDialog(viewModel = viewModel, exercise = uiState.exerciseBeingSwapped)
+        ExerciseSwapSheet(viewModel = viewModel, exercise = uiState.exerciseBeingSwapped)
     }
 
     if (!uiState.workout.isFinished) BoxWithConstraints {
@@ -183,15 +183,28 @@ private fun ExerciseInfo(
     startSwapping: () -> Unit
 ) {
 
+    val typeHints = buildList {
+        if (exerciseAndSets.first.repsType == "seconds") add("Tiempo")
+        if (exerciseAndSets.first.weightType == "unilateral") add("Unilateral")
+    }
+
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = exerciseAndSets.first.name + if (exerciseAndSets.first in (uiState.workout.baseRoutine?.exercises
-                    ?: emptyList())
-            ) " (" + exerciseAndSets.first.setsAndReps + ")" else "",
-            fontSize = 15.sp,
-            maxLines = 1,
-            modifier = Modifier.padding(end = 16.dp)
-        )
+        Column(modifier = Modifier.padding(end = 16.dp)) {
+            Text(
+                text = exerciseAndSets.first.name + if (exerciseAndSets.first in (uiState.workout.baseRoutine?.exercises
+                        ?: emptyList())
+                ) " (" + exerciseAndSets.first.setsAndReps + ")" else "",
+                fontSize = 15.sp,
+                maxLines = 1
+            )
+            if (typeHints.isNotEmpty()) {
+                Text(
+                    text = typeHints.joinToString(" · "),
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
         if (exerciseAndSets.second.isNotEmpty()) IconButton(onClick = { changeSetsOpened() }) {
             Icon(
                 imageVector = if (!setsOpened) Icons.TwoTone.KeyboardArrowDown else Icons.TwoTone.KeyboardArrowUp,
@@ -230,6 +243,9 @@ private fun ExerciseSets(
         visible = setsOpened, enter = expandVertically(), exit = shrinkVertically()
     ) {
 
+        val repsLabel = if (exerciseAndSets.first.repsType == "seconds") "segs" else "reps"
+        val weightLabel = if (exerciseAndSets.first.weightType == "unilateral") "kgs/lado" else "kgs"
+
         Column {
 
             for (i in exerciseAndSets.second) {
@@ -242,7 +258,7 @@ private fun ExerciseSets(
                         .background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.medium)
                 ) {
                     Text(
-                        text = i.reps.toString() + " reps x " + i.weight.toString() + " kgs",
+                        text = "${i.reps} $repsLabel x ${i.weight} $weightLabel",
                         fontSize = 15.sp,
                         modifier = Modifier.padding(8.dp)
                     )

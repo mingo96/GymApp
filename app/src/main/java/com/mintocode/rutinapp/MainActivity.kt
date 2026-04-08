@@ -34,10 +34,16 @@ import com.mintocode.rutinapp.ui.screens.root.RootPager
 import com.mintocode.rutinapp.ui.screens.root.TrainPage
 import com.mintocode.rutinapp.ui.screens.sheets.ActiveWorkoutSheet
 import com.mintocode.rutinapp.ui.screens.sheets.AuthSheet
+import com.mintocode.rutinapp.ui.screens.sheets.ExerciseCreateSheet
+import com.mintocode.rutinapp.ui.screens.sheets.ExerciseDetailSheet
+import com.mintocode.rutinapp.ui.screens.sheets.ExerciseEditSheet
 import com.mintocode.rutinapp.ui.screens.sheets.ExerciseListSheet
 import com.mintocode.rutinapp.ui.screens.sheets.ExerciseStatsSheet
 import com.mintocode.rutinapp.ui.screens.sheets.NotificationsSheet
 import com.mintocode.rutinapp.ui.screens.sheets.PlanningEditSheet
+import com.mintocode.rutinapp.ui.screens.sheets.RoutineCreateSheet
+import com.mintocode.rutinapp.ui.screens.sheets.RoutineDetailSheet
+import com.mintocode.rutinapp.ui.screens.sheets.RoutineEditSheet
 import com.mintocode.rutinapp.ui.screens.sheets.RoutineListSheet
 import com.mintocode.rutinapp.ui.screens.sheets.SettingsSheet
 import com.mintocode.rutinapp.ui.screens.sheets.StatsSheet
@@ -234,17 +240,28 @@ class MainActivity : ComponentActivity() {
                 StatsSheet(viewModel = statsViewModel)
             }
 
-            // Detail/create/edit sheets reuse the list sheets with ViewModel state
-            is SheetDestination.ExerciseDetail,
-            is SheetDestination.ExerciseCreate,
-            is SheetDestination.ExerciseEdit -> {
-                ExerciseListSheet(viewModel = exercisesViewModel)
+            is SheetDestination.ExerciseDetail -> {
+                ExerciseDetailSheet(viewModel = exercisesViewModel)
             }
 
-            is SheetDestination.RoutineDetail,
-            is SheetDestination.RoutineCreate,
+            is SheetDestination.ExerciseCreate -> {
+                ExerciseCreateSheet(viewModel = exercisesViewModel)
+            }
+
+            is SheetDestination.ExerciseEdit -> {
+                ExerciseEditSheet(viewModel = exercisesViewModel)
+            }
+
+            is SheetDestination.RoutineDetail -> {
+                RoutineDetailSheet(viewModel = routinesViewModel)
+            }
+
+            is SheetDestination.RoutineCreate -> {
+                RoutineCreateSheet(viewModel = routinesViewModel)
+            }
+
             is SheetDestination.RoutineEdit -> {
-                RoutineListSheet(viewModel = routinesViewModel)
+                RoutineEditSheet(viewModel = routinesViewModel)
             }
 
             is SheetDestination.WorkoutDetail -> {

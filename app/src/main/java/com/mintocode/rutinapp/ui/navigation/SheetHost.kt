@@ -1,12 +1,13 @@
 package com.mintocode.rutinapp.ui.navigation
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -29,8 +30,9 @@ import androidx.compose.ui.unit.dp
  * Renders the sheet stack managed by [SheetNavigator].
  *
  * Each [SheetDestination] in the stack becomes an independent [ModalBottomSheet]
- * that stacks on top of the previous one. The user can swipe down to dismiss
- * the topmost sheet, revealing the one below.
+ * that stacks on top of the previous one with progressive height reduction.
+ * The first sheet occupies ~93% of the screen, each subsequent sheet is 3% shorter,
+ * revealing the header of the sheet below.
  *
  * This creates the Trade Republic-style stacking navigation pattern.
  *
@@ -45,22 +47,26 @@ fun SheetHost(
 ) {
     val borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
 
-    for (destination in navigator.stack) {
+    navigator.stack.forEachIndexed { index, destination ->
         val sheetState = rememberModalBottomSheetState(
             skipPartiallyExpanded = true
         )
+
+        // Progressive height: first sheet ~93%, each subsequent sheet shrinks by 3%
+        val heightFraction = (0.93f - index * 0.03f).coerceAtLeast(0.75f)
+        // Lighter scrim for stacked sheets so the one below peeks through
+        val scrimAlpha = if (index == 0) 0.5f else 0.12f
 
         ModalBottomSheet(
             onDismissRequest = { navigator.close() },
             sheetState = sheetState,
             containerColor = MaterialTheme.colorScheme.surfaceContainer,
             shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-            scrimColor = Color.Black.copy(alpha = 0.5f),
+            scrimColor = Color.Black.copy(alpha = scrimAlpha),
             dragHandle = {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .statusBarsPadding()
                         .drawBehind {
                             drawLine(
                                 color = borderColor,
@@ -91,7 +97,13 @@ fun SheetHost(
             },
             contentWindowInsets = { WindowInsets.navigationBars }
         ) {
-            content(destination)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(heightFraction)
+            ) {
+                content(destination)
+            }
         }
     }
 }

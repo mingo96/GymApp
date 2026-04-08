@@ -11,6 +11,7 @@ import com.mintocode.rutinapp.data.models.ExerciseModel
 import com.mintocode.rutinapp.domain.addUseCases.AddExerciseUseCase
 import com.mintocode.rutinapp.domain.addUseCases.AddExercisesRelationUseCase
 import com.mintocode.rutinapp.domain.deleteUseCases.DeleteExerciseRelationUseCase
+import com.mintocode.rutinapp.domain.deleteUseCases.DeleteExerciseUseCase
 import com.mintocode.rutinapp.domain.getUseCases.GetExercisesUseCase
 import com.mintocode.rutinapp.domain.updateUseCases.UpdateExerciseUseCase
 import com.mintocode.rutinapp.ui.screenStates.ExercisesState
@@ -31,6 +32,7 @@ class ExercisesViewModel @Inject constructor(
     private val getExercisesUseCase: GetExercisesUseCase,
     private val addExerciseRelationUseCase: AddExercisesRelationUseCase,
     private val deleteExerciseRelationUseCase: DeleteExerciseRelationUseCase,
+    private val deleteExerciseUseCase: DeleteExerciseUseCase,
     private val updateExerciseUseCase: UpdateExerciseUseCase,
     private val syncManager: SyncManager
 ) : ViewModel() {
@@ -403,6 +405,18 @@ class ExercisesViewModel @Inject constructor(
 
     fun backToObserve() {
         _uiState.postValue(ExercisesState.Observe())
+    }
+
+    /**
+     * Deletes an exercise from the local database.
+     *
+     * @param exercise The exercise to delete
+     */
+    fun deleteExercise(exercise: ExerciseModel) {
+        viewModelScope.launch(Dispatchers.IO) {
+            deleteExerciseUseCase(exercise)
+            _uiState.postValue(ExercisesState.Observe())
+        }
     }
 
     fun updateExercise(

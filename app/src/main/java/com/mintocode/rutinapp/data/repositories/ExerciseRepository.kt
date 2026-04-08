@@ -77,5 +77,14 @@ class ExerciseRepository @Inject constructor(
         exerciseDao.update(exerciseToUpdate)
     }
 
+    /**
+     * Deletes an exercise from the local database.
+     *
+     * @param exercise The exercise entity to delete
+     */
+    suspend fun deleteExercise(exercise: ExerciseEntity) {
+        exerciseDao.delete(exercise)
+    }
+
 }
 

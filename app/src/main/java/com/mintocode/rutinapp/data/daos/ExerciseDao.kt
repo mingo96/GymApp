@@ -82,6 +82,9 @@ interface ExerciseDao {
     @Update
     suspend fun update(item: ExerciseEntity)
 
+    @Delete
+    suspend fun delete(item: ExerciseEntity)
+
 }
 
 @Dao

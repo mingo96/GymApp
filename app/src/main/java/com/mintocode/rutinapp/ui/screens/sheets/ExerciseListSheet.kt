@@ -83,26 +83,33 @@ fun ExerciseListSheet(viewModel: ExercisesViewModel) {
     var maxIndex by rememberSaveable { mutableIntStateOf(0) }
     var stateOfSearch: Boolean? by rememberSaveable { mutableStateOf(null) }
 
-    // Dialog states still handled via ViewModel for create/edit/observe
-    when (uiState) {
-        is ExercisesState.Modifying -> {
-            com.mintocode.rutinapp.ui.screens.ModifyExerciseDialog(viewModel, uiState as ExercisesState.Modifying)
-        }
-        is ExercisesState.Creating -> {
-            com.mintocode.rutinapp.ui.screens.CreateExerciseDialog(viewModel = viewModel)
-        }
-        is ExercisesState.Observe -> {
-            stateOfSearch = null
-            if ((uiState as ExercisesState.Observe).exercise != null) {
-                com.mintocode.rutinapp.ui.screens.ObserveExerciseDialog(viewModel, uiState as ExercisesState.Observe)
+    // Navigate to sheets instead of showing dialogs
+    LaunchedEffect(uiState) {
+        when (uiState) {
+            is ExercisesState.Modifying -> {
+                navigator.open(SheetDestination.ExerciseEdit(0))
             }
+            is ExercisesState.Creating -> {
+                navigator.open(SheetDestination.ExerciseCreate)
+            }
+            is ExercisesState.Observe -> {
+                stateOfSearch = null
+                if ((uiState as ExercisesState.Observe).exercise != null) {
+                    navigator.open(SheetDestination.ExerciseDetail(0))
+                }
+            }
+            is ExercisesState.AddingRelations -> {
+                // AddRelations stays as dialog since it's a quick multi-select action
+            }
+            is ExercisesState.SearchingForExercise -> { stateOfSearch = false }
+            is ExercisesState.ExploringExercises -> { stateOfSearch = true }
+            null -> {}
         }
-        is ExercisesState.AddingRelations -> {
-            com.mintocode.rutinapp.ui.screens.AddRelationsDialog(viewModel, uiState as ExercisesState.AddingRelations)
-        }
-        is ExercisesState.SearchingForExercise -> { stateOfSearch = false }
-        is ExercisesState.ExploringExercises -> { stateOfSearch = true }
-        null -> {}
+    }
+
+    // AddRelations dialog (stays inline — quick action)
+    if (uiState is ExercisesState.AddingRelations) {
+        com.mintocode.rutinapp.ui.screens.AddRelationsDialog(viewModel, uiState as ExercisesState.AddingRelations)
     }
 
     Column(
@@ -212,8 +219,14 @@ fun ExerciseListSheet(viewModel: ExercisesViewModel) {
                 AnimatedItem(enterAnimation = slideInHorizontally { +it }, delay = 50) {
                     ExerciseListItem(
                         item = exercise,
-                        onEditClick = { viewModel.clickToEdit(exercise) },
-                        onClick = { viewModel.clickToObserve(exercise) }
+                        onEditClick = {
+                            viewModel.clickToEdit(exercise)
+                            navigator.open(SheetDestination.ExerciseEdit(0))
+                        },
+                        onClick = {
+                            viewModel.clickToObserve(exercise)
+                            navigator.open(SheetDestination.ExerciseDetail(0))
+                        }
                     )
                 }
             }
@@ -221,7 +234,7 @@ fun ExerciseListSheet(viewModel: ExercisesViewModel) {
 
         // ── Create button ──
         Button(
-            onClick = { viewModel.clickToCreate() },
+            onClick = { navigator.open(SheetDestination.ExerciseCreate) },
             colors = rutinAppButtonsColours(),
             modifier = Modifier
                 .fillMaxWidth()

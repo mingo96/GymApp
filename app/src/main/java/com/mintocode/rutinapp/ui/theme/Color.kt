@@ -23,10 +23,10 @@ object RutinAppColors {
         val onPrimary = Color(0xFFFFFFFF)
         val onPrimaryContainer = Color(0xFFD6DEFF)
 
-        val secondary = Color(0xFF7B2FF7)
-        val secondaryContainer = Color(0xFF5A1FBD)
+        val secondary = Color(0xFF8B7FBF)
+        val secondaryContainer = Color(0xFF3D3566)
         val onSecondary = Color(0xFFFFFFFF)
-        val onSecondaryContainer = Color(0xFFE8D5FF)
+        val onSecondaryContainer = Color(0xFFE0D8F0)
 
         val tertiary = Color(0xFF06D6A0)
         val tertiaryContainer = Color(0xFF04A87D)
@@ -64,10 +64,10 @@ object RutinAppColors {
         val onPrimary = Color(0xFFFFFFFF)
         val onPrimaryContainer = Color(0xFF001A5C)
 
-        val secondary = Color(0xFF6519CF)
-        val secondaryContainer = Color(0xFFEADDFF)
+        val secondary = Color(0xFF6B5E9E)
+        val secondaryContainer = Color(0xFFE8E0F5)
         val onSecondary = Color(0xFFFFFFFF)
-        val onSecondaryContainer = Color(0xFF21005E)
+        val onSecondaryContainer = Color(0xFF261A4A)
 
         val tertiary = Color(0xFF05B384)
         val tertiaryContainer = Color(0xFFBBF5E4)

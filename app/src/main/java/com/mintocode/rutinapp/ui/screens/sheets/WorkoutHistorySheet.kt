@@ -12,13 +12,17 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -27,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.mintocode.rutinapp.data.models.WorkoutModel
 import com.mintocode.rutinapp.ui.navigation.LocalSheetNavigator
 import com.mintocode.rutinapp.ui.navigation.SheetDestination
 import com.mintocode.rutinapp.ui.premade.AnimatedItem
@@ -45,6 +50,7 @@ import kotlinx.coroutines.delay
  *
  * @param viewModel WorkoutsViewModel for data and actions
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorkoutHistorySheet(viewModel: WorkoutsViewModel) {
     val navigator = LocalSheetNavigator.current
@@ -65,6 +71,8 @@ fun WorkoutHistorySheet(viewModel: WorkoutsViewModel) {
 
     var maxWorkouts by rememberSaveable { mutableIntStateOf(0) }
     var maxRoutines by rememberSaveable { mutableIntStateOf(0) }
+
+    var selectedWorkout by rememberSaveable { mutableStateOf<Int?>(null) }
 
     LaunchedEffect(workouts) {
         delay(200)
@@ -123,7 +131,11 @@ fun WorkoutHistorySheet(viewModel: WorkoutsViewModel) {
                         }
                         items(workouts.take(maxWorkouts)) { workout ->
                             AnimatedItem(delay = 100, enterAnimation = slideInVertically()) {
-                                WorkoutItem(item = workout, onClick = { viewModel.continueWorkout(workout) })
+                                WorkoutItem(
+                                    item = workout,
+                                    onClick = { viewModel.continueWorkout(workout) },
+                                    onLongPress = { selectedWorkout = workout.id }
+                                )
                             }
                         }
                     }
@@ -201,6 +213,97 @@ fun WorkoutHistorySheet(viewModel: WorkoutsViewModel) {
                 .padding(vertical = 16.dp)
         ) {
             Text(text = "Entrenar sin rutina")
+        }
+    }
+
+    // CRUD sheet for long-pressed workout
+    if (selectedWorkout != null) {
+        val workout = workouts.find { it.id == selectedWorkout }
+        if (workout != null) {
+            WorkoutActionsSheet(
+                workout = workout,
+                onDismiss = { selectedWorkout = null },
+                onDelete = {
+                    viewModel.deleteWorkout(workout)
+                    selectedWorkout = null
+                },
+                onContinue = {
+                    selectedWorkout = null
+                    viewModel.continueWorkout(workout)
+                }
+            )
+        }
+    }
+}
+
+/**
+ * Bottom sheet with CRUD actions for a workout (continue, delete).
+ *
+ * @param workout The workout to act on
+ * @param onDismiss Callback to close the sheet
+ * @param onDelete Callback to delete the workout
+ * @param onContinue Callback to continue the workout
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun WorkoutActionsSheet(
+    workout: WorkoutModel,
+    onDismiss: () -> Unit,
+    onDelete: () -> Unit,
+    onContinue: () -> Unit
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = MaterialTheme.colorScheme.surface
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text(
+                text = workout.title,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = if (workout.isFinished) "Terminado" else "En progreso",
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            if (workout.exercisesAndSets.isNotEmpty()) {
+                Text(
+                    text = "Ejercicios",
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 16.sp
+                )
+                workout.exercisesAndSets.forEach { (exercise, sets) ->
+                    Text(
+                        text = "${exercise.name} — ${sets.size} series",
+                        fontSize = 14.sp,
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
+                }
+            }
+
+            Button(
+                onClick = onContinue,
+                colors = rutinAppButtonsColours(),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = if (workout.isFinished) "Ver entrenamiento" else "Continuar")
+            }
+
+            Button(
+                onClick = onDelete,
+                colors = rutinAppButtonsColours(),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = "Eliminar entrenamiento")
+            }
         }
     }
 }

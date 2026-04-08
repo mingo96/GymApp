@@ -106,7 +106,7 @@ class AdViewModel() : ViewModel() {
                 object : InterstitialAdLoadCallback() {
                     override fun onAdFailedToLoad(p0: LoadAdError) {
                         Log.d(TAG, p0.toString())
-                        isRewardedLoading = false
+                        isInterSitialLoading = false
                         mInterstitialAd = null
                         super.onAdFailedToLoad(p0)
                     }

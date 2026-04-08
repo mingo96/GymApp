@@ -68,4 +68,13 @@ class RoutineRepository @Inject constructor(
         routineDao.updateRoutine(entity)
     }
 
+    /**
+     * Deletes a routine from the local database.
+     *
+     * @param entity The routine entity to delete
+     */
+    suspend fun deleteRoutine(entity: RoutineEntity) {
+        routineDao.deleteRoutine(entity)
+    }
+
 }

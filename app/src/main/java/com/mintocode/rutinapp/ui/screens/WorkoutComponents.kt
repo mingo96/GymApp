@@ -1,8 +1,10 @@
 package com.mintocode.rutinapp.ui.screens
 
 import androidx.compose.animation.slideInHorizontally
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,15 +50,17 @@ import kotlinx.coroutines.delay
  *
  * @param item The workout model to display
  * @param onClick Callback when the card is tapped (e.g. continue workout)
+ * @param onLongPress Callback when the card is long-pressed (e.g. open CRUD sheet)
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun WorkoutItem(item: WorkoutModel, onClick: () -> Unit) {
+fun WorkoutItem(item: WorkoutModel, onClick: () -> Unit, onLongPress: () -> Unit = {}) {
     Box(modifier = Modifier
         .padding(end = 10.dp, top = 4.dp, bottom = 4.dp)
         .background(
             MaterialTheme.colorScheme.primaryContainer, MaterialTheme.shapes.small
         )
-        .clickable { onClick() }) {
+        .combinedClickable(onClick = onClick, onLongClick = onLongPress)) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
 
             Text(text = item.title, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)

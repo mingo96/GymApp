@@ -9,9 +9,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.twotone.KeyboardArrowDown
 import androidx.compose.material.icons.twotone.KeyboardArrowUp
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -26,16 +30,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.compose.foundation.background
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.MaterialTheme
 import com.mintocode.rutinapp.R
 import com.mintocode.rutinapp.data.models.ExerciseModel
 import com.mintocode.rutinapp.data.models.SetModel
-import com.mintocode.rutinapp.ui.components.DialogContainer
 import com.mintocode.rutinapp.ui.components.TextFieldWithTitle
 import com.mintocode.rutinapp.ui.screenStates.SetState
 import com.mintocode.rutinapp.ui.screenStates.WorkoutsScreenState
@@ -44,16 +44,26 @@ import com.mintocode.rutinapp.utils.isValidAsNumber
 import com.mintocode.rutinapp.viewmodels.WorkoutsViewModel
 
 /**
- * Dialog for swapping an exercise with one of its equivalents during a workout.
+ * Bottom sheet for swapping an exercise with one of its equivalents during a workout.
  *
  * @param viewModel ViewModel managing workout actions
  * @param exercise The exercise being swapped, with its list of equivalents
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ExerciseSwapDialog(viewModel: WorkoutsViewModel, exercise: ExerciseModel) {
+fun ExerciseSwapSheet(viewModel: WorkoutsViewModel, exercise: ExerciseModel) {
     val context = LocalContext.current
-    Dialog(onDismissRequest = { viewModel.cancelExerciseSwap() }) {
-        DialogContainer {
+    ModalBottomSheet(
+        onDismissRequest = { viewModel.cancelExerciseSwap() },
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = MaterialTheme.colorScheme.surface
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
             Text(text = "Cambiar ejercicio por", fontSize = 20.sp, fontWeight = FontWeight.Bold)
 
             LazyColumn(Modifier.fillMaxWidth()) {
@@ -78,28 +88,33 @@ fun ExerciseSwapDialog(viewModel: WorkoutsViewModel, exercise: ExerciseModel) {
 }
 
 /**
- * Dialog showing options for an existing set (view details, edit, or delete).
+ * Bottom sheet showing options for an existing set (view details, edit, or delete).
  *
  * @param viewModel ViewModel managing workout actions
  * @param uiState Current workout state containing the set being inspected
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SetOptionsDialog(viewModel: WorkoutsViewModel, uiState: WorkoutsScreenState.WorkoutStarted) {
+fun SetOptionsSheet(viewModel: WorkoutsViewModel, uiState: WorkoutsScreenState.WorkoutStarted) {
 
     val setState = uiState.setBeingCreated!! as SetState.OptionsOfSet
 
     var isEditing by rememberSaveable { mutableStateOf(false) }
 
     if (isEditing) {
-        SetEditionDialog(viewModel = viewModel, set = setState.set)
+        SetEditionSheet(viewModel = viewModel, set = setState.set)
     } else
-
-        Dialog(
+        ModalBottomSheet(
             onDismissRequest = { viewModel.cancelSetEditing() },
-            properties = DialogProperties(usePlatformDefaultWidth = false)
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = MaterialTheme.colorScheme.surface
         ) {
-
-            DialogContainer {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
                 Text(
                     text = "Opciones de serie",
                     fontSize = 22.sp,
@@ -128,30 +143,38 @@ fun SetOptionsDialog(viewModel: WorkoutsViewModel, uiState: WorkoutsScreenState.
                     onEditClick = { isEditing = true }) {
                     viewModel.deleteSet(setState.set)
                 }
-
             }
-
         }
 }
 
 /**
- * Dialog for creating or editing a set (reps, weight, observations).
+ * Bottom sheet for creating or editing a set (reps, weight, observations).
  *
  * @param viewModel ViewModel managing workout actions
  * @param set The set being created or edited
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SetEditionDialog(viewModel: WorkoutsViewModel, set: SetModel) {
-
-    Dialog(onDismissRequest = { viewModel.cancelSetEditing() }) {
-
+fun SetEditionSheet(viewModel: WorkoutsViewModel, set: SetModel) {
+    ModalBottomSheet(
+        onDismissRequest = { viewModel.cancelSetEditing() },
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = MaterialTheme.colorScheme.surface
+    ) {
         var reps by rememberSaveable { mutableIntStateOf(set.reps) }
         var weight by rememberSaveable { mutableStateOf("") }
         var observations by rememberSaveable { mutableStateOf(set.observations) }
 
-        DialogContainer {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
             Text(text = "Añadir serie", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-            Text(text = "Repeticiones")
+            val repsLabel = if (set.exercise?.repsType == "seconds") "Segundos" else "Repeticiones"
+            val weightLabel = if (set.exercise?.weightType == "unilateral") "Peso (por lado)" else "Peso"
+            Text(text = repsLabel)
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly,
@@ -172,7 +195,7 @@ fun SetEditionDialog(viewModel: WorkoutsViewModel, set: SetModel) {
                 }
             }
             TextFieldWithTitle(
-                title = "Peso", text = weight, onWrite = {
+                title = weightLabel, text = weight, onWrite = {
                     if (it.isValidAsNumber()) {
                         weight = it
                     }
@@ -207,9 +230,9 @@ fun SetEditionDialog(viewModel: WorkoutsViewModel, set: SetModel) {
 }
 
 /**
- * Row of action buttons for a set options dialog (Edit, Exit, Delete).
+ * Row of action buttons for a set options sheet (Edit, Exit, Delete).
  *
- * @param exit Callback to close the dialog
+ * @param exit Callback to close the sheet
  * @param onEditClick Callback to switch to edit mode
  * @param delete Callback to delete the set
  */

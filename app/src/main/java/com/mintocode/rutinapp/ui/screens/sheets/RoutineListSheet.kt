@@ -48,9 +48,8 @@ import com.mintocode.rutinapp.ui.components.SearchTextField
 import com.mintocode.rutinapp.ui.components.rememberStaggeredRevealIndex
 import com.mintocode.rutinapp.ui.premade.AnimatedItem
 import com.mintocode.rutinapp.ui.screenStates.RoutinesScreenState
-import com.mintocode.rutinapp.ui.screens.CreateRoutineDialog
-import com.mintocode.rutinapp.ui.screens.EditRoutineDialog
-import com.mintocode.rutinapp.ui.screens.ObserveRoutineDialog
+import com.mintocode.rutinapp.ui.navigation.LocalSheetNavigator
+import com.mintocode.rutinapp.ui.navigation.SheetDestination
 import com.mintocode.rutinapp.ui.theme.rutinAppButtonsColours
 import com.mintocode.rutinapp.ui.theme.rutinappCardColors
 import com.mintocode.rutinapp.viewmodels.RoutinesViewModel
@@ -78,12 +77,24 @@ fun RoutineListSheet(viewModel: RoutinesViewModel) {
 
     val maxIndex = rememberStaggeredRevealIndex(key = routines, totalSize = routines.size)
 
-    // Existing dialog states
-    when (uiState) {
-        is RoutinesScreenState.Creating -> CreateRoutineDialog(viewModel)
-        is RoutinesScreenState.Editing -> EditRoutineDialog(uiState = uiState as RoutinesScreenState.Editing, viewModel)
-        is RoutinesScreenState.Observe -> ObserveRoutineDialog(uiState = uiState as RoutinesScreenState.Observe, viewModel)
-        null, RoutinesScreenState.Overview -> {}
+    val navigator = LocalSheetNavigator.current
+
+    // Navigate to sheets instead of showing dialogs
+    LaunchedEffect(uiState) {
+        when (uiState) {
+            is RoutinesScreenState.Creating -> {
+                navigator.open(SheetDestination.RoutineCreate)
+            }
+            is RoutinesScreenState.Editing -> {
+                navigator.open(SheetDestination.RoutineEdit(0))
+            }
+            is RoutinesScreenState.Observe -> {
+                if ((uiState as RoutinesScreenState.Observe).routine != null) {
+                    navigator.open(SheetDestination.RoutineDetail(0))
+                }
+            }
+            null, RoutinesScreenState.Overview -> {}
+        }
     }
 
     var searchText by rememberSaveable { mutableStateOf("") }
@@ -178,8 +189,14 @@ fun RoutineListSheet(viewModel: RoutinesViewModel) {
                                 RoutineCardItem(
                                     routine = routine,
                                     modifier = Modifier.combinedClickable(
-                                        onClick = { viewModel.clickObserveRoutine(routine) },
-                                        onLongClick = { viewModel.clickEditRoutine(routine) }
+                                        onClick = {
+                                            viewModel.clickObserveRoutine(routine)
+                                            navigator.open(SheetDestination.RoutineDetail(routine.id))
+                                        },
+                                        onLongClick = {
+                                            viewModel.clickEditRoutine(routine)
+                                            navigator.open(SheetDestination.RoutineEdit(routine.id))
+                                        }
                                     )
                                 )
                             }
@@ -190,7 +207,7 @@ fun RoutineListSheet(viewModel: RoutinesViewModel) {
         }
 
         Button(
-            onClick = { viewModel.clickCreateRoutine() },
+            onClick = { navigator.open(SheetDestination.RoutineCreate) },
             colors = rutinAppButtonsColours(),
             modifier = Modifier
                 .fillMaxWidth()
