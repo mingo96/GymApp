@@ -24,6 +24,7 @@ import com.mintocode.rutinapp.domain.getUseCases.GetWorkoutsUseCase
 import com.mintocode.rutinapp.domain.updateUseCases.UpdateSetUseCase
 import com.mintocode.rutinapp.domain.updateUseCases.UpdateWorkoutUseCase
 import com.mintocode.rutinapp.sync.SyncManager
+import com.mintocode.rutinapp.ui.floating.ActiveWorkoutHolder
 import com.mintocode.rutinapp.ui.screenStates.SetState
 import com.mintocode.rutinapp.ui.screenStates.WorkoutsScreenState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -183,11 +184,7 @@ class WorkoutsViewModel @Inject constructor(
 
             newWorkout.id = addWorkoutUseCase(workout = newWorkout)
 
-            _workoutScreenStates.postValue(
-                WorkoutsScreenState.WorkoutStarted(
-                    workout = newWorkout, otherExercises = availableExercises
-                )
-            )
+            publishWorkoutStarted(newWorkout, availableExercises)
         }
     }
 
@@ -208,9 +205,55 @@ class WorkoutsViewModel @Inject constructor(
 
             newWorkout.id = addWorkoutUseCase(workout = newWorkout)
 
+            publishWorkoutStarted(newWorkout, availableExercises)
+        }
+    }
+
+    /**
+     * Publica el estado WorkoutStarted y sincroniza el ActiveWorkoutHolder
+     * para que el widget flotante pueda acceder al entrenamiento activo.
+     *
+     * @param workout Entrenamiento iniciado
+     * @param otherExercises Ejercicios disponibles que no están en el entrenamiento
+     */
+    private fun publishWorkoutStarted(
+        workout: WorkoutModel,
+        otherExercises: List<ExerciseModel>
+    ) {
+        ActiveWorkoutHolder.setActiveWorkout(workout) { set ->
+            handleFloatingSetAdded(set)
+        }
+        _workoutScreenStates.postValue(
+            WorkoutsScreenState.WorkoutStarted(
+                workout = workout, otherExercises = otherExercises
+            )
+        )
+    }
+
+    /**
+     * Maneja un set creado desde el widget flotante.
+     * Persiste el set en base de datos y actualiza el estado del entrenamiento.
+     *
+     * @param set Set creado desde el widget flotante
+     */
+    private fun handleFloatingSetAdded(set: SetModel) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val currentState =
+                _workoutScreenStates.value as? WorkoutsScreenState.WorkoutStarted ?: return@launch
+
+            val exercisePair =
+                currentState.workout.exercisesAndSets.find { it.first.id == set.exercise?.id }
+                    ?: return@launch
+
+            exercisePair.second += set
+            set.id = addSetUseCase(set)
+
+            ActiveWorkoutHolder.updateWorkout(currentState.workout)
+
             _workoutScreenStates.postValue(
                 WorkoutsScreenState.WorkoutStarted(
-                    workout = newWorkout, otherExercises = availableExercises
+                    workout = currentState.workout,
+                    otherExercises = currentState.otherExercises
                 )
             )
         }
@@ -320,13 +363,17 @@ class WorkoutsViewModel @Inject constructor(
 
         val currentState = _workoutScreenStates.value as WorkoutsScreenState.WorkoutStarted
 
+        val updatedWorkout = currentState.workout.copy(
+            exercisesAndSets = (currentState.workout.exercisesAndSets + Pair(
+                exercise, mutableListOf()
+            )).toMutableList()
+        )
+
+        ActiveWorkoutHolder.updateWorkout(updatedWorkout)
+
         _workoutScreenStates.postValue(
             WorkoutsScreenState.WorkoutStarted(
-                currentState.workout.copy(
-                    exercisesAndSets = (currentState.workout.exercisesAndSets + Pair(
-                        exercise, mutableListOf()
-                    )).toMutableList()
-                ), currentState.otherExercises - exercise
+                updatedWorkout, currentState.otherExercises - exercise
             )
         )
     }
@@ -390,6 +437,10 @@ class WorkoutsViewModel @Inject constructor(
                     .map { it to mutableListOf() }
             }
 
+            ActiveWorkoutHolder.setActiveWorkout(workout) { set ->
+                handleFloatingSetAdded(set)
+            }
+
             _workoutScreenStates.postValue(
                 WorkoutsScreenState.WorkoutStarted(
                     workout = workout, otherExercises = availableExercises
@@ -399,6 +450,7 @@ class WorkoutsViewModel @Inject constructor(
     }
 
     fun backToObserve() {
+        ActiveWorkoutHolder.clear()
         try {
 
             adsViewModel
@@ -546,6 +598,8 @@ class WorkoutsViewModel @Inject constructor(
 
         adsViewModel.callRandomAd()
 
+        ActiveWorkoutHolder.clear()
+
         val actualState = _workoutScreenStates.value as WorkoutsScreenState.WorkoutStarted
 
         viewModelScope.launch(Dispatchers.IO) {
@@ -616,11 +670,7 @@ class WorkoutsViewModel @Inject constructor(
 
                 newWorkout.id = addWorkoutUseCase(workout = newWorkout)
 
-                _workoutScreenStates.postValue(
-                    WorkoutsScreenState.WorkoutStarted(
-                        workout = newWorkout, otherExercises = availableExercises
-                    )
-                )
+                publishWorkoutStarted(newWorkout, availableExercises)
 
             }
 

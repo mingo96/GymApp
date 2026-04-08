@@ -38,6 +38,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -48,6 +49,7 @@ import com.mintocode.rutinapp.data.models.RoutineModel
 import com.mintocode.rutinapp.data.models.WorkoutModel
 import com.mintocode.rutinapp.ui.navigation.LocalSheetNavigator
 import com.mintocode.rutinapp.ui.navigation.SheetDestination
+import com.mintocode.rutinapp.ui.floating.FloatingWorkoutService
 import com.mintocode.rutinapp.ui.premade.AnimatedItem
 import com.mintocode.rutinapp.ui.screenStates.WorkoutsScreenState
 import com.mintocode.rutinapp.ui.theme.rutinAppButtonsColours
@@ -75,6 +77,7 @@ fun TrainPage(
 ) {
     val navigator = LocalSheetNavigator.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         workoutsViewModel.autoSync()
@@ -90,12 +93,16 @@ fun TrainPage(
     )
     val workoutState by workoutsViewModel.workoutScreenStates.observeAsState(WorkoutsScreenState.Observe())
 
-    // If a workout was started (from any source), open the ActiveWorkout sheet.
+    // If a workout was started (from any source), open the ActiveWorkout sheet
+    // and start the floating overlay service.
     // Deduplication in SheetNavigator.open() prevents double sheets.
     LaunchedEffect(workoutState) {
         if (workoutState is WorkoutsScreenState.WorkoutStarted) {
             val ws = workoutState as WorkoutsScreenState.WorkoutStarted
             navigator.open(SheetDestination.ActiveWorkout(ws.workout.id))
+            FloatingWorkoutService.start(context)
+        } else {
+            FloatingWorkoutService.stop(context)
         }
     }
 

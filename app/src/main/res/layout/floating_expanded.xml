@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/expanded_root"
+    android:layout_width="320dp"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/expanded_bg"
+    android:padding="16dp"
+    android:elevation="8dp">
+
+    <!-- Header with title and minimize button -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="12dp">
+
+        <TextView
+            android:id="@+id/txt_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Entrenamiento"
+            android:textColor="@android:color/white"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <ImageButton
+            android:id="@+id/btn_minimize"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/arrow_down_float"
+            android:contentDescription="Minimizar"
+            android:scaleType="centerInside" />
+
+    </LinearLayout>
+
+    <!-- Exercise selector -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Ejercicio"
+        android:textColor="#B0B0B0"
+        android:textSize="12sp"
+        android:layout_marginBottom="4dp" />
+
+    <Spinner
+        android:id="@+id/spinner_exercise"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:background="@drawable/spinner_bg"
+        android:popupBackground="#2D2D2D"
+        android:layout_marginBottom="12dp" />
+
+    <!-- Reps input -->
+    <TextView
+        android:id="@+id/label_reps"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Repeticiones"
+        android:textColor="#B0B0B0"
+        android:textSize="12sp"
+        android:layout_marginBottom="4dp" />
+
+    <EditText
+        android:id="@+id/input_reps"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:background="@drawable/input_bg"
+        android:hint="0"
+        android:inputType="number"
+        android:textColor="@android:color/white"
+        android:textColorHint="#666666"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:textSize="16sp"
+        android:layout_marginBottom="12dp"
+        android:importantForAutofill="no" />
+
+    <!-- Weight input -->
+    <TextView
+        android:id="@+id/label_weight"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Peso (kgs)"
+        android:textColor="#B0B0B0"
+        android:textSize="12sp"
+        android:layout_marginBottom="4dp" />
+
+    <EditText
+        android:id="@+id/input_weight"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:background="@drawable/input_bg"
+        android:hint="0"
+        android:inputType="numberDecimal"
+        android:textColor="@android:color/white"
+        android:textColorHint="#666666"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:textSize="16sp"
+        android:layout_marginBottom="16dp"
+        android:importantForAutofill="no" />
+
+    <!-- Action buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <Button
+            android:id="@+id/btn_send"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_weight="1"
+            android:text="Enviar"
+            android:textColor="@android:color/white"
+            android:backgroundTint="#BB86FC"
+            android:layout_marginEnd="8dp" />
+
+        <ImageButton
+            android:id="@+id/btn_fullscreen"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@drawable/input_bg"
+            android:src="@drawable/ic_fullscreen"
+            android:contentDescription="Abrir app"
+            android:scaleType="centerInside" />
+
+    </LinearLayout>
+
+    <!-- Status text -->
+    <TextView
+        android:id="@+id/txt_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="#888888"
+        android:textSize="12sp"
+        android:layout_marginTop="8dp"
+        android:visibility="gone" />
+
+</LinearLayout>

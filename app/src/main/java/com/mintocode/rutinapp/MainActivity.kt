@@ -1,6 +1,9 @@
 package com.mintocode.rutinapp
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -296,5 +299,21 @@ class MainActivity : ComponentActivity() {
         }
 
         settingsViewModel.registerFcmTokenIfNeeded()
+
+        requestOverlayPermission()
+    }
+
+    /**
+     * Solicita el permiso de superposición (SYSTEM_ALERT_WINDOW) si no está concedido.
+     * Abre la pantalla de ajustes del sistema para que el usuario lo active manualmente.
+     */
+    private fun requestOverlayPermission() {
+        if (!Settings.canDrawOverlays(this)) {
+            val intent = Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:$packageName")
+            )
+            startActivity(intent)
+        }
     }
 }
