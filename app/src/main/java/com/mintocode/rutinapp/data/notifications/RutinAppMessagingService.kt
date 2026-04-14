@@ -56,7 +56,7 @@ class RutinAppMessagingService : FirebaseMessagingService() {
      */
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        Log.d(TAG, "Nuevo token FCM: $token")
+        Log.d(TAG, "Nuevo token FCM recibido")
         // El token se registrará con el backend desde NotificationHelper
         // cuando el usuario esté autenticado y se solicite el token.
     }

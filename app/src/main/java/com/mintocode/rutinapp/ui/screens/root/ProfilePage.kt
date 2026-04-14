@@ -33,6 +33,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -50,6 +51,7 @@ import com.mintocode.rutinapp.viewmodels.SettingsViewModel
 fun ProfilePage(settingsViewModel: SettingsViewModel) {
     val navigator = LocalSheetNavigator.current
     val data by settingsViewModel.data.observeAsState()
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -141,11 +143,19 @@ fun ProfilePage(settingsViewModel: SettingsViewModel) {
             onClick = { navigator.open(SheetDestination.Settings) }
         )
 
-        ProfileMenuItem(
-            icon = Icons.AutoMirrored.TwoTone.Login,
-            label = "Inicio de sesión",
-            onClick = { navigator.open(SheetDestination.Auth) }
-        )
+        if (!data?.authToken.isNullOrBlank()) {
+            ProfileMenuItem(
+                icon = Icons.AutoMirrored.TwoTone.Login,
+                label = "Cerrar sesión",
+                onClick = { settingsViewModel.logOut(context) }
+            )
+        } else {
+            ProfileMenuItem(
+                icon = Icons.AutoMirrored.TwoTone.Login,
+                label = "Inicio de sesión",
+                onClick = { navigator.open(SheetDestination.Auth) }
+            )
+        }
 
         ProfileMenuItem(
             icon = Icons.TwoTone.Notifications,

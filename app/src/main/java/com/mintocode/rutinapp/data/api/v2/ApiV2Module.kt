@@ -1,5 +1,6 @@
 package com.mintocode.rutinapp.data.api.v2
 
+import com.mintocode.rutinapp.BuildConfig
 import com.mintocode.rutinapp.data.BASE_URL
 import com.mintocode.rutinapp.data.UserDetails
 import dagger.Module
@@ -56,7 +57,9 @@ object ApiV2Module {
     @Singleton
     fun provideOkHttp(): OkHttpClient {
         val logging = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            level = HttpLoggingPolicy.resolve(BuildConfig.DEBUG)
+            redactHeader("Authorization")
+            redactHeader("Cookie")
         }
         return OkHttpClient.Builder()
             .addInterceptor(logging)

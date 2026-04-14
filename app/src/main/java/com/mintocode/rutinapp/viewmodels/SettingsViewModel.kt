@@ -22,6 +22,7 @@ import com.mintocode.rutinapp.data.api.v2.dto.RegisterRequest
 import com.mintocode.rutinapp.data.models.TrainerRelationModel
 import com.mintocode.rutinapp.data.api.v2.dto.DtoMapper
 import com.mintocode.rutinapp.data.notifications.NotificationHelper
+import com.mintocode.rutinapp.security.SessionDataSanitizer
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import com.mintocode.rutinapp.ui.screenStates.SettingsScreenState
@@ -37,7 +38,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
-import java.lang.Thread.State
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
@@ -268,6 +268,46 @@ class SettingsViewModel @Inject constructor(
             }
             launch(Dispatchers.Main) {
                 Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    /**
+     * Closes the active session on backend and locally.
+     *
+     * Logout is best-effort: even if network calls fail, local sensitive
+     * session data is cleared to prevent stale authenticated state.
+     *
+     * @param context Android context for user feedback
+     */
+    fun logOut(context: Context) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val hasToken = !actualValue?.authToken.isNullOrBlank()
+                if (hasToken) {
+                    runCatching { apiV2.unregisterFcmToken() }
+                    runCatching { apiV2.logout() }
+                }
+            } catch (e: Exception) {
+                Log.e("Auth", "Logout failure", e)
+            } finally {
+                auth.signOut()
+
+                val current = _data.value ?: UserDetails()
+                val sanitized = SessionDataSanitizer.clearSession(current)
+
+                actualValue = sanitized
+                _data.postValue(sanitized)
+
+                if (::dataStoreManager.isInitialized) {
+                    dataStoreManager.saveData(sanitized)
+                }
+
+                _uiState.postValue(SettingsScreenState.LogIn(isRegister = false, userMail = ""))
+
+                launch(Dispatchers.Main) {
+                    Toast.makeText(context, "Sesión cerrada", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
