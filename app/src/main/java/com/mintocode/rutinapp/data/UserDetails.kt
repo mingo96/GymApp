@@ -5,7 +5,8 @@ data class UserDetails(
     val name: String = "",
     val isDarkTheme: Boolean = true,
     val authToken: String = "",
-    val email: String = "@gmail.com"
+    val email: String = "@gmail.com",
+    val floatingWidgetEnabled: Boolean = false
 ){
     companion object{
 

@@ -1,9 +1,6 @@
 package com.mintocode.rutinapp
 
-import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
-import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -36,6 +33,7 @@ import com.mintocode.rutinapp.ui.screens.root.ProfilePage
 import com.mintocode.rutinapp.ui.screens.root.RootPager
 import com.mintocode.rutinapp.ui.screens.root.TrainPage
 import com.mintocode.rutinapp.ui.screens.sheets.ActiveWorkoutSheet
+import com.mintocode.rutinapp.ui.screens.sheets.AppConfigSheet
 import com.mintocode.rutinapp.ui.screens.sheets.AuthSheet
 import com.mintocode.rutinapp.ui.screens.sheets.ExerciseCreateSheet
 import com.mintocode.rutinapp.ui.screens.sheets.ExerciseDetailSheet
@@ -158,7 +156,8 @@ class MainActivity : ComponentActivity() {
                     TrainPage(
                         workoutsViewModel = workoutsViewModel,
                         exercisesViewModel = exercisesViewModel,
-                        routinesViewModel = routinesViewModel
+                        routinesViewModel = routinesViewModel,
+                        settingsViewModel = settingsViewModel
                     )
                 },
                 page2 = { ProfilePage(settingsViewModel = settingsViewModel) }
@@ -225,6 +224,10 @@ class MainActivity : ComponentActivity() {
 
             is SheetDestination.Settings -> {
                 SettingsSheet(viewModel = settingsViewModel)
+            }
+
+            is SheetDestination.AppConfig -> {
+                AppConfigSheet(viewModel = settingsViewModel)
             }
 
             is SheetDestination.Auth -> {
@@ -299,21 +302,5 @@ class MainActivity : ComponentActivity() {
         }
 
         settingsViewModel.registerFcmTokenIfNeeded()
-
-        requestOverlayPermission()
-    }
-
-    /**
-     * Solicita el permiso de superposición (SYSTEM_ALERT_WINDOW) si no está concedido.
-     * Abre la pantalla de ajustes del sistema para que el usuario lo active manualmente.
-     */
-    private fun requestOverlayPermission() {
-        if (!Settings.canDrawOverlays(this)) {
-            val intent = Intent(
-                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                Uri.parse("package:$packageName")
-            )
-            startActivity(intent)
-        }
     }
 }

@@ -22,6 +22,7 @@ import androidx.compose.material.icons.twotone.FitnessCenter
 import androidx.compose.material.icons.twotone.Notifications
 import androidx.compose.material.icons.twotone.Person
 import androidx.compose.material.icons.twotone.Settings
+import androidx.compose.material.icons.twotone.Tune
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
@@ -128,6 +129,12 @@ fun ProfilePage(settingsViewModel: SettingsViewModel) {
         }
 
         // ── Menu items ──
+        ProfileMenuItem(
+            icon = Icons.TwoTone.Tune,
+            label = "Configuración",
+            onClick = { navigator.open(SheetDestination.AppConfig) }
+        )
+
         ProfileMenuItem(
             icon = Icons.TwoTone.Settings,
             label = "Ajustes de cuenta",

@@ -64,6 +64,9 @@ sealed class SheetDestination {
     /** Full settings sheet. */
     data object Settings : SheetDestination()
 
+    /** App configuration (floating widget, etc.). */
+    data object AppConfig : SheetDestination()
+
     /** Authentication (login/register). */
     data object Auth : SheetDestination()
 

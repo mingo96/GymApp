@@ -92,10 +92,11 @@ class SettingsViewModel @Inject constructor(
         code: String = _data.value!!.code,
         isDarkTheme: Boolean = _data.value!!.isDarkTheme,
         email: String = _data.value!!.email, // fixed: previously used name erroneously
-        authToken: String = _data.value!!.authToken
+        authToken: String = _data.value!!.authToken,
+        floatingWidgetEnabled: Boolean = _data.value!!.floatingWidgetEnabled
     ) {
         val newData = UserDetails(
-            code, name, isDarkTheme, authToken, email
+            code, name, isDarkTheme, authToken, email, floatingWidgetEnabled
         )
         viewModelScope.launch(Dispatchers.IO) {
 
@@ -110,6 +111,15 @@ class SettingsViewModel @Inject constructor(
             val newIsDark = !_data.value!!.isDarkTheme
             updateUserDetails(isDarkTheme = newIsDark)
         }
+    }
+
+    /**
+     * Activa o desactiva la herramienta flotante de entrenamiento.
+     *
+     * @param enabled true para activar, false para desactivar
+     */
+    fun setFloatingWidgetEnabled(enabled: Boolean) {
+        updateUserDetails(floatingWidgetEnabled = enabled)
     }
 
     fun toggleLogInState() {

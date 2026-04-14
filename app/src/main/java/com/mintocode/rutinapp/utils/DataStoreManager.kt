@@ -24,6 +24,7 @@ class DataStoreManager(val context: Context) {
         val ISDARKTHEME = booleanPreferencesKey("isDarkTheme")
         val AUTHTOKEN = stringPreferencesKey("authToken")
         val EMAIL = stringPreferencesKey("email")
+        val FLOATING_WIDGET_ENABLED = booleanPreferencesKey("floatingWidgetEnabled")
     }
 
     suspend fun saveData(userDetails: UserDetails) {
@@ -33,6 +34,7 @@ class DataStoreManager(val context: Context) {
             it[ISDARKTHEME] = userDetails.isDarkTheme
             it[AUTHTOKEN] = userDetails.authToken
             it[EMAIL] = userDetails.email
+            it[FLOATING_WIDGET_ENABLED] = userDetails.floatingWidgetEnabled
         }
     }
 
@@ -42,7 +44,8 @@ class DataStoreManager(val context: Context) {
             name = it[NAME] ?: "",
             isDarkTheme = it[ISDARKTHEME] ?: true,
             authToken = it[AUTHTOKEN] ?: "",
-            email = it[EMAIL] ?: "@gmail.com"
+            email = it[EMAIL] ?: "@gmail.com",
+            floatingWidgetEnabled = it[FLOATING_WIDGET_ENABLED] ?: false
         )
     }
 

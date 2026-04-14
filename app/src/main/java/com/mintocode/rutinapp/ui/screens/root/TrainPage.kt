@@ -56,6 +56,7 @@ import com.mintocode.rutinapp.ui.theme.rutinAppButtonsColours
 import com.mintocode.rutinapp.utils.simpleDateString
 import com.mintocode.rutinapp.viewmodels.ExercisesViewModel
 import com.mintocode.rutinapp.viewmodels.RoutinesViewModel
+import com.mintocode.rutinapp.viewmodels.SettingsViewModel
 import com.mintocode.rutinapp.viewmodels.WorkoutsViewModel
 import kotlinx.coroutines.delay
 
@@ -73,7 +74,8 @@ import kotlinx.coroutines.delay
 fun TrainPage(
     workoutsViewModel: WorkoutsViewModel,
     exercisesViewModel: ExercisesViewModel,
-    routinesViewModel: RoutinesViewModel
+    routinesViewModel: RoutinesViewModel,
+    settingsViewModel: SettingsViewModel
 ) {
     val navigator = LocalSheetNavigator.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -93,14 +95,19 @@ fun TrainPage(
     )
     val workoutState by workoutsViewModel.workoutScreenStates.observeAsState(WorkoutsScreenState.Observe())
 
+    val userData by settingsViewModel.data.observeAsState()
+    val floatingEnabled = userData?.floatingWidgetEnabled == true
+
     // If a workout was started (from any source), open the ActiveWorkout sheet
-    // and start the floating overlay service.
+    // and start the floating overlay service (if enabled in settings).
     // Deduplication in SheetNavigator.open() prevents double sheets.
-    LaunchedEffect(workoutState) {
+    LaunchedEffect(workoutState, floatingEnabled) {
         if (workoutState is WorkoutsScreenState.WorkoutStarted) {
             val ws = workoutState as WorkoutsScreenState.WorkoutStarted
             navigator.open(SheetDestination.ActiveWorkout(ws.workout.id))
-            FloatingWorkoutService.start(context)
+            if (floatingEnabled) {
+                FloatingWorkoutService.start(context)
+            }
         } else {
             FloatingWorkoutService.stop(context)
         }

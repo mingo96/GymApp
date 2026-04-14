@@ -1,17 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/bubble_root"
-    android:layout_width="56dp"
-    android:layout_height="56dp"
-    android:background="@drawable/bubble_bg"
+    android:layout_width="wrap_content"
+    android:layout_height="48dp"
+    android:orientation="horizontal"
+    android:background="@drawable/bubble_pill_bg"
+    android:gravity="center_vertical"
+    android:paddingStart="8dp"
+    android:paddingEnd="12dp"
     android:clickable="true"
     android:focusable="true">
 
     <ImageView
         android:layout_width="28dp"
         android:layout_height="28dp"
-        android:layout_gravity="center"
-        android:src="@drawable/ic_fitness"
-        android:contentDescription="Entrenamiento activo" />
+        android:src="@drawable/ic_logo_white"
+        android:contentDescription="RutinApp"
+        android:layout_marginEnd="6dp" />
 
-</FrameLayout>
+    <TextView
+        android:id="@+id/txt_bubble_timer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="0:00"
+        android:textColor="@android:color/white"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+
+</LinearLayout>
