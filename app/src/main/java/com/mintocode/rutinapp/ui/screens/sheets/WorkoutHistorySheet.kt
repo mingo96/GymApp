@@ -113,62 +113,65 @@ fun WorkoutHistorySheet(viewModel: WorkoutsViewModel) {
             .fillMaxSize()
             .padding(horizontal = 24.dp, vertical = 16.dp)
     ) {
-        // ── Hero Header ──
-        Text(
-            text = "Historial de\nentrenamientos",
-            fontFamily = SpaceGroteskFont,
-            fontWeight = FontWeight.Bold,
-            fontSize = 36.sp,
-            letterSpacing = (-0.9).sp,
-            lineHeight = 40.sp,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        Text(
-            text = "Revisa tu progreso y continúa donde lo dejaste",
-            fontFamily = ManropeFont,
-            fontWeight = FontWeight.Medium,
-            fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-            modifier = Modifier.padding(top = 4.dp)
-        )
-
-        Spacer(Modifier.height(24.dp))
-
-        // ── Stats Summary Row ──
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            val finishedCount = workouts.count { it.isFinished }
-            val thisWeekCount = workouts.count {
-                val diff = System.currentTimeMillis() - it.date.time
-                diff < 7 * 24 * 60 * 60 * 1000 && it.isFinished
-            }
-
-            KPGlassStatCard(
-                label = "TOTAL",
-                value = finishedCount.toString(),
-                modifier = Modifier.weight(1f)
-            )
-            KPGlassStatCard(
-                label = "ESTA SEMANA",
-                value = thisWeekCount.toString(),
-                modifier = Modifier.weight(1f)
-            )
-            KPGlassStatCard(
-                label = "RACHA",
-                value = "–",
-                unit = "DÍAS",
-                modifier = Modifier.weight(1f)
-            )
-        }
-
-        Spacer(Modifier.height(32.dp))
-
         LazyColumn(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // ── Hero Header ──
+            item {
+                Column {
+                    Text(
+                        text = "Historial de\nentrenamientos",
+                        fontFamily = SpaceGroteskFont,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 36.sp,
+                        letterSpacing = (-0.9).sp,
+                        lineHeight = 40.sp,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Revisa tu progreso y continúa donde lo dejaste",
+                        fontFamily = ManropeFont,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+
+                    Spacer(Modifier.height(24.dp))
+
+                    // ── Stats Summary Row ──
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        val finishedCount = workouts.count { it.isFinished }
+                        val thisWeekCount = workouts.count {
+                            val diff = System.currentTimeMillis() - it.date.time
+                            diff < 7 * 24 * 60 * 60 * 1000 && it.isFinished
+                        }
+
+                        KPGlassStatCard(
+                            label = "TOTAL",
+                            value = finishedCount.toString(),
+                            modifier = Modifier.weight(1f)
+                        )
+                        KPGlassStatCard(
+                            label = "ESTA SEMANA",
+                            value = thisWeekCount.toString(),
+                            modifier = Modifier.weight(1f)
+                        )
+                        KPGlassStatCard(
+                            label = "RACHA",
+                            value = "–",
+                            unit = "DÍAS",
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    Spacer(Modifier.height(20.dp))
+                }
+            }
             // ── Routine Suggestions ──
             if (routines.isNotEmpty()) {
                 item {

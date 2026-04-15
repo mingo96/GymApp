@@ -87,7 +87,7 @@ fun AddRelationsDialog(
                             }) {
                                 Icon(
                                     imageVector = Icons.TwoTone.Add,
-                                    contentDescription = "Add exercise relation"
+                                    contentDescription = "Añadir relación de ejercicio"
                                 )
                             }
                         }
@@ -178,7 +178,7 @@ fun ModifyExerciseDialog(viewModel: ExercisesViewModel, uiState: ExercisesState.
                     IconButton(onClick = { viewModel.clickToAddRelatedExercises(context) }) {
                         Icon(
                             imageVector = Icons.TwoTone.Add,
-                            contentDescription = "Add related exercises"
+                            contentDescription = "Añadir ejercicios relacionados"
                         )
                     }
                 }

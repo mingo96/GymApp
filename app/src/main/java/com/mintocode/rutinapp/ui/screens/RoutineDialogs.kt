@@ -233,7 +233,7 @@ private fun EditRoutineExercises(uiState: RoutinesScreenState.Editing, viewModel
                 )
             }) {
                 Icon(
-                    imageVector = Icons.TwoTone.Edit, contentDescription = "Edit selected exercise"
+                    imageVector = Icons.TwoTone.Edit, contentDescription = "Editar ejercicio seleccionado"
                 )
             }
         }
@@ -284,7 +284,7 @@ private fun EditRoutineContent(uiState: RoutinesScreenState.Editing, viewModel: 
             colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.secondary)
         ) {
             Icon(
-                painter = painterResource(id = R.drawable.save), contentDescription = "Save changes"
+                painter = painterResource(id = R.drawable.save), contentDescription = "Guardar cambios"
             )
         }
     }

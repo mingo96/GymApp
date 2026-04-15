@@ -418,7 +418,7 @@ private fun ExerciseInfo(
                 Icon(
                     imageVector = if (!setsOpened) Icons.TwoTone.KeyboardArrowDown
                     else Icons.TwoTone.KeyboardArrowUp,
-                    contentDescription = "toggle sets",
+                    contentDescription = "mostrar series",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -426,7 +426,7 @@ private fun ExerciseInfo(
             IconButton(onClick = startSwapping) {
                 Icon(
                     painter = painterResource(id = R.drawable.swap),
-                    contentDescription = "change exercise",
+                    contentDescription = "cambiar ejercicio",
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
@@ -606,14 +606,14 @@ private fun ExerciseActions(
         IconButton(onClick = { viewModel.addSetClicked(exerciseAndSets.first) }) {
             Icon(
                 imageVector = Icons.TwoTone.Add,
-                contentDescription = "add set",
+                contentDescription = "Añadir serie",
                 tint = MaterialTheme.colorScheme.primary
             )
         }
         IconButton(onClick = { viewModel.removeExerciseFromRoutine(exerciseAndSets.first) }) {
             Icon(
                 imageVector = Icons.TwoTone.Delete,
-                contentDescription = "delete exercise",
+                contentDescription = "eliminar ejercicio",
                 tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
             )
         }
@@ -621,7 +621,7 @@ private fun ExerciseActions(
             IconButton(onClick = { viewModel.moveExercise(exerciseAndSets.first, false) }) {
                 Icon(
                     imageVector = Icons.AutoMirrored.TwoTone.ArrowBack,
-                    contentDescription = "move up",
+                    contentDescription = "subir",
                     modifier = Modifier.rotate(-90f),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -631,7 +631,7 @@ private fun ExerciseActions(
             IconButton(onClick = { viewModel.moveExercise(exerciseAndSets.first, true) }) {
                 Icon(
                     imageVector = Icons.AutoMirrored.TwoTone.ArrowBack,
-                    contentDescription = "move down",
+                    contentDescription = "bajar",
                     modifier = Modifier.rotate(90f),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )

@@ -8,6 +8,8 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.delay
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -73,12 +75,11 @@ fun ExerciseEditSheet(viewModel: ExercisesViewModel) {
 
     val modifyingState = uiState as? ExercisesState.Modifying
     if (modifyingState == null) {
-        Text(
-            text = "Cargando...",
-            fontFamily = ManropeFont,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(32.dp)
-        )
+        // Si el estado no es Modifying, volver atrás automáticamente
+        LaunchedEffect(Unit) {
+            delay(300)
+            navigator.close()
+        }
         return
     }
 

@@ -391,16 +391,15 @@ class ExercisesViewModel @Inject constructor(
 
     /**this will only be reached during edit state*/
     fun clickToAddRelatedExercises(context: Context) {
-        try {
-            assert(_uiState.value is ExercisesState.Modifying)
-            val selected = (_uiState.value as ExercisesState.Modifying).exerciseModel
-            _uiState.postValue(
-                ExercisesState.AddingRelations(selected,
-                    exercisesState.value.filter { it != selected && it.id !in selected.equivalentExercises.map { it.id } })
-            )
-        } catch (error: AssertionError) {
-            Toast.makeText(context, "You are not in edit mode", Toast.LENGTH_SHORT).show()
+        val selected = (_uiState.value as? ExercisesState.Modifying)?.exerciseModel
+        if (selected == null) {
+            Toast.makeText(context, "No estás en modo edición", Toast.LENGTH_SHORT).show()
+            return
         }
+        _uiState.postValue(
+            ExercisesState.AddingRelations(selected,
+                exercisesState.value.filter { it != selected && it.id !in selected.equivalentExercises.map { it.id } })
+        )
     }
 
     fun backToObserve() {
@@ -423,12 +422,14 @@ class ExercisesViewModel @Inject constructor(
         name: String, description: String, targetedBodyPart: String, context: Context,
         repsType: String = "base", weightType: String = "base"
     ) {
-        if (name.isNotEmpty() && description.isNotEmpty() && targetedBodyPart.isNotEmpty())
-
+        if (name.isNotEmpty() && description.isNotEmpty() && targetedBodyPart.isNotEmpty()) {
+            val selected = (_uiState.value as? ExercisesState.Modifying)?.exerciseModel
+            if (selected == null) {
+                _uiState.postValue(ExercisesState.Observe())
+                return
+            }
             viewModelScope.launch(Dispatchers.IO) {
                 try {
-                    assert(_uiState.value is ExercisesState.Modifying)
-                    val selected = (_uiState.value as ExercisesState.Modifying).exerciseModel
                     selected.name = name
                     selected.description = description
                     selected.targetedBodyPart = targetedBodyPart
@@ -437,13 +438,13 @@ class ExercisesViewModel @Inject constructor(
                     selected.isDirty = true
                     updateExerciseUseCase(selected)
                     _uiState.postValue(ExercisesState.Observe(selected))
-                    // Remote update removed (offline-first). Mark dirty if future upsert added.
-
-                } catch (error: AssertionError) {
-                    //i dont know how would this happen
+                } catch (e: Exception) {
+                    _uiState.postValue(ExercisesState.Observe())
                 }
             }
-        else Toast.makeText(context, "Faltan campos por rellenar", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(context, "Faltan campos por rellenar", Toast.LENGTH_SHORT).show()
+        }
     }
 
     fun clickToCreate() {

@@ -208,7 +208,7 @@ fun DateVerticalItem(
             IconButton(onClick = { onPlanningSelected() }, modifier = Modifier) {
                 Icon(
                     imageVector = if (content == null) Icons.TwoTone.Add else Icons.TwoTone.Edit,
-                    contentDescription = if (content == null) "add planning" else "edit planning"
+                    contentDescription = if (content == null) "Añadir planificación" else "Editar planificación"
                 )
             }
         }

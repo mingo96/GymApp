@@ -147,11 +147,37 @@ class WorkoutsViewModel @Inject constructor(
                     val existingByReal = workouts.value
                         .filter { it.realId != 0L }
                         .associateBy { it.realId }
+
+                    // Resolve local exercises for set persistence
+                    val allExercises = exercises.first()
+                    val exerciseByRealId = allExercises.associateBy { it.realId }
+
                     remote.forEach { incoming ->
                         if (incoming.realId != 0L && existingByReal[incoming.realId] == null) {
                             incoming.isDirty = false
-                            addWorkoutUseCase(incoming)
+                            incoming.id = addWorkoutUseCase(incoming)
+
+                            // Persist sets with resolved local exercise references
+                            incoming.exercisesAndSets.forEach { (exercise, sets) ->
+                                val localExercise = exerciseByRealId[exercise.realId]
+                                if (localExercise != null) {
+                                    sets.forEach { set ->
+                                        set.exercise = localExercise
+                                        set.workoutDone = incoming
+                                        set.id = addSetUseCase(set)
+                                    }
+                                }
+                            }
                         }
+                    }
+
+                    // 3. Delete local workouts removed from server
+                    val remoteIds = remote.map { it.realId }.toSet()
+                    val orphans = workouts.value.filter {
+                        it.realId != 0L && it.realId !in remoteIds
+                    }
+                    orphans.forEach { orphan ->
+                        deleteWorkoutUseCase(orphan)
                     }
                 }
             } catch (_: Exception) { }

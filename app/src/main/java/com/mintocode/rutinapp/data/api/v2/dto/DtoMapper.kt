@@ -157,23 +157,82 @@ object DtoMapper {
     }
 
     // ========================================================================
+    // Set mapping
+    // ========================================================================
+
+    /**
+     * Maps a SetDto from the API to a local SetModel.
+     *
+     * @param dto The API set DTO
+     * @param exercise The resolved ExerciseModel for this set
+     * @param workout The parent WorkoutModel (nullable during construction)
+     * @return A SetModel with the mapped values
+     */
+    fun toSetModel(dto: SetDto, exercise: ExerciseModel, workout: WorkoutModel?): SetModel {
+        return SetModel(
+            weight = dto.weight ?: 0.0,
+            exercise = exercise,
+            workoutDone = workout,
+            reps = dto.repetitions ?: 0,
+            date = parseDate(dto.createdAt),
+            observations = dto.notes ?: ""
+        )
+    }
+
+    // ========================================================================
     // Workout mapping
     // ========================================================================
 
     /**
      * Maps a WorkoutDto from the API to a local WorkoutModel.
      *
-     * Note: Sets and exercise linkage need to be resolved separately
-     * since the local model uses object references.
+     * Includes sets grouped by exercise and the first linked routine
+     * so that downloaded workouts contain the full exercise/set structure.
+     *
+     * @param dto The API workout DTO
+     * @return A WorkoutModel with exercisesAndSets populated from dto.sets
      */
     fun toWorkoutModel(dto: WorkoutDto): WorkoutModel {
-        return WorkoutModel(
+        val workout = WorkoutModel(
             realId = dto.id,
             date = parseDate(dto.date),
             title = dto.title,
             isFinished = dto.isFinished,
             isDirty = false
         )
+
+        // Map sets grouped by exercise
+        val sets = dto.sets ?: emptyList()
+        if (sets.isNotEmpty()) {
+            val groupedByExercise = sets.groupBy { it.exerciseId }
+            workout.exercisesAndSets = groupedByExercise.map { (exerciseId, exerciseSets) ->
+                val exerciseDto = exerciseSets.firstNotNullOfOrNull { it.exercise }
+                val exerciseModel = if (exerciseDto != null) {
+                    toExerciseModel(exerciseDto)
+                } else {
+                    ExerciseModel(
+                        id = "0",
+                        realId = exerciseId,
+                        name = "Exercise #$exerciseId",
+                        description = "",
+                        targetedBodyPart = "",
+                        observations = "",
+                        isFromThisUser = false
+                    )
+                }
+                val setModels = exerciseSets.map { setDto ->
+                    toSetModel(setDto, exerciseModel, workout)
+                }.toMutableList()
+                Pair(exerciseModel, setModels)
+            }.toMutableList()
+        }
+
+        // Link first routine if present
+        if (!dto.routines.isNullOrEmpty()) {
+            workout.baseRoutine = toRoutineModel(dto.routines.first())
+        }
+
+        return workout
     }
 
     /**

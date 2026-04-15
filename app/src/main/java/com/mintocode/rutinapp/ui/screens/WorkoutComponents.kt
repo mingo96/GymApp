@@ -237,7 +237,7 @@ fun OtherExercises(
                             }) {
                                 Icon(
                                     imageVector = Icons.TwoTone.Add,
-                                    contentDescription = "add exercise to workout"
+                                    contentDescription = "Añadir ejercicio al entrenamiento"
                                 )
                             }
                         }
@@ -249,7 +249,7 @@ fun OtherExercises(
                         viewModel.exercisesViewModel.clickToCreate()
                     }, Modifier.fillMaxWidth()) {
                         Icon(
-                            imageVector = Icons.TwoTone.Add, contentDescription = "add new exercise"
+                            imageVector = Icons.TwoTone.Add, contentDescription = "Añadir nuevo ejercicio"
                         )
                     }
                 }

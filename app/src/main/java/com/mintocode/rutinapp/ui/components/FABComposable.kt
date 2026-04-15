@@ -80,7 +80,7 @@ fun FABComposable(buttons: List<FABButton>) {
         ) {
             Icon(
                 Icons.AutoMirrored.TwoTone.List,
-                contentDescription = "Display Buttons",
+                contentDescription = "Mostrar botones",
                 modifier = Modifier.size(50.dp)
             )
         }

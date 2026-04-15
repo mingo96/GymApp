@@ -51,7 +51,7 @@
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/space_grotesk"
                     android:letterSpacing="0.2"
-                    android:text="CURRENT WORKOUT"
+                    android:text="ENTRENAMIENTO ACTUAL"
                     android:textAllCaps="true"
                     android:textColor="#C4C5D7"
                     android:textSize="9sp"
@@ -152,6 +152,7 @@
 
                 <!-- Input grid: Reps + Weight side by side -->
                 <LinearLayout
+                    android:id="@+id/stepper_row"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
@@ -255,7 +256,7 @@
                             android:layout_marginBottom="8dp"
                             android:fontFamily="@font/manrope"
                             android:letterSpacing="0.15"
-                            android:text="WEIGHT (KG)"
+                            android:text="PESO (KG)"
                             android:textAllCaps="true"
                             android:textColor="#C4C5D7"
                             android:textSize="9sp"
@@ -337,7 +338,7 @@
                         android:layout_gravity="center"
                         android:fontFamily="@font/space_grotesk"
                         android:letterSpacing="0.15"
-                        android:text="LOG SET"
+                        android:text="REGISTRAR SERIE"
                         android:textAllCaps="true"
                         android:textColor="#003827"
                         android:textSize="14sp"
@@ -475,7 +476,7 @@
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/manrope"
                     android:letterSpacing="-0.03"
-                    android:text="TIME"
+                    android:text="TIEMPO"
                     android:textAllCaps="true"
                     android:textColor="#C4C5D7"
                     android:textSize="8sp"
