@@ -83,4 +83,9 @@ sealed class SheetDestination {
 
     /** Stats detail for the currently selected exercise (set via StatsViewModel). */
     data object ExerciseStats : SheetDestination()
+
+    // ── Backup ──
+
+    /** Backup management sheet. */
+    data object Backup : SheetDestination()
 }

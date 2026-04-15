@@ -1,7 +1,5 @@
 package com.mintocode.rutinapp.ui.screens.root
 
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -15,17 +13,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.twotone.Add
 import androidx.compose.material.icons.twotone.ChevronRight
 import androidx.compose.material.icons.twotone.FitnessCenter
-import androidx.compose.material.icons.twotone.FormatListBulleted
-import androidx.compose.material.icons.twotone.PlayArrow
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.automirrored.twotone.FormatListBulleted
+import androidx.compose.material.icons.twotone.PlayCircle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -33,11 +31,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -50,25 +48,24 @@ import com.mintocode.rutinapp.data.models.WorkoutModel
 import com.mintocode.rutinapp.ui.navigation.LocalSheetNavigator
 import com.mintocode.rutinapp.ui.navigation.SheetDestination
 import com.mintocode.rutinapp.ui.floating.FloatingWorkoutService
-import com.mintocode.rutinapp.ui.premade.AnimatedItem
 import com.mintocode.rutinapp.ui.screenStates.WorkoutsScreenState
-import com.mintocode.rutinapp.ui.theme.rutinAppButtonsColours
+import com.mintocode.rutinapp.ui.theme.SpaceGroteskFont
 import com.mintocode.rutinapp.utils.simpleDateString
 import com.mintocode.rutinapp.viewmodels.ExercisesViewModel
 import com.mintocode.rutinapp.viewmodels.RoutinesViewModel
 import com.mintocode.rutinapp.viewmodels.SettingsViewModel
 import com.mintocode.rutinapp.viewmodels.WorkoutsViewModel
-import kotlinx.coroutines.delay
 
 /**
- * Train root page: Entry point for exercises, routines, and workouts.
+ * Train root page — Kinetic Precision design.
  *
- * Displays quick-start options, recent workouts carousel, routines carousel,
- * and action buttons to browse full lists (which open as sheets).
+ * Gradient CTA for free workout, bento grid for Exercises/Routines,
+ * recent workouts carousel, and routines carousel.
  *
  * @param workoutsViewModel ViewModel for workout data
  * @param exercisesViewModel ViewModel for exercise data
  * @param routinesViewModel ViewModel for routine data
+ * @param settingsViewModel ViewModel for settings data
  */
 @Composable
 fun TrainPage(
@@ -98,9 +95,6 @@ fun TrainPage(
     val userData by settingsViewModel.data.observeAsState()
     val floatingEnabled = userData?.floatingWidgetEnabled == true
 
-    // If a workout was started (from any source), open the ActiveWorkout sheet
-    // and start the floating overlay service (if enabled in settings).
-    // Deduplication in SheetNavigator.open() prevents double sheets.
     LaunchedEffect(workoutState, floatingEnabled) {
         if (workoutState is WorkoutsScreenState.WorkoutStarted) {
             val ws = workoutState as WorkoutsScreenState.WorkoutStarted
@@ -117,67 +111,124 @@ fun TrainPage(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(horizontal = 24.dp, vertical = 16.dp)
     ) {
-        // ── Quick Start ──
+        // ── Page Title ──
         Text(
             text = "Entrenar",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground
+            fontFamily = SpaceGroteskFont,
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = 40.sp,
+            letterSpacing = (-1).sp,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Box(
+            modifier = Modifier
+                .padding(top = 8.dp)
+                .width(48.dp)
+                .height(4.dp)
+                .clip(RoundedCornerShape(50))
+                .background(MaterialTheme.colorScheme.primary)
         )
 
-        Button(
-            onClick = { workoutsViewModel.startFromEmpty() },
-            colors = rutinAppButtonsColours(),
-            modifier = Modifier.fillMaxWidth()
+        Spacer(Modifier.height(28.dp))
+
+        // ── Gradient CTA Button ──
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(20.dp))
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.primaryContainer,
+                            MaterialTheme.colorScheme.primary
+                        )
+                    )
+                )
+                .clickable { workoutsViewModel.startFromEmpty() }
+                .padding(horizontal = 24.dp, vertical = 20.dp)
         ) {
-            Icon(
-                Icons.TwoTone.PlayArrow,
-                contentDescription = null,
-                modifier = Modifier.size(20.dp)
-            )
-            Text(
-                text = "  Entrenamiento libre",
-                fontWeight = FontWeight.SemiBold
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Icon(
+                        Icons.TwoTone.PlayCircle,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(28.dp)
+                    )
+                    Column {
+                        Text(
+                            text = "Entrenamiento Libre",
+                            fontFamily = SpaceGroteskFont,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                        Text(
+                            text = "Empieza sin rutina",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+                Icon(
+                    Icons.TwoTone.ChevronRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
+                    modifier = Modifier.size(24.dp)
+                )
+            }
         }
 
-        // ── Browse sections ──
+        Spacer(Modifier.height(20.dp))
+
+        // ── Quick Access Bento Grid ──
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            SectionCard(
+            KPBentoCard(
                 icon = Icons.TwoTone.FitnessCenter,
                 label = "Ejercicios",
+                tint = MaterialTheme.colorScheme.secondary,
                 modifier = Modifier.weight(1f),
                 onClick = { navigator.open(SheetDestination.ExerciseList) }
             )
-            SectionCard(
-                icon = Icons.TwoTone.FormatListBulleted,
+            KPBentoCard(
+                icon = Icons.AutoMirrored.TwoTone.FormatListBulleted,
                 label = "Rutinas",
+                tint = MaterialTheme.colorScheme.tertiary,
                 modifier = Modifier.weight(1f),
                 onClick = { navigator.open(SheetDestination.RoutineList) }
             )
         }
 
+        Spacer(Modifier.height(28.dp))
+
         // ── Recent Workouts ──
-        SectionHeader(
+        KPSectionHeader(
             title = "Recientes",
             onSeeAll = { navigator.open(SheetDestination.WorkoutHistory) }
         )
+        Spacer(Modifier.height(12.dp))
 
         if (workouts.isEmpty()) {
-            EmptyHint("Sin entrenamientos aún")
+            KPEmptyHint("Sin entrenamientos aún")
         } else {
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 contentPadding = PaddingValues(end = 16.dp)
             ) {
                 items(workouts.take(10)) { workout ->
-                    WorkoutCard(
+                    KPWorkoutCard(
                         workout = workout,
                         onClick = { workoutsViewModel.continueWorkout(workout) }
                     )
@@ -185,21 +236,24 @@ fun TrainPage(
             }
         }
 
-        // ── Routines carousel ──
-        SectionHeader(
-            title = "Rutinas",
+        Spacer(Modifier.height(28.dp))
+
+        // ── Routines ──
+        KPSectionHeader(
+            title = "Mis Rutinas",
             onSeeAll = { navigator.open(SheetDestination.RoutineList) }
         )
+        Spacer(Modifier.height(12.dp))
 
         if (routines.isEmpty()) {
-            EmptyHint("Sin rutinas")
+            KPEmptyHint("Sin rutinas")
         } else {
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 contentPadding = PaddingValues(end = 16.dp)
             ) {
                 items(routines.take(10)) { routine ->
-                    RoutineCard(
+                    KPRoutineCard(
                         routine = routine,
                         onClick = { workoutsViewModel.startFromRoutine(routine) }
                     )
@@ -207,35 +261,47 @@ fun TrainPage(
             }
         }
 
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(48.dp))
     }
 }
 
+/**
+ * KP bento grid card — rounded-xl, surfaceContainerLow,
+ * icon container in tint/10 color.
+ */
 @Composable
-private fun SectionCard(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+private fun KPBentoCard(
+    icon: ImageVector,
     label: String,
+    tint: androidx.compose.ui.graphics.Color,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     Box(
         modifier = modifier
-            .background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.medium)
+            .clip(RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
             .clickable(onClick = onClick)
-            .padding(16.dp)
+            .padding(20.dp)
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = label,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp)
-            )
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(tint.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = tint,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
             Text(
                 text = label,
+                fontFamily = SpaceGroteskFont,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 15.sp,
                 color = MaterialTheme.colorScheme.onSurface
@@ -244,8 +310,11 @@ private fun SectionCard(
     }
 }
 
+/**
+ * KP section header — title + "Ver todo" chevron.
+ */
 @Composable
-private fun SectionHeader(title: String, onSeeAll: () -> Unit) {
+private fun KPSectionHeader(title: String, onSeeAll: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -255,26 +324,31 @@ private fun SectionHeader(title: String, onSeeAll: () -> Unit) {
     ) {
         Text(
             text = title,
-            fontSize = 17.sp,
+            fontFamily = SpaceGroteskFont,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground
+            fontSize = 18.sp,
+            color = MaterialTheme.colorScheme.onSurface
         )
         Icon(
             Icons.TwoTone.ChevronRight,
             contentDescription = "Ver todo",
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            tint = MaterialTheme.colorScheme.outline,
             modifier = Modifier.size(20.dp)
         )
     }
 }
 
+/**
+ * KP empty state hint — surfaceContainerLow, rounded-xl.
+ */
 @Composable
-private fun EmptyHint(text: String) {
+private fun KPEmptyHint(text: String) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.medium)
-            .padding(20.dp),
+            .clip(RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .padding(24.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -285,20 +359,25 @@ private fun EmptyHint(text: String) {
     }
 }
 
+/**
+ * KP workout card — rounded-xl, surfaceContainerLow, status badge.
+ */
 @Composable
-private fun WorkoutCard(workout: WorkoutModel, onClick: () -> Unit) {
+private fun KPWorkoutCard(workout: WorkoutModel, onClick: () -> Unit) {
     Column(
         modifier = Modifier
-            .size(width = 140.dp, height = 90.dp)
-            .background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.medium)
+            .size(width = 160.dp, height = 110.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
             .clickable(onClick = onClick)
-            .padding(12.dp),
+            .padding(16.dp),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
             text = workout.baseRoutine?.name ?: "Sin rutina",
-            fontSize = 14.sp,
+            fontFamily = SpaceGroteskFont,
             fontWeight = FontWeight.SemiBold,
+            fontSize = 14.sp,
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
@@ -308,45 +387,62 @@ private fun WorkoutCard(workout: WorkoutModel, onClick: () -> Unit) {
             fontSize = 12.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        if (workout.isFinished) {
+        // Status badge
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .background(
+                    if (workout.isFinished) MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f)
+                    else MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                )
+                .padding(horizontal = 8.dp, vertical = 3.dp)
+        ) {
             Text(
-                text = "✓ Completado",
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.tertiary
-            )
-        } else {
-            Text(
-                text = "En progreso",
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.primary
+                text = if (workout.isFinished) "Completado" else "En progreso",
+                fontSize = 10.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = if (workout.isFinished) MaterialTheme.colorScheme.tertiary
+                else MaterialTheme.colorScheme.primary
             )
         }
     }
 }
 
+/**
+ * KP routine card — rounded-xl, surfaceContainerLow, body part tag.
+ */
 @Composable
-private fun RoutineCard(routine: RoutineModel, onClick: () -> Unit) {
+private fun KPRoutineCard(routine: RoutineModel, onClick: () -> Unit) {
     Column(
         modifier = Modifier
-            .size(width = 140.dp, height = 80.dp)
-            .background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.medium)
+            .size(width = 160.dp, height = 100.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
             .clickable(onClick = onClick)
-            .padding(12.dp),
+            .padding(16.dp),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
             text = routine.name,
-            fontSize = 14.sp,
+            fontFamily = SpaceGroteskFont,
             fontWeight = FontWeight.SemiBold,
+            fontSize = 14.sp,
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
-        Text(
-            text = routine.targetedBodyPart,
-            fontSize = 12.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1
-        )
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                .padding(horizontal = 8.dp, vertical = 3.dp)
+        ) {
+            Text(
+                text = routine.targetedBodyPart,
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1
+            )
+        }
     }
 }

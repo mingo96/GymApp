@@ -14,14 +14,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.twotone.Add
+import androidx.compose.material.icons.twotone.CheckCircle
 import androidx.compose.material.icons.twotone.ChevronRight
-import androidx.compose.material.icons.twotone.Edit
+import androidx.compose.material.icons.twotone.FitnessCenter
 import androidx.compose.material.icons.twotone.KeyboardArrowDown
 import androidx.compose.material.icons.twotone.KeyboardArrowUp
-import androidx.compose.material.icons.twotone.CheckCircle
 import androidx.compose.material.icons.twotone.Person
 import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -40,6 +41,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -49,16 +51,17 @@ import com.mintocode.rutinapp.ui.navigation.SheetDestination
 import com.mintocode.rutinapp.ui.premade.AdjustableText
 import com.mintocode.rutinapp.ui.premade.RutinAppCalendar
 import com.mintocode.rutinapp.ui.screenStates.MainScreenState
+import com.mintocode.rutinapp.ui.theme.SpaceGroteskFont
 import com.mintocode.rutinapp.ui.theme.rutinAppDatePickerColors
 import com.mintocode.rutinapp.utils.simpleDateString
 import com.mintocode.rutinapp.viewmodels.MainScreenViewModel
 import java.util.Date
 
 /**
- * Home root page: Today's plan summary, date range picker, and calendar.
+ * Home root page — Kinetic Precision design.
  *
- * Tapping on a planning item opens a PlanningEdit sheet.
- * Tapping "start training" navigates to the Train root page (handled by parent).
+ * Today's plan with objective card, planned exercises,
+ * date range picker, and full calendar view.
  *
  * @param viewModel MainScreenViewModel for planning data
  */
@@ -76,7 +79,6 @@ fun HomePage(viewModel: MainScreenViewModel) {
     val todaysPlanning by viewModel.todaysPlanning.observeAsState()
     val calendarPhases by viewModel.calendarPhases.collectAsState()
 
-    // Handle planning edition as a sheet instead of dialog
     LaunchedEffect(uiState) {
         if (uiState is MainScreenState.PlanningOnMainFocus) {
             val state = uiState as MainScreenState.PlanningOnMainFocus
@@ -87,29 +89,46 @@ fun HomePage(viewModel: MainScreenViewModel) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+            .padding(horizontal = 24.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // ── Date header ──
+        // ── Date label ──
         item {
-        Text(
-            text = "Plan de hoy",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-        }
-        item {
-        Text(
-            text = Date().simpleDateString(),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+            Text(
+                text = Date().simpleDateString().uppercase(),
+                fontFamily = SpaceGroteskFont,
+                fontWeight = FontWeight.Bold,
+                fontSize = 11.sp,
+                letterSpacing = 2.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
 
-        item { Spacer(Modifier.height(4.dp)) }
+        // ── Page Title ──
+        item {
+            Text(
+                text = "Plan de hoy",
+                fontFamily = SpaceGroteskFont,
+                fontWeight = FontWeight.Bold,
+                fontSize = 40.sp,
+                letterSpacing = (-1).sp,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+        item {
+            Box(
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .width(48.dp)
+                    .height(4.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(MaterialTheme.colorScheme.primary)
+            )
+        }
 
-        // ── Today's planning card ──
+        item { Spacer(Modifier.height(20.dp)) }
+
+        // ── Today's Objective Card ──
         if (todaysPlanning != null) {
             val planning = todaysPlanning!!
             val content = when {
@@ -119,185 +138,211 @@ fun HomePage(viewModel: MainScreenViewModel) {
             }
 
             item {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        MaterialTheme.colorScheme.surfaceVariant,
-                        MaterialTheme.shapes.medium
-                    )
-                    .clickable { viewModel.planningClicked(planning) }
-                    .padding(16.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        if (planning.isFromTrainer) {
-                            Icon(
-                                imageVector = Icons.TwoTone.Person,
-                                contentDescription = "Creado por entrenador",
-                                tint = MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                        Column {
-                            Text(
-                                text = "Objetivo",
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = content ?: "Sin definir",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    }
-                    Icon(
-                        imageVector = Icons.TwoTone.ChevronRight,
-                        contentDescription = "Ver detalle",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-            }
-
-            // Planned exercises
-            if (planning.planningExercises.isNotEmpty()) {
-                item {
-                Column(
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 4.dp)
-                        .background(
-                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                            MaterialTheme.shapes.small
-                        )
-                        .padding(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                        .clickable { viewModel.planningClicked(planning) }
+                        .padding(20.dp)
                 ) {
-                    Text(
-                        text = "Ejercicios planificados",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    planning.planningExercises.sortedBy { it.position }.forEach { pe ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            modifier = Modifier.weight(1f)
                         ) {
-                            Text("•", fontSize = 12.sp, color = MaterialTheme.colorScheme.secondary)
-                            Text(
-                                text = pe.exerciseName.ifBlank { "Ejercicio #${pe.exerciseId}" },
-                                fontSize = 13.sp,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            if (!pe.expectationText.isNullOrBlank()) {
+                            // Icon container
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = if (planning.isFromTrainer) Icons.TwoTone.Person
+                                    else Icons.TwoTone.FitnessCenter,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.tertiary,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                            Column {
                                 Text(
-                                    text = "· ${pe.expectationText}",
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    text = "Objetivo",
+                                    fontFamily = SpaceGroteskFont,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 11.sp,
+                                    letterSpacing = 2.sp,
+                                    color = MaterialTheme.colorScheme.tertiary
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    text = content ?: "Sin definir",
+                                    fontFamily = SpaceGroteskFont,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 20.sp,
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                             }
                         }
+                        Icon(
+                            imageVector = Icons.TwoTone.ChevronRight,
+                            contentDescription = "Ver detalle",
+                            tint = MaterialTheme.colorScheme.outline,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 }
+            }
+
+            // ── Planned Exercises ──
+            if (planning.planningExercises.isNotEmpty()) {
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                            .padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "EJERCICIOS PLANIFICADOS",
+                            fontFamily = SpaceGroteskFont,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.sp,
+                            letterSpacing = 2.sp,
+                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
+                        )
+                        planning.planningExercises.sortedBy { it.position }.forEach { pe ->
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f))
+                                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(6.dp)
+                                        .clip(RoundedCornerShape(50))
+                                        .background(MaterialTheme.colorScheme.secondary)
+                                )
+                                Text(
+                                    text = pe.exerciseName.ifBlank { "Ejercicio #${pe.exerciseId}" },
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                if (!pe.expectationText.isNullOrBlank()) {
+                                    Text(
+                                        text = "· ${pe.expectationText}",
+                                        fontSize = 12.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
         } else {
             // No planning today
             item {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        MaterialTheme.colorScheme.surfaceVariant,
-                        MaterialTheme.shapes.medium
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                        .padding(24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Sin plan para hoy",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 15.sp
                     )
-                    .padding(20.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "Sin plan para hoy",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 15.sp
-                )
-            }
+                }
             }
         }
 
+        item { Spacer(Modifier.height(12.dp)) }
+
         // ── Date range picker (collapsible) ──
         item {
-        val dateRangePickerState = rememberDateRangePickerState()
-        var isExtended by rememberSaveable { mutableStateOf(false) }
+            val dateRangePickerState = rememberDateRangePickerState()
+            var isExtended by rememberSaveable { mutableStateOf(false) }
 
-        DateRangePicker(
-            dateRangePickerState,
-            title = null,
-            headline = {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
+            DateRangePicker(
+                dateRangePickerState,
+                title = null,
+                headline = {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        AdjustableText(
-                            "Rango de fechas",
-                            TextStyle(fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface),
-                            modifier = Modifier.padding(12.dp)
-                        )
-                        if (isExtended) {
-                            IconButton(onClick = {
-                                viewModel.changeDates(
-                                    dateRangePickerState.selectedStartDateMillis,
-                                    dateRangePickerState.selectedEndDateMillis
-                                )
-                                isExtended = false
-                            }) {
-                                Icon(
-                                    Icons.TwoTone.CheckCircle,
-                                    contentDescription = "Confirmar fechas",
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            AdjustableText(
+                                "Rango de fechas",
+                                TextStyle(
+                                    fontSize = 16.sp,
+                                    fontFamily = SpaceGroteskFont,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                ),
+                                modifier = Modifier.padding(12.dp)
+                            )
+                            if (isExtended) {
+                                IconButton(onClick = {
+                                    viewModel.changeDates(
+                                        dateRangePickerState.selectedStartDateMillis,
+                                        dateRangePickerState.selectedEndDateMillis
+                                    )
+                                    isExtended = false
+                                }) {
+                                    Icon(
+                                        Icons.TwoTone.CheckCircle,
+                                        contentDescription = "Confirmar fechas",
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
                             }
                         }
+                        IconButton(onClick = { isExtended = !isExtended }) {
+                            Icon(
+                                if (!isExtended) Icons.TwoTone.KeyboardArrowDown
+                                else Icons.TwoTone.KeyboardArrowUp,
+                                contentDescription = "Expandir fechas",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
-                    IconButton(onClick = { isExtended = !isExtended }) {
-                        Icon(
-                            if (!isExtended) Icons.TwoTone.KeyboardArrowDown
-                            else Icons.TwoTone.KeyboardArrowUp,
-                            contentDescription = "Expandir fechas",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            },
-            colors = rutinAppDatePickerColors(),
-            modifier = Modifier
-                .heightIn(0.dp, if (isExtended) 280.dp else 52.dp)
-                .animateContentSize(),
-            showModeToggle = false,
-        )
+                },
+                colors = rutinAppDatePickerColors(),
+                modifier = Modifier
+                    .heightIn(0.dp, if (isExtended) 280.dp else 52.dp)
+                    .animateContentSize(),
+                showModeToggle = false,
+            )
         }
 
         // ── Calendar ──
         item {
-        Column(modifier = Modifier.heightIn(max = 500.dp)) {
-        RutinAppCalendar(plannings, calendarPhases) {
-            viewModel.planningClicked(it)
-        }
-        }
+            Column(modifier = Modifier.heightIn(max = 500.dp)) {
+                RutinAppCalendar(plannings, calendarPhases) {
+                    viewModel.planningClicked(it)
+                }
+            }
         }
 
         item { Spacer(Modifier.height(16.dp)) }

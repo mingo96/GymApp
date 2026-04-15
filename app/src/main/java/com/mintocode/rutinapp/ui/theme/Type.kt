@@ -6,115 +6,113 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
 /**
- * RutinApp v2 typography scale using Lexend font family.
+ * Kinetic Precision typography scale.
  *
- * - Display: hero numbers (PRs, big stats on dashboard)
- * - Headline: section headers, screen titles
- * - Title: card titles, dialog titles
- * - Body: primary readable text
- * - Label: metadata, chips, captions, button text
+ * Dual-font system matching web KP design:
+ * - Display/Headline/Title: Space Grotesk (bold, tight tracking)
+ * - Body/Label: Manrope (clean, readable)
  */
 val RutinAppTypography = Typography(
     displayLarge = TextStyle(
-        fontFamily = RutinAppFont,
+        fontFamily = SpaceGroteskFont,
         fontWeight = FontWeight.Bold,
         fontSize = 57.sp,
         lineHeight = 64.sp,
         letterSpacing = (-0.25).sp
     ),
     displayMedium = TextStyle(
-        fontFamily = RutinAppFont,
+        fontFamily = SpaceGroteskFont,
         fontWeight = FontWeight.Bold,
         fontSize = 45.sp,
         lineHeight = 52.sp,
         letterSpacing = 0.sp
     ),
     displaySmall = TextStyle(
-        fontFamily = RutinAppFont,
+        fontFamily = SpaceGroteskFont,
         fontWeight = FontWeight.Bold,
         fontSize = 36.sp,
         lineHeight = 44.sp,
         letterSpacing = 0.sp
     ),
     headlineLarge = TextStyle(
-        fontFamily = RutinAppFont,
-        fontWeight = FontWeight.SemiBold,
+        fontFamily = SpaceGroteskFont,
+        fontWeight = FontWeight.Bold,
         fontSize = 32.sp,
         lineHeight = 40.sp,
-        letterSpacing = 0.sp
+        letterSpacing = (-0.5).sp
     ),
     headlineMedium = TextStyle(
-        fontFamily = RutinAppFont,
-        fontWeight = FontWeight.SemiBold,
+        fontFamily = SpaceGroteskFont,
+        fontWeight = FontWeight.Bold,
         fontSize = 28.sp,
         lineHeight = 36.sp,
-        letterSpacing = 0.sp
+        letterSpacing = (-0.25).sp
     ),
     headlineSmall = TextStyle(
-        fontFamily = RutinAppFont,
+        fontFamily = SpaceGroteskFont,
         fontWeight = FontWeight.SemiBold,
         fontSize = 24.sp,
         lineHeight = 32.sp,
         letterSpacing = 0.sp
     ),
     titleLarge = TextStyle(
-        fontFamily = RutinAppFont,
+        fontFamily = SpaceGroteskFont,
         fontWeight = FontWeight.SemiBold,
         fontSize = 22.sp,
         lineHeight = 28.sp,
         letterSpacing = 0.sp
     ),
     titleMedium = TextStyle(
-        fontFamily = RutinAppFont,
+        fontFamily = SpaceGroteskFont,
         fontWeight = FontWeight.Medium,
         fontSize = 16.sp,
         lineHeight = 24.sp,
         letterSpacing = 0.15.sp
     ),
     titleSmall = TextStyle(
-        fontFamily = RutinAppFont,
+        fontFamily = SpaceGroteskFont,
         fontWeight = FontWeight.Medium,
         fontSize = 14.sp,
         lineHeight = 20.sp,
         letterSpacing = 0.1.sp
     ),
     bodyLarge = TextStyle(
-        fontFamily = RutinAppFont,
+        fontFamily = ManropeFont,
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp,
         lineHeight = 24.sp,
         letterSpacing = 0.5.sp
     ),
     bodyMedium = TextStyle(
-        fontFamily = RutinAppFont,
+        fontFamily = ManropeFont,
         fontWeight = FontWeight.Normal,
         fontSize = 14.sp,
         lineHeight = 20.sp,
         letterSpacing = 0.25.sp
     ),
     bodySmall = TextStyle(
-        fontFamily = RutinAppFont,
+        fontFamily = ManropeFont,
         fontWeight = FontWeight.Normal,
         fontSize = 12.sp,
         lineHeight = 16.sp,
         letterSpacing = 0.4.sp
     ),
     labelLarge = TextStyle(
-        fontFamily = RutinAppFont,
+        fontFamily = ManropeFont,
         fontWeight = FontWeight.Medium,
         fontSize = 14.sp,
         lineHeight = 20.sp,
         letterSpacing = 0.1.sp
     ),
     labelMedium = TextStyle(
-        fontFamily = RutinAppFont,
+        fontFamily = ManropeFont,
         fontWeight = FontWeight.Medium,
         fontSize = 12.sp,
         lineHeight = 16.sp,
         letterSpacing = 0.5.sp
     ),
     labelSmall = TextStyle(
-        fontFamily = RutinAppFont,
+        fontFamily = ManropeFont,
         fontWeight = FontWeight.Medium,
         fontSize = 11.sp,
         lineHeight = 16.sp,

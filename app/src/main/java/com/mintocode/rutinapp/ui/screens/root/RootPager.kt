@@ -3,28 +3,25 @@ package com.mintocode.rutinapp.ui.screens.root
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.FitnessCenter
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material3.Icon
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,33 +30,24 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mintocode.rutinapp.ui.theme.SpaceGroteskFont
 import kotlinx.coroutines.launch
 
 /**
- * Data class for each root page shown in the top indicator.
+ * Tab labels for the 3 root pages.
  */
-data class RootPageInfo(
-    val icon: ImageVector,
-    val label: String
-)
-
-/** The 3 root pages: Inicio, Entrenar, Perfil. */
-val rootPages = listOf(
-    RootPageInfo(Icons.Outlined.Home, "Inicio"),
-    RootPageInfo(Icons.Outlined.FitnessCenter, "Entrenar"),
-    RootPageInfo(Icons.Outlined.Person, "Perfil")
-)
+private val rootTabLabels = listOf("INICIO", "ENTRENAR", "PERFIL")
 
 /**
  * Root pager with horizontal swipe between 3 main pages.
  *
- * Top indicator shows icons + text for each page. Tapping an indicator
- * or swiping horizontally navigates between pages. This replaces the
- * traditional bottom navigation bar.
+ * Kinetic Precision top navigation: text-only tabs with underline indicator.
+ * Tapping a tab or swiping horizontally navigates between pages.
  *
  * @param page0 Composable content for Home page
  * @param page1 Composable content for Train page
@@ -78,7 +66,7 @@ fun RootPager(
             .fillMaxSize()
             .padding(top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding())
     ) {
-        RootPageIndicator(pagerState = pagerState)
+        KPTopNavigation(pagerState = pagerState)
 
         HorizontalPager(
             state = pagerState,
@@ -95,33 +83,34 @@ fun RootPager(
 }
 
 /**
- * Top indicator bar showing icons + labels for each root page.
+ * Kinetic Precision top navigation bar with text tabs and underline indicator.
  *
- * The current page's label and icon are highlighted with primary color.
- * Tapping any indicator animates the pager to that page.
+ * Matches the Stitch KP design: uppercase labels in Space Grotesk,
+ * active tab highlighted with primary color and a short underline bar.
  */
 @Composable
-private fun RootPageIndicator(pagerState: PagerState) {
+private fun KPTopNavigation(pagerState: PagerState) {
     val scope = rememberCoroutineScope()
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.background.copy(alpha = 0.9f))
             .padding(horizontal = 24.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        rootPages.forEachIndexed { index, page ->
+        rootTabLabels.forEachIndexed { index, label ->
             val isSelected = pagerState.currentPage == index
 
             val color by animateColorAsState(
                 targetValue = if (isSelected) {
                     MaterialTheme.colorScheme.primary
                 } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                    MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
                 },
                 animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-                label = "indicator_color"
+                label = "tab_color"
             )
 
             Column(
@@ -135,21 +124,27 @@ private fun RootPageIndicator(pagerState: PagerState) {
                             pagerState.animateScrollToPage(index)
                         }
                     }
-                    .padding(horizontal = 16.dp, vertical = 4.dp)
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
-                Icon(
-                    imageVector = page.icon,
-                    contentDescription = page.label,
-                    tint = color,
-                    modifier = Modifier.size(22.dp)
-                )
-                Spacer(Modifier.height(2.dp))
                 Text(
-                    text = page.label,
+                    text = label,
                     color = color,
-                    fontSize = 12.sp,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                    fontFamily = SpaceGroteskFont,
+                    fontWeight = if (isSelected) FontWeight.Black else FontWeight.Bold,
+                    fontSize = 11.sp,
+                    letterSpacing = 2.sp,
+                    textAlign = TextAlign.Center
                 )
+                if (isSelected) {
+                    Box(
+                        modifier = Modifier
+                            .padding(top = 4.dp)
+                            .width(16.dp)
+                            .height(3.dp)
+                            .clip(RoundedCornerShape(50))
+                            .background(color)
+                    )
+                }
             }
         }
     }

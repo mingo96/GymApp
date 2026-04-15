@@ -1,8 +1,10 @@
 package com.mintocode.rutinapp.ui.screens.root
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,27 +13,34 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.twotone.Login
-import androidx.compose.material.icons.twotone.BarChart
+import androidx.compose.material.icons.automirrored.twotone.Logout
+import androidx.compose.material.icons.twotone.Backup
 import androidx.compose.material.icons.twotone.ChevronRight
 import androidx.compose.material.icons.twotone.DarkMode
-import androidx.compose.material.icons.twotone.FitnessCenter
+import androidx.compose.material.icons.twotone.Group
+import androidx.compose.material.icons.twotone.Insights
+import androidx.compose.material.icons.twotone.Lock
+import androidx.compose.material.icons.twotone.ManageAccounts
 import androidx.compose.material.icons.twotone.Notifications
 import androidx.compose.material.icons.twotone.Person
-import androidx.compose.material.icons.twotone.Settings
-import androidx.compose.material.icons.twotone.Tune
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -39,11 +48,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mintocode.rutinapp.ui.navigation.LocalSheetNavigator
 import com.mintocode.rutinapp.ui.navigation.SheetDestination
+import com.mintocode.rutinapp.ui.theme.SpaceGroteskFont
 import com.mintocode.rutinapp.viewmodels.SettingsViewModel
 
 /**
- * Profile root page: User info card, theme toggle, and navigation to
- * Settings, Notifications, Trainer, Stats, and Auth sheets.
+ * Profile root page — Kinetic Precision design.
+ *
+ * User info card, theme toggle, settings sections, and navigation
+ * to Settings, Notifications, Trainer, Stats, and Auth sheets.
  *
  * @param settingsViewModel ViewModel for user data and settings
  */
@@ -57,130 +69,211 @@ fun ProfilePage(settingsViewModel: SettingsViewModel) {
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+            .padding(horizontal = 24.dp, vertical = 16.dp)
     ) {
+        // ── Page Title ──
         Text(
             text = "Perfil",
-            style = MaterialTheme.typography.headlineSmall,
+            fontFamily = SpaceGroteskFont,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground
+            fontSize = 40.sp,
+            letterSpacing = (-1).sp,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Box(
+            modifier = Modifier
+                .padding(top = 8.dp)
+                .width(48.dp)
+                .height(4.dp)
+                .clip(RoundedCornerShape(50))
+                .background(MaterialTheme.colorScheme.tertiary)
         )
 
-        // ── User card ──
-        Row(
+        Spacer(Modifier.height(32.dp))
+
+        // ── User Card ──
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.medium)
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                .padding(24.dp)
         ) {
-            Icon(
-                imageVector = Icons.TwoTone.Person,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(40.dp)
-            )
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = data?.name?.ifBlank { "Usuario" } ?: "Usuario",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = data?.email?.ifBlank { "Sin cuenta vinculada" } ?: "Sin cuenta vinculada",
-                    fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Avatar placeholder
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.TwoTone.Person,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = data?.name?.ifBlank { "Usuario" } ?: "Usuario",
+                        fontFamily = SpaceGroteskFont,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 22.sp,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = data?.email?.ifBlank { "Sin cuenta vinculada" } ?: "Sin cuenta vinculada",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
 
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(32.dp))
 
-        // ── Theme toggle ──
+        // ── Personalización ──
+        KPSectionLabel("Personalización")
+        Spacer(Modifier.height(12.dp))
+
+        // Theme toggle
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.medium)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .clip(RoundedCornerShape(16.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                .padding(20.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Icon(
-                    Icons.TwoTone.DarkMode,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(22.dp)
-                )
+                KPIconContainer(Icons.TwoTone.DarkMode, MaterialTheme.colorScheme.primary)
                 Text(
                     text = "Tema oscuro",
-                    fontSize = 15.sp,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
             Switch(
                 checked = data?.isDarkTheme ?: true,
-                onCheckedChange = { settingsViewModel.toggleRutinAppTheme() }
+                onCheckedChange = { settingsViewModel.toggleRutinAppTheme() },
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                    checkedTrackColor = MaterialTheme.colorScheme.primary
+                )
             )
         }
-
-        // ── Menu items ──
-        ProfileMenuItem(
-            icon = Icons.TwoTone.Tune,
-            label = "Configuración",
-            onClick = { navigator.open(SheetDestination.AppConfig) }
-        )
-
-        ProfileMenuItem(
-            icon = Icons.TwoTone.Settings,
-            label = "Ajustes de cuenta",
-            onClick = { navigator.open(SheetDestination.Settings) }
-        )
-
-        if (!data?.authToken.isNullOrBlank()) {
-            ProfileMenuItem(
-                icon = Icons.AutoMirrored.TwoTone.Login,
-                label = "Cerrar sesión",
-                onClick = { settingsViewModel.logOut(context) }
-            )
-        } else {
-            ProfileMenuItem(
-                icon = Icons.AutoMirrored.TwoTone.Login,
-                label = "Inicio de sesión",
-                onClick = { navigator.open(SheetDestination.Auth) }
-            )
-        }
-
-        ProfileMenuItem(
-            icon = Icons.TwoTone.Notifications,
-            label = "Notificaciones",
-            onClick = { navigator.open(SheetDestination.Notifications) }
-        )
-
-        ProfileMenuItem(
-            icon = Icons.TwoTone.FitnessCenter,
-            label = "Entrenadores",
-            onClick = { navigator.open(SheetDestination.TrainerManagement) }
-        )
-
-        ProfileMenuItem(
-            icon = Icons.TwoTone.BarChart,
-            label = "Estadísticas",
-            onClick = { navigator.open(SheetDestination.StatsOverview) }
-        )
 
         Spacer(Modifier.height(24.dp))
+
+        // ── Cuenta y Seguridad ──
+        KPSectionLabel("Cuenta y Seguridad")
+        Spacer(Modifier.height(12.dp))
+
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            KPSettingsItem(
+                icon = Icons.TwoTone.ManageAccounts,
+                label = "Ajustes de cuenta",
+                onClick = { navigator.open(SheetDestination.Settings) }
+            )
+
+            if (!data?.authToken.isNullOrBlank()) {
+                KPSettingsItem(
+                    icon = Icons.AutoMirrored.TwoTone.Logout,
+                    label = "Cerrar sesión",
+                    onClick = { settingsViewModel.logOut(context) }
+                )
+            } else {
+                KPSettingsItem(
+                    icon = Icons.TwoTone.Lock,
+                    label = "Inicio de sesión",
+                    onClick = { navigator.open(SheetDestination.Auth) }
+                )
+            }
+
+            KPSettingsItem(
+                icon = Icons.TwoTone.Notifications,
+                label = "Notificaciones",
+                onClick = { navigator.open(SheetDestination.Notifications) }
+            )
+
+            KPSettingsItem(
+                icon = Icons.TwoTone.Group,
+                label = "Entrenadores",
+                onClick = { navigator.open(SheetDestination.TrainerManagement) }
+            )
+
+            KPSettingsItem(
+                icon = Icons.TwoTone.Insights,
+                label = "Estadísticas",
+                onClick = { navigator.open(SheetDestination.StatsOverview) }
+            )
+
+            KPSettingsItem(
+                icon = Icons.TwoTone.Backup,
+                label = "Copia de seguridad",
+                onClick = { navigator.open(SheetDestination.Backup) }
+            )
+        }
+
+        Spacer(Modifier.height(48.dp))
     }
 }
 
+/**
+ * KP section label — uppercase tracking, Space Grotesk, outline color.
+ */
 @Composable
-private fun ProfileMenuItem(
+private fun KPSectionLabel(text: String) {
+    Text(
+        text = text.uppercase(),
+        fontFamily = SpaceGroteskFont,
+        fontWeight = FontWeight.Bold,
+        fontSize = 11.sp,
+        letterSpacing = 2.sp,
+        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f),
+        modifier = Modifier.padding(horizontal = 4.dp)
+    )
+}
+
+/**
+ * KP icon container — rounded square, surfaceContainerHighest bg.
+ */
+@Composable
+private fun KPIconContainer(
+    icon: ImageVector,
+    tint: Color = MaterialTheme.colorScheme.onSurfaceVariant
+) {
+    Box(
+        modifier = Modifier
+            .size(40.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = tint,
+            modifier = Modifier.size(22.dp)
+        )
+    }
+}
+
+/**
+ * KP settings menu item — surfaceContainerLow, icon container, chevron.
+ */
+@Composable
+private fun KPSettingsItem(
     icon: ImageVector,
     label: String,
     onClick: () -> Unit
@@ -188,32 +281,29 @@ private fun ProfileMenuItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.medium)
+            .clip(RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .padding(20.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = label,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(22.dp)
-            )
+            KPIconContainer(icon)
             Text(
                 text = label,
-                fontSize = 15.sp,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurface
             )
         }
         Icon(
             Icons.TwoTone.ChevronRight,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+            tint = MaterialTheme.colorScheme.outline,
             modifier = Modifier.size(20.dp)
         )
     }

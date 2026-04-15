@@ -35,6 +35,7 @@ import com.mintocode.rutinapp.ui.screens.root.TrainPage
 import com.mintocode.rutinapp.ui.screens.sheets.ActiveWorkoutSheet
 import com.mintocode.rutinapp.ui.screens.sheets.AppConfigSheet
 import com.mintocode.rutinapp.ui.screens.sheets.AuthSheet
+import com.mintocode.rutinapp.ui.screens.sheets.BackupSheet
 import com.mintocode.rutinapp.ui.screens.sheets.ExerciseCreateSheet
 import com.mintocode.rutinapp.ui.screens.sheets.ExerciseDetailSheet
 import com.mintocode.rutinapp.ui.screens.sheets.ExerciseEditSheet
@@ -53,6 +54,7 @@ import com.mintocode.rutinapp.ui.screens.sheets.WorkoutHistorySheet
 import com.mintocode.rutinapp.ui.theme.RutinAppTheme
 import com.mintocode.rutinapp.utils.DataStoreManager
 import com.mintocode.rutinapp.viewmodels.AdViewModel
+import com.mintocode.rutinapp.viewmodels.BackupViewModel
 import com.mintocode.rutinapp.viewmodels.ExercisesViewModel
 import com.mintocode.rutinapp.viewmodels.MainScreenViewModel
 import com.mintocode.rutinapp.viewmodels.NotificationsViewModel
@@ -77,6 +79,7 @@ class MainActivity : ComponentActivity() {
     private val mainScreenViewModel: MainScreenViewModel by viewModels()
     private val notificationsViewModel: NotificationsViewModel by viewModels()
     private val adViewModel: AdViewModel by viewModels()
+    private val backupViewModel: BackupViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge(
@@ -276,6 +279,10 @@ class MainActivity : ComponentActivity() {
 
             is SheetDestination.ExerciseStats -> {
                 ExerciseStatsSheet(viewModel = statsViewModel)
+            }
+
+            is SheetDestination.Backup -> {
+                BackupSheet(viewModel = backupViewModel)
             }
         }
     }

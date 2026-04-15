@@ -529,4 +529,55 @@ interface ApiV2Service {
     suspend fun getTrainerCalendarPhases(
         @Path("relationId") relationId: Long
     ): DataResponse<List<CalendarPhaseDto>>
+
+    // ========================================================================
+    // Backup endpoints
+    // ========================================================================
+
+    /**
+     * Get backup summary with counts and last modification dates.
+     *
+     * @return Summary per resource (exercises, routines, workouts)
+     */
+    @GET("backup/summary")
+    suspend fun getBackupSummary(): DataResponse<BackupSummaryData>
+
+    /**
+     * Export user resources with pagination.
+     *
+     * @param resources Comma-separated resource types (exercises,routines,workouts)
+     * @param page Page number
+     * @param perPage Items per page (max 100)
+     * @param exerciseIds Comma-separated IDs to filter exercises
+     * @param routineIds Comma-separated IDs to filter routines
+     * @param workoutIds Comma-separated IDs to filter workouts
+     * @return Exported data with pagination metadata
+     */
+    @GET("backup/export")
+    suspend fun exportBackup(
+        @Query("resources") resources: String,
+        @Query("page") page: Int? = null,
+        @Query("per_page") perPage: Int? = null,
+        @Query("exercise_ids") exerciseIds: String? = null,
+        @Query("routine_ids") routineIds: String? = null,
+        @Query("workout_ids") workoutIds: String? = null
+    ): BackupExportResponse
+
+    /**
+     * Import resources with upsert logic.
+     *
+     * @param body Resources to import (exercises, routines with exercises, workouts with sets)
+     * @return Import result with created/updated/skipped counts per resource
+     */
+    @POST("backup/import")
+    suspend fun importBackup(@Body body: BackupImportRequest): DataResponse<BackupImportData>
+
+    /**
+     * Catch-up sync: get changes since a given date.
+     *
+     * @param body Since date and resources to check
+     * @return Updated resources and deleted IDs per resource type
+     */
+    @POST("backup/catch-up")
+    suspend fun catchUpBackup(@Body body: BackupCatchUpRequest): DataResponse<BackupCatchUpData>
 }
