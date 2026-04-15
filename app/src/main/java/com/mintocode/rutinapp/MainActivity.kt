@@ -40,6 +40,7 @@ import com.mintocode.rutinapp.ui.screens.sheets.ExerciseCreateSheet
 import com.mintocode.rutinapp.ui.screens.sheets.ExerciseDetailSheet
 import com.mintocode.rutinapp.ui.screens.sheets.ExerciseEditSheet
 import com.mintocode.rutinapp.ui.screens.sheets.ExerciseListSheet
+import com.mintocode.rutinapp.ui.screens.sheets.ExercisePickerSheet
 import com.mintocode.rutinapp.ui.screens.sheets.ExerciseStatsSheet
 import com.mintocode.rutinapp.ui.screens.sheets.NotificationsSheet
 import com.mintocode.rutinapp.ui.screens.sheets.PlanningEditSheet
@@ -213,7 +214,7 @@ class MainActivity : ComponentActivity() {
                 ActiveWorkoutSheet(
                     viewModel = workoutsViewModel,
                     onNavigateToExercises = {
-                        navigator.open(SheetDestination.ExerciseList)
+                        navigator.open(SheetDestination.ExercisePickForWorkout)
                     }
                 )
             }
@@ -230,9 +231,13 @@ class MainActivity : ComponentActivity() {
                 ActiveWorkoutSheet(
                     viewModel = workoutsViewModel,
                     onNavigateToExercises = {
-                        navigator.open(SheetDestination.ExerciseList)
+                        navigator.open(SheetDestination.ExercisePickForWorkout)
                     }
                 )
+            }
+
+            is SheetDestination.ExercisePickForWorkout -> {
+                ExercisePickerSheet(viewModel = workoutsViewModel)
             }
 
             is SheetDestination.PlanningEdit -> {

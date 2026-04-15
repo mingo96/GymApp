@@ -131,7 +131,7 @@ private fun KPTopNavigation(pagerState: PagerState) {
                     color = color,
                     fontFamily = SpaceGroteskFont,
                     fontWeight = if (isSelected) FontWeight.Black else FontWeight.Bold,
-                    fontSize = 11.sp,
+                    fontSize = 12.sp,
                     letterSpacing = 2.sp,
                     textAlign = TextAlign.Center
                 )

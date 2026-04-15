@@ -54,6 +54,9 @@ sealed class SheetDestination {
     /** Start a new workout from a routine. */
     data class StartWorkout(val routineId: Int? = null) : SheetDestination()
 
+    /** Pick an exercise to add to the active workout. */
+    data object ExercisePickForWorkout : SheetDestination()
+
     // ── Planning ──
 
     /** Edit planning for a specific date. */

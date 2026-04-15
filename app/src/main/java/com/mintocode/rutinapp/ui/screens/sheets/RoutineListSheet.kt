@@ -1,9 +1,11 @@
 package com.mintocode.rutinapp.ui.screens.sheets
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.slideInHorizontally
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,26 +22,37 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.twotone.Add
-import androidx.compose.material.icons.twotone.Refresh
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.twotone.FitnessCenter
+import androidx.compose.material.icons.twotone.MoreVert
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -49,21 +62,22 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mintocode.rutinapp.data.models.RoutineModel
 import com.mintocode.rutinapp.ui.components.EmptyStateMessage
 import com.mintocode.rutinapp.ui.components.LoadingIndicator
-import com.mintocode.rutinapp.ui.components.OwnershipFilterRow
 import com.mintocode.rutinapp.ui.components.SearchTextField
 import com.mintocode.rutinapp.ui.components.rememberStaggeredRevealIndex
-import com.mintocode.rutinapp.ui.premade.AnimatedItem
-import com.mintocode.rutinapp.ui.screenStates.RoutinesScreenState
 import com.mintocode.rutinapp.ui.navigation.LocalSheetNavigator
 import com.mintocode.rutinapp.ui.navigation.SheetDestination
+import com.mintocode.rutinapp.ui.premade.AnimatedItem
+import com.mintocode.rutinapp.ui.screenStates.RoutinesScreenState
+import com.mintocode.rutinapp.ui.theme.SpaceGroteskFont
+import com.mintocode.rutinapp.ui.theme.ManropeFont
 import com.mintocode.rutinapp.viewmodels.RoutinesViewModel
 import java.util.Locale
 
 /**
- * Routine list sheet content (Kinetic Precision design).
+ * Routine list with Kinetic Precision design (Guide 09).
  *
- * Shows routines grouped by body part with search, filters, and CRUD.
- * Cards use surfaceContainerHigh with primary-tinted badges.
+ * Features: 48sp title, SearchBar, 3-tab TabRow (MIS RUTINAS / COMPARTIDAS / DEL ENTRENADOR),
+ * routines grouped by body part with gradient-border cards, gradient FAB (rounded-full, 3-color).
  *
  * @param viewModel RoutinesViewModel for data and actions
  */
@@ -85,12 +99,8 @@ fun RoutineListSheet(viewModel: RoutinesViewModel) {
 
     LaunchedEffect(uiState) {
         when (uiState) {
-            is RoutinesScreenState.Creating -> {
-                navigator.open(SheetDestination.RoutineCreate)
-            }
-            is RoutinesScreenState.Editing -> {
-                navigator.open(SheetDestination.RoutineEdit(0))
-            }
+            is RoutinesScreenState.Creating -> navigator.open(SheetDestination.RoutineCreate)
+            is RoutinesScreenState.Editing -> navigator.open(SheetDestination.RoutineEdit(0))
             is RoutinesScreenState.Observe -> {
                 if ((uiState as RoutinesScreenState.Observe).routine != null) {
                     navigator.open(SheetDestination.RoutineDetail(0))
@@ -101,113 +111,153 @@ fun RoutineListSheet(viewModel: RoutinesViewModel) {
     }
 
     var searchText by rememberSaveable { mutableStateOf("") }
+    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp)
-    ) {
-        // ── Header ──
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 4.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Rutinas",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-            IconButton(
-                onClick = { viewModel.syncRoutines() },
-                modifier = Modifier.size(36.dp),
-                colors = IconButtonDefaults.iconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.TwoTone.Refresh,
-                    contentDescription = "Sincronizar",
-                    modifier = Modifier.size(18.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
+    val tabTitles = listOf("MIS RUTINAS", "COMPARTIDAS", "DEL ENTRENADOR")
 
-        // ── Search ──
-        SearchTextField(
-            value = searchText,
-            onValueChange = { searchText = it },
-            onSearch = { },
-            placeholder = "Buscar rutinas...",
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(Modifier.height(8.dp))
-
-        // ── Filter row ──
-        OwnershipFilterRow(
-            showOthers = showOthers,
-            onShowMine = { viewModel.showMine() },
-            onShowOthers = { viewModel.showOthers() }
-        )
-
-        Spacer(Modifier.height(8.dp))
-
-        if (loading) { LoadingIndicator() }
-
-        val filtered = run {
-            val byOwnership = if (showOthers) routines.filter { !it.isFromThisUser }
-            else routines.filter { it.isFromThisUser }
-            if (searchText.isBlank()) byOwnership else byOwnership.filter {
-                it.name.contains(searchText, ignoreCase = true) ||
-                        it.targetedBodyPart.contains(searchText, ignoreCase = true)
-            }
-        }
-
-        if (!loading && filtered.isEmpty()) {
-            EmptyStateMessage(
-                text = if (showOthers) "No hay rutinas de otros" else "No tienes rutinas aún"
-            )
-        }
-
+    Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
-            modifier = Modifier.weight(1f),
-            contentPadding = PaddingValues(top = 4.dp, bottom = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 96.dp)
         ) {
-            items(
-                filtered.map {
-                    it.targetedBodyPart.replaceFirstChar { c ->
-                        if (c.isLowerCase()) c.titlecase(Locale.ROOT) else c.toString()
+            // ── Title: 48sp ──
+            item {
+                Text(
+                    text = "Rutinas",
+                    fontFamily = SpaceGroteskFont,
+                    fontSize = 48.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = (-1.5).sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(Modifier.height(24.dp))
+            }
+
+            // ── Search ──
+            item {
+                SearchTextField(
+                    value = searchText,
+                    onValueChange = { searchText = it },
+                    onSearch = { },
+                    placeholder = "Buscar rutinas...",
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(Modifier.height(16.dp))
+            }
+
+            // ── TabRow ──
+            item {
+                ScrollableTabRow(
+                    selectedTabIndex = selectedTab,
+                    containerColor = Color.Transparent,
+                    contentColor = MaterialTheme.colorScheme.primary,
+                    edgePadding = 0.dp,
+                    divider = {
+                        Box(
+                            Modifier
+                                .fillMaxWidth()
+                                .height(1.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.1f)
+                                )
+                        )
+                    },
+                    indicator = { tabPositions ->
+                        if (selectedTab < tabPositions.size) {
+                            TabRowDefaults.SecondaryIndicator(
+                                modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
+                                height = 2.dp,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
-                }.distinct().take(maxIndex)
-            ) { bodyPart ->
+                ) {
+                    tabTitles.forEachIndexed { index, title ->
+                        Tab(
+                            selected = selectedTab == index,
+                            onClick = {
+                                selectedTab = index
+                                when (index) {
+                                    0 -> viewModel.showMine()
+                                    1 -> viewModel.showOthers()
+                                    2 -> viewModel.showOthers()
+                                }
+                            },
+                            text = {
+                                Text(
+                                    text = title,
+                                    fontFamily = SpaceGroteskFont,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp,
+                                    letterSpacing = 2.sp,
+                                    color = if (selectedTab == index)
+                                        MaterialTheme.colorScheme.primary
+                                    else
+                                        MaterialTheme.colorScheme.outline
+                                )
+                            }
+                        )
+                    }
+                }
+                Spacer(Modifier.height(32.dp))
+            }
+
+            if (loading) {
+                item { LoadingIndicator() }
+            }
+
+            // ── Filter routines ──
+            val filtered = run {
+                val byOwnership = if (selectedTab == 0) routines.filter { it.isFromThisUser }
+                else routines.filter { !it.isFromThisUser }
+                if (searchText.isBlank()) byOwnership else byOwnership.filter {
+                    it.name.contains(searchText, ignoreCase = true) ||
+                            it.targetedBodyPart.contains(searchText, ignoreCase = true)
+                }
+            }
+
+            if (!loading && filtered.isEmpty()) {
+                item {
+                    EmptyStateMessage(
+                        text = when (selectedTab) {
+                            0 -> "No tienes rutinas aún"
+                            1 -> "No hay rutinas compartidas"
+                            else -> "No hay rutinas del entrenador"
+                        }
+                    )
+                }
+            }
+
+            // ── Group by body part ──
+            val groups = filtered
+                .groupBy { it.targetedBodyPart.replaceFirstChar { c ->
+                    if (c.isLowerCase()) c.titlecase(Locale.ROOT) else c.toString()
+                } }
+                .entries.toList()
+                .take(maxIndex)
+
+            items(groups, key = { it.key }) { (bodyPart, groupRoutines) ->
                 AnimatedItem(enterAnimation = slideInHorizontally(), delay = 80) {
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        // Section header
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        // Section label: primary uppercase
                         Text(
                             text = bodyPart.uppercase(),
+                            fontFamily = SpaceGroteskFont,
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 11.sp,
-                            letterSpacing = 1.5.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            letterSpacing = 3.sp,
+                            color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(start = 2.dp)
                         )
+
                         LazyRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
                             contentPadding = PaddingValues(end = 4.dp)
                         ) {
-                            items(filtered.filter {
-                                it.targetedBodyPart.replaceFirstChar { c ->
-                                    if (c.isLowerCase()) c.titlecase(Locale.ROOT) else c.toString()
-                                } == bodyPart
-                            }) { routine ->
-                                RoutineCardItem(
+                            items(groupRoutines) { routine ->
+                                KPRoutineCard(
                                     routine = routine,
+                                    gradientColor = bodyPartGradientColor(routine.targetedBodyPart),
                                     modifier = Modifier.combinedClickable(
                                         onClick = {
                                             viewModel.clickObserveRoutine(routine)
@@ -222,40 +272,51 @@ fun RoutineListSheet(viewModel: RoutinesViewModel) {
                             }
                         }
                     }
+                    Spacer(Modifier.height(24.dp))
                 }
             }
         }
 
-        // ── Create button ──
-        Card(
+        // ── FAB: gradient 3-color, rounded-full ──
+        val fabScale by animateFloatAsState(targetValue = 1f, label = "fab")
+
+        FloatingActionButton(
             onClick = { navigator.open(SheetDestination.RoutineCreate) },
-            shape = MaterialTheme.shapes.medium,
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer
-            ),
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp)
+                .align(Alignment.BottomEnd)
+                .padding(end = 24.dp, bottom = 24.dp)
+                .size(64.dp)
+                .scale(fabScale)
+                .shadow(
+                    elevation = 16.dp,
+                    shape = CircleShape,
+                    ambientColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                    spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+                ),
+            shape = CircleShape,
+            containerColor = Color.Transparent,
+            contentColor = Color.White
         ) {
-            Row(
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
+                    .fillMaxSize()
+                    .background(
+                        brush = Brush.linearGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.primary,
+                                MaterialTheme.colorScheme.primaryContainer,
+                                MaterialTheme.colorScheme.secondaryContainer
+                            )
+                        ),
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
             ) {
                 Icon(
                     Icons.TwoTone.Add,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = "Crear rutina",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                    contentDescription = "Crear rutina",
+                    modifier = Modifier.size(30.dp),
+                    tint = Color.White
                 )
             }
         }
@@ -263,55 +324,149 @@ fun RoutineListSheet(viewModel: RoutinesViewModel) {
 }
 
 /**
- * Card de rutina con badge de grupo muscular y conteo de ejercicios.
+ * Routine card with gradient border wrapper (Guide 09 pattern).
  *
- * @param routine Modelo de la rutina
- * @param modifier Modifier con click handlers
+ * Wrapper p-[1px] with gradient border, inner surfaceContainerLowest card.
+ *
+ * @param routine Routine model to display
+ * @param gradientColor Color for gradient border based on body part
+ * @param modifier Modifier with click handlers
  */
 @Composable
-private fun RoutineCardItem(routine: RoutineModel, modifier: Modifier) {
-    Card(
-        shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        modifier = modifier.width(160.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+private fun KPRoutineCard(
+    routine: RoutineModel,
+    gradientColor: Color,
+    modifier: Modifier = Modifier
+) {
+    // Gradient border wrapper
+    Box(
+        modifier = modifier
+            .width(280.dp)
+            .background(
+                brush = Brush.linearGradient(
+                    colors = listOf(
+                        gradientColor.copy(alpha = 0.3f),
+                        Color.Transparent
+                    )
+                ),
+                shape = RoundedCornerShape(16.dp)
+            )
+            .padding(1.dp)
     ) {
-        Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
-            // Body part badge
-            Box(
-                modifier = Modifier
-                    .clip(MaterialTheme.shapes.small)
-                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f))
-                    .padding(horizontal = 8.dp, vertical = 2.dp)
+        // Inner card
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    MaterialTheme.colorScheme.surfaceContainerLowest,
+                    RoundedCornerShape(16.dp)
+                )
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            // Top row: body part tag + more icon
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = routine.targetedBodyPart
-                        .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() },
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    letterSpacing = 0.5.sp,
-                    color = MaterialTheme.colorScheme.primary
+                // Body part tag
+                Box(
+                    modifier = Modifier
+                        .background(
+                            gradientColor.copy(alpha = 0.1f),
+                            RoundedCornerShape(50)
+                        )
+                        .padding(horizontal = 12.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = routine.targetedBodyPart
+                            .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }
+                            .uppercase(),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 2.sp,
+                        color = gradientColor
+                    )
+                }
+                Icon(
+                    Icons.TwoTone.MoreVert,
+                    contentDescription = "Opciones",
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.outline
                 )
             }
-            Spacer(Modifier.height(6.dp))
+
+            Spacer(Modifier.height(12.dp))
+
+            // Focus label
+            Text(
+                text = "FOCUS",
+                fontFamily = ManropeFont,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.outline
+            )
+
+            // Routine name
             Text(
                 text = routine.name,
+                fontFamily = SpaceGroteskFont,
+                fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
-                maxLines = 1,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.onSurface
+                lineHeight = 24.sp
             )
-            if (routine.exercises.isNotEmpty()) {
-                Text(
-                    text = "${routine.exercises.size} ejercicios",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+
+            Spacer(Modifier.height(16.dp))
+
+            // Footer: exercise count
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.TwoTone.FitnessCenter,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "${routine.exercises.size} EJERC",
+                        fontFamily = ManropeFont,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = (-0.5).sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
+    }
+}
+
+/**
+ * Returns gradient color for routine card based on body part.
+ *
+ * @param bodyPart The targeted body part string
+ * @return Color matching the body part group
+ */
+@Composable
+private fun bodyPartGradientColor(bodyPart: String): Color {
+    val lower = bodyPart.lowercase()
+    return when {
+        lower.contains("pecho") -> MaterialTheme.colorScheme.tertiary
+        lower.contains("pierna") -> MaterialTheme.colorScheme.primary
+        lower.contains("espalda") -> MaterialTheme.colorScheme.secondary
+        lower.contains("hombro") -> MaterialTheme.colorScheme.primary
+        lower.contains("brazo") -> MaterialTheme.colorScheme.tertiary
+        lower.contains("core") -> MaterialTheme.colorScheme.secondary
+        else -> MaterialTheme.colorScheme.primary
     }
 }

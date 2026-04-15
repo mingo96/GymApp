@@ -1,5 +1,8 @@
 package com.mintocode.rutinapp.ui.floating
 
+import android.animation.AnimatorSet
+import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
@@ -8,20 +11,24 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.graphics.PixelFormat
+import android.graphics.drawable.GradientDrawable
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.provider.Settings
 import android.util.Log
+import android.util.TypedValue
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
-import android.widget.Button
-import android.widget.EditText
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.OvershootInterpolator
 import android.widget.FrameLayout
+import android.widget.HorizontalScrollView
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -36,13 +43,15 @@ import java.time.Instant
 import java.util.Date
 
 /**
- * Servicio en primer plano que muestra un widget flotante sobre otras aplicaciones
- * cuando hay un entrenamiento activo.
+ * Servicio en primer plano que muestra un widget flotante estilo Kinetic Precision
+ * sobre otras aplicaciones cuando hay un entrenamiento activo.
  *
  * El widget tiene dos estados:
- * - Burbuja colapsada: muestra el tiempo desde el último set, arrastrable, se expande al tocar.
- * - Panel expandido: selector de ejercicio, inputs de reps/peso, estadísticas del ejercicio,
- *   redimensionable arrastrando la ficha de agarre superior.
+ * - Burbuja colapsada: círculo 56dp con icono fitness, borde tertiary neón con animación
+ *   pulse, timer badge superpuesto, arrastrable, se expande al tocar.
+ * - Panel expandido: glass panel 340×520 con stepper inputs (reps/weight),
+ *   chips de ejercicios, botón LOG SET con gradiente tertiary, footer de estadísticas,
+ *   redimensionable y arrastrable.
  *
  * El widget se oculta automáticamente cuando la app está en primer plano y se muestra
  * al salir de la app.
@@ -54,11 +63,20 @@ class FloatingWorkoutService : Service() {
         private const val CHANNEL_NAME = "Entrenamiento flotante"
         private const val NOTIFICATION_ID = 2001
         private const val TIMER_INTERVAL_MS = 1000L
-        private const val MIN_EXPANDED_WIDTH = 280
-        private const val MIN_EXPANDED_HEIGHT = 350
+        private const val MIN_EXPANDED_WIDTH = 300
+        private const val MIN_EXPANDED_HEIGHT = 400
         private const val DEFAULT_EXPANDED_WIDTH = 340
-        private const val DEFAULT_EXPANDED_HEIGHT = 480
-        private const val RESIZE_TOUCH_AREA = 12
+        private const val DEFAULT_EXPANDED_HEIGHT = 520
+
+        // KP color palette
+        private const val COLOR_TERTIARY = "#27E0A9"
+        private const val COLOR_ON_TERTIARY = "#003827"
+        private const val COLOR_ON_SURFACE = "#E4E1E9"
+        private const val COLOR_ON_SURFACE_VARIANT = "#C4C5D7"
+        private const val COLOR_SURFACE_CONTAINER_HIGH = "#2A292F"
+        private const val COLOR_PRIMARY_CONTAINER = "#4361EE"
+        private const val COLOR_ON_PRIMARY_CONTAINER = "#F4F2FF"
+        private const val COLOR_ERROR = "#FFB4AB"
 
         /**
          * Inicia el servicio de widget flotante si el permiso de overlay está concedido.
@@ -95,10 +113,23 @@ class FloatingWorkoutService : Service() {
     private var expandedHeight = DEFAULT_EXPANDED_HEIGHT
     private var expandedParams: WindowManager.LayoutParams? = null
 
+    // Stepper state
+    private var currentReps = 10
+    private var currentWeight = 0.0
+    private val weightStep = 2.5
+
+    // Workout start time for total timer
+    private var workoutStartTime = 0L
+
+    // Bubble animation
+    private var bubblePulseAnimator: AnimatorSet? = null
+
     private val handler = Handler(Looper.getMainLooper())
     private val timerRunnable = object : Runnable {
         override fun run() {
             updateBubbleTimer()
+            updatePanelTimer()
+            updateFooterStats()
             handler.postDelayed(this, TIMER_INTERVAL_MS)
         }
     }
@@ -124,6 +155,7 @@ class FloatingWorkoutService : Service() {
     override fun onCreate() {
         super.onCreate()
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+        workoutStartTime = System.currentTimeMillis()
         createNotificationChannel()
         try {
             startForeground(NOTIFICATION_ID, buildNotification())
@@ -140,6 +172,7 @@ class FloatingWorkoutService : Service() {
 
     override fun onDestroy() {
         handler.removeCallbacks(timerRunnable)
+        stopBubblePulse()
         removeBubble()
         removeExpanded()
         try {
@@ -154,6 +187,7 @@ class FloatingWorkoutService : Service() {
     private fun hideOverlay() {
         bubbleView?.visibility = View.GONE
         expandedView?.visibility = View.GONE
+        stopBubblePulse()
     }
 
     /**
@@ -165,8 +199,12 @@ class FloatingWorkoutService : Service() {
             if (expandedView != null) expandedView?.visibility = View.VISIBLE
             else showExpanded()
         } else {
-            if (bubbleView != null) bubbleView?.visibility = View.VISIBLE
-            else showBubble()
+            if (bubbleView != null) {
+                bubbleView?.visibility = View.VISIBLE
+                startBubblePulse()
+            } else {
+                showBubble()
+            }
         }
     }
 
@@ -209,6 +247,38 @@ class FloatingWorkoutService : Service() {
             .build()
     }
 
+    // ── Utility ─────────────────────────────────────────────────────────
+
+    /**
+     * Convierte dp a píxeles.
+     *
+     * @param dp Valor en dp
+     * @return Valor en píxeles
+     */
+    private fun dpToPx(dp: Float): Int {
+        return TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP, dp, resources.displayMetrics
+        ).toInt()
+    }
+
+    /**
+     * Formatea segundos en formato HH:MM:SS o M:SS.
+     *
+     * @param totalSeconds Segundos totales
+     * @param full Si true, muestra siempre HH:MM:SS
+     * @return Cadena formateada
+     */
+    private fun formatTime(totalSeconds: Long, full: Boolean = false): String {
+        val hours = totalSeconds / 3600
+        val minutes = (totalSeconds % 3600) / 60
+        val seconds = totalSeconds % 60
+        return if (full || hours > 0) {
+            "%02d:%02d:%02d".format(hours, minutes, seconds)
+        } else {
+            "%d:%02d".format(minutes, seconds)
+        }
+    }
+
     // ── Timer ───────────────────────────────────────────────────────────
 
     /**
@@ -223,16 +293,90 @@ class FloatingWorkoutService : Service() {
             return
         }
         val elapsed = (System.currentTimeMillis() - lastSet) / 1000
-        val minutes = elapsed / 60
-        val seconds = elapsed % 60
-        timerText.text = "$minutes:%02d".format(seconds)
+        timerText.text = formatTime(elapsed)
+    }
+
+    /**
+     * Actualiza el temporizador general del panel expandido con el tiempo
+     * total del entrenamiento.
+     */
+    private fun updatePanelTimer() {
+        val timerText = expandedView?.findViewById<TextView>(R.id.txt_panel_timer) ?: return
+        val elapsed = (System.currentTimeMillis() - workoutStartTime) / 1000
+        timerText.text = formatTime(elapsed, full = true)
+    }
+
+    /**
+     * Actualiza las estadísticas del footer del panel expandido.
+     */
+    private fun updateFooterStats() {
+        val view = expandedView ?: return
+        val workout = ActiveWorkoutHolder.activeWorkout ?: return
+
+        // Total sets
+        var totalSets = 0
+        var totalVolume = 0.0
+        workout.exercisesAndSets.forEach { (_, sets) ->
+            totalSets += sets.size
+            sets.forEach { set -> totalVolume += set.weight * set.reps }
+        }
+
+        view.findViewById<TextView>(R.id.txt_stat_sets)?.text = "$totalSets"
+
+        // Volume formatting
+        val volumeText = if (totalVolume >= 1000) {
+            "%.1fk kg".format(totalVolume / 1000)
+        } else {
+            "%.0f kg".format(totalVolume)
+        }
+        view.findViewById<TextView>(R.id.txt_stat_volume)?.text = volumeText
+
+        // Time
+        val elapsed = (System.currentTimeMillis() - workoutStartTime) / 1000 / 60
+        view.findViewById<TextView>(R.id.txt_stat_time)?.text = "${elapsed}m"
     }
 
     // ── Bubble (collapsed) ──────────────────────────────────────────────
 
     /**
+     * Inicia la animación neon-pulse de la burbuja: escala 0.95→1.0 con
+     * un brillo tertiary pulsante, ciclo infinito de 2 segundos.
+     */
+    private fun startBubblePulse() {
+        val circle = bubbleView?.findViewById<FrameLayout>(R.id.bubble_circle) ?: return
+
+        val scaleX = ObjectAnimator.ofFloat(circle, "scaleX", 0.95f, 1.0f).apply {
+            repeatMode = ValueAnimator.REVERSE
+            repeatCount = ValueAnimator.INFINITE
+        }
+        val scaleY = ObjectAnimator.ofFloat(circle, "scaleY", 0.95f, 1.0f).apply {
+            repeatMode = ValueAnimator.REVERSE
+            repeatCount = ValueAnimator.INFINITE
+        }
+        val alpha = ObjectAnimator.ofFloat(circle, "alpha", 0.85f, 1.0f).apply {
+            repeatMode = ValueAnimator.REVERSE
+            repeatCount = ValueAnimator.INFINITE
+        }
+
+        bubblePulseAnimator = AnimatorSet().apply {
+            playTogether(scaleX, scaleY, alpha)
+            duration = 2000L
+            interpolator = AccelerateDecelerateInterpolator()
+            start()
+        }
+    }
+
+    /**
+     * Detiene la animación neon-pulse de la burbuja.
+     */
+    private fun stopBubblePulse() {
+        bubblePulseAnimator?.cancel()
+        bubblePulseAnimator = null
+    }
+
+    /**
      * Muestra la burbuja colapsada flotante sobre otras aplicaciones.
-     * Muestra el tiempo desde el último set y se expande al tocarla sin arrastrar.
+     * Círculo 56dp con icono fitness, borde tertiary neón pulsante y timer badge.
      */
     @SuppressLint("ClickableViewAccessibility")
     private fun showBubble() {
@@ -240,6 +384,18 @@ class FloatingWorkoutService : Service() {
 
         val inflater = LayoutInflater.from(this)
         bubbleView = inflater.inflate(R.layout.floating_bubble, null)
+
+        // Tint fitness icon to tertiary
+        bubbleView?.findViewById<FrameLayout>(R.id.bubble_circle)
+            ?.findViewById<android.widget.ImageView>(android.R.id.icon)
+            ?: run {
+                // The ImageView in the bubble doesn't have an ID, tint via the first ImageView child
+                val circle = bubbleView?.findViewById<FrameLayout>(R.id.bubble_circle)
+                if (circle != null && circle.childCount > 0) {
+                    val imageView = circle.getChildAt(0) as? android.widget.ImageView
+                    imageView?.setColorFilter(Color.parseColor(COLOR_TERTIARY))
+                }
+            }
 
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -249,8 +405,8 @@ class FloatingWorkoutService : Service() {
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
-            x = 100
-            y = 300
+            x = resources.displayMetrics.widthPixels - dpToPx(80f)
+            y = resources.displayMetrics.heightPixels / 2
         }
 
         // Drag + tap logic
@@ -276,11 +432,12 @@ class FloatingWorkoutService : Service() {
                     if (dx * dx + dy * dy > 25) moved = true
                     params.x = initialX + dx.toInt()
                     params.y = initialY + dy.toInt()
-                    windowManager.updateViewLayout(bubbleView, params)
+                    try { windowManager.updateViewLayout(bubbleView, params) } catch (_: Exception) {}
                     true
                 }
                 MotionEvent.ACTION_UP -> {
                     if (!moved) {
+                        stopBubblePulse()
                         removeBubble()
                         showExpanded()
                     }
@@ -293,7 +450,8 @@ class FloatingWorkoutService : Service() {
         windowManager.addView(bubbleView, params)
         isExpanded = false
 
-        // Start timer updates
+        // Start animations and timer
+        startBubblePulse()
         handler.removeCallbacks(timerRunnable)
         handler.post(timerRunnable)
     }
@@ -303,6 +461,7 @@ class FloatingWorkoutService : Service() {
      */
     private fun removeBubble() {
         handler.removeCallbacks(timerRunnable)
+        stopBubblePulse()
         bubbleView?.let {
             try { windowManager.removeView(it) } catch (_: Exception) {}
         }
@@ -312,8 +471,8 @@ class FloatingWorkoutService : Service() {
     // ── Expanded panel ──────────────────────────────────────────────────
 
     /**
-     * Muestra el panel expandido con slider de ejercicios, inputs, stats.
-     * Configura drag handle para mover y bordes para redimensionar.
+     * Muestra el panel expandido KP glass con stepper inputs, chips de ejercicios,
+     * botón LOG SET, y footer de estadísticas. Incluye animación de entrada suave.
      */
     @SuppressLint("ClickableViewAccessibility")
     private fun showExpanded() {
@@ -342,14 +501,81 @@ class FloatingWorkoutService : Service() {
         }
         expandedParams = params
 
+        // Set workout title
+        val workout = ActiveWorkoutHolder.activeWorkout
+        val title = workout?.title?.ifBlank { workout.baseRoutine?.name }
+            ?: workout?.baseRoutine?.name ?: "Entrenamiento"
+        expandedView?.findViewById<TextView>(R.id.txt_title)?.text = title
+
+        // Initialize stepper values from last set
+        initializeStepperValues()
+
         setupMoveHandle(params)
         setupResizeEdges(params)
-        setupExerciseSlider()
+        setupStepperButtons()
+        setupExerciseChips()
         setupButtons()
-        updateStats()
+        updateSetProgress()
+        updatePanelTimer()
+        updateFooterStats()
+
+        // Entry animation: scale from 0.8 + fade in
+        expandedView?.scaleX = 0.8f
+        expandedView?.scaleY = 0.8f
+        expandedView?.alpha = 0f
 
         windowManager.addView(expandedView, params)
         isExpanded = true
+
+        expandedView?.animate()
+            ?.scaleX(1f)
+            ?.scaleY(1f)
+            ?.alpha(1f)
+            ?.setDuration(300)
+            ?.setInterpolator(OvershootInterpolator(0.8f))
+            ?.start()
+
+        // Start timer updates
+        handler.removeCallbacks(timerRunnable)
+        handler.post(timerRunnable)
+    }
+
+    /**
+     * Inicializa los valores de los steppers basándose en el último set del ejercicio
+     * seleccionado, o usa valores por defecto.
+     */
+    private fun initializeStepperValues() {
+        val index = ActiveWorkoutHolder.selectedExerciseIndex
+        val lastSet = ActiveWorkoutHolder.getLastSetForExercise(index)
+        if (lastSet != null) {
+            currentReps = lastSet.reps
+            currentWeight = lastSet.weight
+        }
+        updateStepperDisplay()
+    }
+
+    /**
+     * Actualiza la visualización de los valores en los steppers de reps y weight.
+     */
+    private fun updateStepperDisplay() {
+        expandedView?.findViewById<TextView>(R.id.txt_reps_value)?.text = "$currentReps"
+        val weightText = if (currentWeight == currentWeight.toLong().toDouble()) {
+            "${currentWeight.toLong()}"
+        } else {
+            "%.1f".format(currentWeight)
+        }
+        expandedView?.findViewById<TextView>(R.id.txt_weight_value)?.text = weightText
+    }
+
+    /**
+     * Actualiza el texto de progreso de serie (ej: "Set 3 / 4").
+     */
+    private fun updateSetProgress() {
+        val view = expandedView ?: return
+        val index = ActiveWorkoutHolder.selectedExerciseIndex
+        val sets = ActiveWorkoutHolder.getSetsForExercise(index)
+        val currentSet = sets.size + 1
+        view.findViewById<TextView>(R.id.txt_set_progress)?.text = "Set $currentSet"
     }
 
     /**
@@ -388,7 +614,7 @@ class FloatingWorkoutService : Service() {
 
     /**
      * Configura las zonas de toque en los bordes del panel para redimensionar
-     * en todas las direcciones (arriba, abajo, izquierda, derecha).
+     * en todas las direcciones.
      *
      * @param params LayoutParams del panel expandido
      */
@@ -408,20 +634,17 @@ class FloatingWorkoutService : Service() {
             expandedWidth = (params.width / dp).toInt()
             expandedHeight = (params.height / dp).toInt()
             try { windowManager.updateViewLayout(expandedView, params) } catch (_: Exception) {}
-            updateStatsVisibility(params.height)
         }
 
-        // Right edge: resize width from right
         expandedView?.findViewById<View>(R.id.resize_right)?.setOnTouchListener(
-            createEdgeResizeListener(params) { dx, dy, initW, initH, initX, initY ->
+            createEdgeResizeListener(params) { dx, _, initW, _, _, _ ->
                 params.width = initW + dx
                 clampAndUpdate()
             }
         )
 
-        // Left edge: resize width from left (move x + shrink width)
         expandedView?.findViewById<View>(R.id.resize_left)?.setOnTouchListener(
-            createEdgeResizeListener(params) { dx, dy, initW, initH, initX, initY ->
+            createEdgeResizeListener(params) { dx, _, initW, _, initX, _ ->
                 val newW = (initW - dx).coerceIn(minW, maxW)
                 params.x = initX + (initW - newW)
                 params.width = newW
@@ -429,17 +652,15 @@ class FloatingWorkoutService : Service() {
             }
         )
 
-        // Bottom edge: resize height from bottom
         expandedView?.findViewById<View>(R.id.resize_bottom)?.setOnTouchListener(
-            createEdgeResizeListener(params) { dx, dy, initW, initH, initX, initY ->
+            createEdgeResizeListener(params) { _, dy, _, initH, _, _ ->
                 params.height = initH + dy
                 clampAndUpdate()
             }
         )
 
-        // Top edge: resize height from top (move y + shrink height)
         expandedView?.findViewById<View>(R.id.resize_top)?.setOnTouchListener(
-            createEdgeResizeListener(params) { dx, dy, initW, initH, initX, initY ->
+            createEdgeResizeListener(params) { _, dy, _, initH, _, initY ->
                 val newH = (initH - dy).coerceIn(minH, maxH)
                 params.y = initY + (initH - newH)
                 params.height = newH
@@ -452,7 +673,7 @@ class FloatingWorkoutService : Service() {
      * Crea un OnTouchListener para redimensionar desde un borde.
      *
      * @param params LayoutParams del panel
-     * @param onDrag Lambda que recibe (dx, dy, initialWidth, initialHeight, initialX, initialY) en el ACTION_MOVE
+     * @param onDrag Lambda que recibe (dx, dy, initialWidth, initialHeight, initialX, initialY)
      * @return View.OnTouchListener configurado
      */
     @SuppressLint("ClickableViewAccessibility")
@@ -482,164 +703,185 @@ class FloatingWorkoutService : Service() {
         }
     }
 
+    // ── Stepper controls ────────────────────────────────────────────────
+
     /**
-     * Muestra u oculta la sección de estadísticas según la altura del panel.
-     *
-     * @param height Altura actual del panel en píxeles
+     * Configura los botones de stepper (+/-) para repeticiones y peso.
+     * Incluye feedback visual con animación de escala al pulsar.
      */
-    private fun updateStatsVisibility(height: Int) {
-        val statsSection = expandedView?.findViewById<LinearLayout>(R.id.stats_section)
-        val threshold = (resources.displayMetrics.density * 380).toInt()
-        if (height > threshold) {
-            statsSection?.visibility = View.VISIBLE
-        } else {
-            statsSection?.visibility = View.GONE
+    private fun setupStepperButtons() {
+        val view = expandedView ?: return
+
+        // Reps stepper
+        view.findViewById<FrameLayout>(R.id.btn_reps_minus)?.setOnClickListener {
+            animatePress(it)
+            currentReps = (currentReps - 1).coerceAtLeast(1)
+            updateStepperDisplay()
+        }
+        view.findViewById<FrameLayout>(R.id.btn_reps_plus)?.setOnClickListener {
+            animatePress(it)
+            currentReps++
+            updateStepperDisplay()
+        }
+
+        // Weight stepper
+        view.findViewById<FrameLayout>(R.id.btn_weight_minus)?.setOnClickListener {
+            animatePress(it)
+            currentWeight = (currentWeight - weightStep).coerceAtLeast(0.0)
+            updateStepperDisplay()
+        }
+        view.findViewById<FrameLayout>(R.id.btn_weight_plus)?.setOnClickListener {
+            animatePress(it)
+            currentWeight += weightStep
+            updateStepperDisplay()
         }
     }
 
     /**
-     * Configura el selector de ejercicios por deslizamiento.
-     * Deslizar a la izquierda avanza al siguiente ejercicio,
-     * deslizar a la derecha retrocede al anterior.
-     * Los botones de flecha también cambian la selección.
+     * Aplica una animación de escala pulsante al presionar un botón.
+     *
+     * @param view Vista a animar
      */
-    @SuppressLint("ClickableViewAccessibility")
-    private fun setupExerciseSlider() {
-        val view = expandedView ?: return
-        val swipeArea = view.findViewById<FrameLayout>(R.id.exercise_swipe) ?: return
-        val nameView = view.findViewById<TextView>(R.id.exercise_name) ?: return
-        val arrowLeft = view.findViewById<TextView>(R.id.exercise_arrow_left)
-        val arrowRight = view.findViewById<TextView>(R.id.exercise_arrow_right)
-        val exerciseNames = ActiveWorkoutHolder.getExerciseNames()
+    private fun animatePress(view: View) {
+        view.animate()
+            .scaleX(0.85f).scaleY(0.85f)
+            .setDuration(80)
+            .withEndAction {
+                view.animate()
+                    .scaleX(1f).scaleY(1f)
+                    .setDuration(120)
+                    .setInterpolator(OvershootInterpolator(2f))
+                    .start()
+            }
+            .start()
+    }
 
-        if (exerciseNames.isEmpty()) {
-            nameView.text = "Sin ejercicios"
-            arrowLeft?.visibility = View.INVISIBLE
-            arrowRight?.visibility = View.INVISIBLE
-            return
-        }
+    // ── Exercise chips ──────────────────────────────────────────────────
+
+    /**
+     * Crea los chips de ejercicio horizontales dinámicamente.
+     * El chip activo tiene fondo primaryContainer, los inactivos surfaceContainerHigh.
+     * Al tocar un chip, cambia la selección de ejercicio y actualiza los steppers.
+     */
+    private fun setupExerciseChips() {
+        val view = expandedView ?: return
+        val container = view.findViewById<LinearLayout>(R.id.exercise_chips_container) ?: return
+        container.removeAllViews()
+
+        val exerciseNames = ActiveWorkoutHolder.getExerciseNames()
+        if (exerciseNames.isEmpty()) return
 
         val currentIndex = ActiveWorkoutHolder.selectedExerciseIndex
             .coerceIn(0, exerciseNames.size - 1)
-        ActiveWorkoutHolder.selectedExerciseIndex = currentIndex
-        nameView.text = exerciseNames[currentIndex]
-        updateArrowVisibility(arrowLeft, arrowRight, currentIndex, exerciseNames.size)
 
-        // Swipe gesture detection
-        var startX = 0f
-        val swipeThreshold = resources.displayMetrics.density * 50
+        exerciseNames.forEachIndexed { index, name ->
+            val chip = TextView(this).apply {
+                text = name
+                textSize = 12f
+                setPadding(dpToPx(12f), dpToPx(6f), dpToPx(12f), dpToPx(6f))
+                isSingleLine = true
 
-        swipeArea.setOnTouchListener { _, event ->
-            when (event.action) {
-                MotionEvent.ACTION_DOWN -> {
-                    startX = event.rawX
-                    true
+                if (index == currentIndex) {
+                    setBackgroundResource(R.drawable.exercise_chip_active_bg)
+                    setTextColor(Color.parseColor(COLOR_ON_PRIMARY_CONTAINER))
+                    typeface = android.graphics.Typeface.DEFAULT_BOLD
+                } else {
+                    setBackgroundResource(R.drawable.exercise_chip_bg)
+                    setTextColor(Color.parseColor(COLOR_ON_SURFACE_VARIANT))
+                    typeface = android.graphics.Typeface.DEFAULT
                 }
-                MotionEvent.ACTION_UP -> {
-                    val dx = event.rawX - startX
-                    if (dx < -swipeThreshold) {
-                        selectExercise(1, exerciseNames, nameView, arrowLeft, arrowRight)
-                    } else if (dx > swipeThreshold) {
-                        selectExercise(-1, exerciseNames, nameView, arrowLeft, arrowRight)
-                    }
-                    true
+
+                setOnClickListener {
+                    animatePress(this)
+                    ActiveWorkoutHolder.selectedExerciseIndex = index
+                    setupExerciseChips()
+                    updateExerciseDisplay()
+                    initializeStepperValues()
+                    updateSetProgress()
                 }
-                else -> true
+            }
+
+            val chipParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                marginEnd = dpToPx(8f)
+            }
+            container.addView(chip, chipParams)
+        }
+
+        // Scroll to active chip
+        val scrollView = container.parent as? HorizontalScrollView
+        handler.post {
+            if (currentIndex > 0 && container.childCount > currentIndex) {
+                val targetChip = container.getChildAt(currentIndex)
+                scrollView?.smoothScrollTo(
+                    (targetChip.left - dpToPx(20f)).coerceAtLeast(0), 0
+                )
             }
         }
 
-        arrowLeft?.setOnClickListener {
-            selectExercise(-1, exerciseNames, nameView, arrowLeft, arrowRight)
-        }
-        arrowRight?.setOnClickListener {
-            selectExercise(1, exerciseNames, nameView, arrowLeft, arrowRight)
-        }
+        updateExerciseDisplay()
     }
 
     /**
-     * Cambia la selección de ejercicio en la dirección indicada.
-     *
-     * @param direction +1 para siguiente, -1 para anterior
-     * @param names Lista de nombres de ejercicios
-     * @param nameView TextView que muestra el nombre del ejercicio
-     * @param arrowLeft Flecha izquierda para mostrar/ocultar
-     * @param arrowRight Flecha derecha para mostrar/ocultar
+     * Actualiza el nombre del ejercicio y el progreso de serie en el panel.
      */
-    private fun selectExercise(
-        direction: Int,
-        names: List<String>,
-        nameView: TextView,
-        arrowLeft: TextView?,
-        arrowRight: TextView?
-    ) {
-        val newIndex = (ActiveWorkoutHolder.selectedExerciseIndex + direction)
-            .coerceIn(0, names.size - 1)
-        if (newIndex == ActiveWorkoutHolder.selectedExerciseIndex) return
-        ActiveWorkoutHolder.selectedExerciseIndex = newIndex
-        nameView.text = names[newIndex]
-        updateArrowVisibility(arrowLeft, arrowRight, newIndex, names.size)
-        updateStats()
-    }
-
-    /**
-     * Muestra u oculta las flechas del selector según la posición actual.
-     *
-     * @param left Flecha izquierda
-     * @param right Flecha derecha
-     * @param index Índice actual
-     * @param count Número total de ejercicios
-     */
-    private fun updateArrowVisibility(left: TextView?, right: TextView?, index: Int, count: Int) {
-        left?.visibility = if (index > 0) View.VISIBLE else View.INVISIBLE
-        right?.visibility = if (index < count - 1) View.VISIBLE else View.INVISIBLE
-    }
-
-    /**
-     * Actualiza la sección de estadísticas con datos del ejercicio seleccionado:
-     * último set, peso máximo y total de sets.
-     */
-    private fun updateStats() {
+    private fun updateExerciseDisplay() {
         val view = expandedView ?: return
+        val names = ActiveWorkoutHolder.getExerciseNames()
         val index = ActiveWorkoutHolder.selectedExerciseIndex
-        val sets = ActiveWorkoutHolder.getSetsForExercise(index)
-        val lastSet = ActiveWorkoutHolder.getLastSetForExercise(index)
-        val maxWeight = ActiveWorkoutHolder.getMaxWeightForExercise(index)
+            .coerceIn(0, (names.size - 1).coerceAtLeast(0))
 
-        val txtLastSet = view.findViewById<TextView>(R.id.txt_last_set)
-        val txtMaxWeight = view.findViewById<TextView>(R.id.txt_max_weight)
-        val txtTotalSets = view.findViewById<TextView>(R.id.txt_total_sets)
-
-        if (lastSet != null) {
-            txtLastSet.text = "Último set: ${lastSet.reps} reps × ${lastSet.weight} kg"
-        } else {
-            txtLastSet.text = "Último set: –"
-        }
-        txtMaxWeight.text = "Peso máximo: ${maxWeight} kg"
-        txtTotalSets.text = "Sets totales: ${sets.size}"
-
-        updateStatsVisibility(expandedHeight)
+        view.findViewById<TextView>(R.id.exercise_name)?.text =
+            if (names.isNotEmpty()) names[index] else "Sin ejercicios"
     }
+
+    // ── Buttons ─────────────────────────────────────────────────────────
 
     /**
      * Configura los listeners de los botones del panel expandido:
-     * minimizar, enviar set y abrir pantalla completa.
+     * minimizar, cerrar overlay, enviar set y abrir pantalla completa.
      */
     private fun setupButtons() {
         val view = expandedView ?: return
 
-        // Minimize → collapse to bubble
-        view.findViewById<ImageButton>(R.id.btn_minimize).setOnClickListener {
-            removeExpanded()
-            showBubble()
+        // Minimize → collapse to bubble with exit animation
+        view.findViewById<ImageButton>(R.id.btn_minimize)?.setOnClickListener {
+            animatePress(it)
+            expandedView?.animate()
+                ?.scaleX(0.3f)?.scaleY(0.3f)
+                ?.alpha(0f)
+                ?.setDuration(250)
+                ?.withEndAction {
+                    removeExpanded()
+                    showBubble()
+                }
+                ?.start()
         }
 
-        // Send set
-        view.findViewById<Button>(R.id.btn_send).setOnClickListener {
+        // Close overlay → stop service entirely
+        view.findViewById<ImageButton>(R.id.btn_close)?.setOnClickListener {
+            animatePress(it)
+            expandedView?.animate()
+                ?.scaleX(0.3f)?.scaleY(0.3f)
+                ?.alpha(0f)
+                ?.setDuration(200)
+                ?.withEndAction {
+                    stopSelf()
+                }
+                ?.start()
+        }
+
+        // Log Set
+        view.findViewById<FrameLayout>(R.id.btn_send)?.setOnClickListener {
+            animatePress(it)
             sendSet()
         }
 
-        // Fullscreen → resume app (not restart)
-        view.findViewById<ImageButton>(R.id.btn_fullscreen).setOnClickListener {
+        // Fullscreen → resume app
+        view.findViewById<ImageButton>(R.id.btn_fullscreen)?.setOnClickListener {
+            animatePress(it)
             val intent = Intent(this, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
             }
@@ -650,52 +892,31 @@ class FloatingWorkoutService : Service() {
     }
 
     /**
-     * Recoge los datos del formulario y crea un nuevo set en el entrenamiento activo
-     * a través del ActiveWorkoutHolder.
+     * Recoge los datos de los steppers y crea un nuevo set en el entrenamiento activo.
+     * Muestra feedback visual con el resultado.
      */
     private fun sendSet() {
         val view = expandedView ?: return
-        val repsInput = view.findViewById<EditText>(R.id.input_reps)
-        val weightInput = view.findViewById<EditText>(R.id.input_weight)
         val statusText = view.findViewById<TextView>(R.id.txt_status)
 
         val selectedIndex = ActiveWorkoutHolder.selectedExerciseIndex
         val exercise = ActiveWorkoutHolder.getExerciseAt(selectedIndex)
 
         if (exercise == null) {
-            statusText.text = "No hay ejercicio seleccionado"
-            statusText.visibility = View.VISIBLE
+            showStatus(statusText, "No hay ejercicio seleccionado", isError = true)
             return
         }
 
-        val repsStr = repsInput.text.toString().trim()
-        val weightStr = weightInput.text.toString().trim()
-
-        if (repsStr.isEmpty()) {
-            statusText.text = "Introduce las repeticiones"
-            statusText.visibility = View.VISIBLE
-            return
-        }
-
-        val reps = repsStr.toIntOrNull()
-        if (reps == null || reps <= 0) {
-            statusText.text = "Repeticiones inválidas"
-            statusText.visibility = View.VISIBLE
-            return
-        }
-
-        val weight = if (weightStr.isEmpty()) 0.0 else weightStr.toDoubleOrNull()
-        if (weight == null || weight < 0) {
-            statusText.text = "Peso inválido"
-            statusText.visibility = View.VISIBLE
+        if (currentReps <= 0) {
+            showStatus(statusText, "Introduce las repeticiones", isError = true)
             return
         }
 
         val workout = ActiveWorkoutHolder.activeWorkout ?: return
 
         val newSet = SetModel(
-            weight = weight,
-            reps = reps,
+            weight = currentWeight,
+            reps = currentReps,
             date = Date.from(Instant.now()),
             observations = "",
             exercise = exercise,
@@ -705,15 +926,57 @@ class FloatingWorkoutService : Service() {
         ActiveWorkoutHolder.onSetAdded?.invoke(newSet)
         ActiveWorkoutHolder.recordSetAdded(selectedIndex)
 
-        // Feedback
-        statusText.text = "✓ Set añadido: ${exercise.name} ${reps}x${weight}kg"
-        statusText.visibility = View.VISIBLE
-        repsInput.text.clear()
-        weightInput.text.clear()
+        // Success feedback
+        val weightStr = if (currentWeight > 0) " × ${currentWeight}kg" else ""
+        showStatus(statusText, "✓ ${exercise.name} — ${currentReps} reps$weightStr", isError = false)
 
-        // Update slider and stats
-        setupExerciseSlider()
-        updateStats()
+        // Flash the LOG SET button
+        val sendBtn = view.findViewById<FrameLayout>(R.id.btn_send)
+        sendBtn?.animate()
+            ?.scaleX(1.05f)?.scaleY(1.05f)
+            ?.setDuration(100)
+            ?.withEndAction {
+                sendBtn.animate()
+                    .scaleX(1f).scaleY(1f)
+                    .setDuration(150)
+                    .start()
+            }
+            ?.start()
+
+        // Update chips and stats
+        setupExerciseChips()
+        updateSetProgress()
+        updateFooterStats()
+    }
+
+    /**
+     * Muestra un mensaje de estado con animación de fade, que se oculta
+     * automáticamente después de 3 segundos.
+     *
+     * @param textView TextView de estado
+     * @param message Mensaje a mostrar
+     * @param isError Si true, muestra en color error; si false, en tertiary
+     */
+    private fun showStatus(textView: TextView?, message: String, isError: Boolean) {
+        textView ?: return
+        textView.text = message
+        textView.setTextColor(
+            Color.parseColor(if (isError) COLOR_ERROR else COLOR_TERTIARY)
+        )
+        textView.alpha = 0f
+        textView.visibility = View.VISIBLE
+        textView.animate()
+            .alpha(1f)
+            .setDuration(200)
+            .start()
+
+        handler.postDelayed({
+            textView.animate()
+                .alpha(0f)
+                .setDuration(300)
+                .withEndAction { textView.visibility = View.GONE }
+                .start()
+        }, 3000)
     }
 
     /**
