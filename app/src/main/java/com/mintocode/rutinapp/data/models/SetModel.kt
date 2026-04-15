@@ -14,10 +14,11 @@ data class SetModel(
 ) {
     fun toEntity(): SetEntity {
         return SetEntity(
+            setId = id,
             weight = weight,
             exerciseDoneId = exercise!!.id.toInt(),
             reps = reps,
-            date = date.toString(),
+            date = date.time,
             observations = observations,
             workoutDoneId = workoutDone!!.id
         )

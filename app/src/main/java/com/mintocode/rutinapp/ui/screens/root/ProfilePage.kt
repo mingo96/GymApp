@@ -29,6 +29,7 @@ import androidx.compose.material.icons.twotone.Lock
 import androidx.compose.material.icons.twotone.ManageAccounts
 import androidx.compose.material.icons.twotone.Notifications
 import androidx.compose.material.icons.twotone.Person
+import androidx.compose.material.icons.twotone.Widgets
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
@@ -222,6 +223,20 @@ fun ProfilePage(settingsViewModel: SettingsViewModel) {
                 icon = Icons.TwoTone.Backup,
                 label = "Copia de seguridad",
                 onClick = { navigator.open(SheetDestination.Backup) }
+            )
+        }
+
+        Spacer(Modifier.height(24.dp))
+
+        // ── Configuración de la App ──
+        KPSectionLabel("Configuración")
+        Spacer(Modifier.height(12.dp))
+
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            KPSettingsItem(
+                icon = Icons.TwoTone.Widgets,
+                label = "Widget flotante",
+                onClick = { navigator.open(SheetDestination.AppConfig) }
             )
         }
 

@@ -36,7 +36,7 @@ import com.mintocode.rutinapp.data.daos.WorkoutRoutinesDao
         AppNotificationEntity::class,
         CalendarPhaseEntity::class
     ],
-    version = 10,
+    version = 11,
     exportSchema = true,
 )
 abstract class RutinAppDatabase : RoomDatabase() {

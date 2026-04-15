@@ -6,24 +6,28 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.twotone.Add
 import androidx.compose.material.icons.twotone.Refresh
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,7 +39,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -50,16 +56,14 @@ import com.mintocode.rutinapp.ui.premade.AnimatedItem
 import com.mintocode.rutinapp.ui.screenStates.RoutinesScreenState
 import com.mintocode.rutinapp.ui.navigation.LocalSheetNavigator
 import com.mintocode.rutinapp.ui.navigation.SheetDestination
-import com.mintocode.rutinapp.ui.theme.rutinAppButtonsColours
-import com.mintocode.rutinapp.ui.theme.rutinappCardColors
 import com.mintocode.rutinapp.viewmodels.RoutinesViewModel
 import java.util.Locale
 
 /**
- * Routine list sheet content.
+ * Routine list sheet content (Kinetic Precision design).
  *
  * Shows routines grouped by body part with search, filters, and CRUD.
- * Replaces the old RoutinesScreen — now rendered inside a ModalBottomSheet.
+ * Cards use surfaceContainerHigh with primary-tinted badges.
  *
  * @param viewModel RoutinesViewModel for data and actions
  */
@@ -79,7 +83,6 @@ fun RoutineListSheet(viewModel: RoutinesViewModel) {
 
     val navigator = LocalSheetNavigator.current
 
-    // Navigate to sheets instead of showing dialogs
     LaunchedEffect(uiState) {
         when (uiState) {
             is RoutinesScreenState.Creating -> {
@@ -104,45 +107,55 @@ fun RoutineListSheet(viewModel: RoutinesViewModel) {
             .fillMaxSize()
             .padding(horizontal = 16.dp)
     ) {
-        Text(
-            text = "Rutinas",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-
-        SearchTextField(
-            value = searchText,
-            onValueChange = { searchText = it },
-            onSearch = { },
-            modifier = Modifier.fillMaxWidth()
-        )
-
+        // ── Header ──
         Row(
-            Modifier
+            modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                .padding(bottom = 4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            OwnershipFilterRow(
-                showOthers = showOthers,
-                onShowMine = { viewModel.showMine() },
-                onShowOthers = { viewModel.showOthers() }
+            Text(
+                text = "Rutinas",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
             )
-            Spacer(Modifier.weight(1f))
             IconButton(
                 onClick = { viewModel.syncRoutines() },
-                modifier = Modifier.size(36.dp)
+                modifier = Modifier.size(36.dp),
+                colors = IconButtonDefaults.iconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                )
             ) {
                 Icon(
                     imageVector = Icons.TwoTone.Refresh,
                     contentDescription = "Sincronizar",
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
+
+        // ── Search ──
+        SearchTextField(
+            value = searchText,
+            onValueChange = { searchText = it },
+            onSearch = { },
+            placeholder = "Buscar rutinas...",
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(Modifier.height(8.dp))
+
+        // ── Filter row ──
+        OwnershipFilterRow(
+            showOthers = showOthers,
+            onShowMine = { viewModel.showMine() },
+            onShowOthers = { viewModel.showOthers() }
+        )
+
+        Spacer(Modifier.height(8.dp))
 
         if (loading) { LoadingIndicator() }
 
@@ -163,7 +176,8 @@ fun RoutineListSheet(viewModel: RoutinesViewModel) {
 
         LazyColumn(
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            contentPadding = PaddingValues(top = 4.dp, bottom = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(
                 filtered.map {
@@ -172,15 +186,21 @@ fun RoutineListSheet(viewModel: RoutinesViewModel) {
                     }
                 }.distinct().take(maxIndex)
             ) { bodyPart ->
-                AnimatedItem(enterAnimation = slideInHorizontally(), delay = 100) {
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                AnimatedItem(enterAnimation = slideInHorizontally(), delay = 80) {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        // Section header
                         Text(
-                            text = bodyPart,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 16.sp,
-                            color = MaterialTheme.colorScheme.onSurface
+                            text = bodyPart.uppercase(),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.sp,
+                            letterSpacing = 1.5.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(start = 2.dp)
                         )
-                        LazyRow {
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            contentPadding = PaddingValues(end = 4.dp)
+                        ) {
                             items(filtered.filter {
                                 it.targetedBodyPart.replaceFirstChar { c ->
                                     if (c.isLowerCase()) c.titlecase(Locale.ROOT) else c.toString()
@@ -206,34 +226,84 @@ fun RoutineListSheet(viewModel: RoutinesViewModel) {
             }
         }
 
-        Button(
+        // ── Create button ──
+        Card(
             onClick = { navigator.open(SheetDestination.RoutineCreate) },
-            colors = rutinAppButtonsColours(),
+            shape = MaterialTheme.shapes.medium,
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer
+            ),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 16.dp)
+                .padding(bottom = 16.dp)
         ) {
-            Icon(Icons.TwoTone.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-            Text(text = "  Crear rutina")
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.TwoTone.Add,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = "Crear rutina",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
         }
     }
 }
 
+/**
+ * Card de rutina con badge de grupo muscular y conteo de ejercicios.
+ *
+ * @param routine Modelo de la rutina
+ * @param modifier Modifier con click handlers
+ */
 @Composable
 private fun RoutineCardItem(routine: RoutineModel, modifier: Modifier) {
     Card(
-        shape = MaterialTheme.shapes.small,
-        colors = rutinappCardColors(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        modifier = modifier.padding(end = 10.dp, top = 4.dp, bottom = 4.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.4f))
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        modifier = modifier.width(160.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
     ) {
-        Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+        Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
+            // Body part badge
+            Box(
+                modifier = Modifier
+                    .clip(MaterialTheme.shapes.small)
+                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f))
+                    .padding(horizontal = 8.dp, vertical = 2.dp)
+            ) {
+                Text(
+                    text = routine.targetedBodyPart
+                        .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() },
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 0.5.sp,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            Spacer(Modifier.height(6.dp))
             Text(
                 text = routine.name,
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp,
-                maxLines = 1
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                color = MaterialTheme.colorScheme.onSurface
             )
             if (routine.exercises.isNotEmpty()) {
                 Text(

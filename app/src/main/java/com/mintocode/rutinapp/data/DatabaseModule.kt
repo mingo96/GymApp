@@ -184,8 +184,38 @@ class DatabaseModule {
             }
         }
 
+        // v10 -> v11: convert SetEntity.date from TEXT to INTEGER (epoch millis).
+        // Existing date strings can't be reliably parsed, so we approximate
+        // each set's date with its parent workout's date (which is already Long).
+        val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `SetEntity_new` (
+                        `setId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `exerciseDoneId` INTEGER NOT NULL,
+                        `workoutDoneId` INTEGER NOT NULL,
+                        `weight` REAL NOT NULL,
+                        `reps` INTEGER NOT NULL,
+                        `date` INTEGER NOT NULL DEFAULT 0,
+                        `observations` TEXT NOT NULL,
+                        FOREIGN KEY(`exerciseDoneId`) REFERENCES `ExerciseEntity`(`exerciseId`) ON DELETE CASCADE,
+                        FOREIGN KEY(`workoutDoneId`) REFERENCES `WorkOutEntity`(`workOutId`) ON DELETE CASCADE
+                    )
+                """.trimIndent())
+                database.execSQL("""
+                    INSERT INTO `SetEntity_new` (`setId`, `exerciseDoneId`, `workoutDoneId`, `weight`, `reps`, `date`, `observations`)
+                    SELECT s.`setId`, s.`exerciseDoneId`, s.`workoutDoneId`, s.`weight`, s.`reps`,
+                           COALESCE(w.`date`, 0), s.`observations`
+                    FROM `SetEntity` s
+                    LEFT JOIN `WorkOutEntity` w ON s.`workoutDoneId` = w.`workOutId`
+                """.trimIndent())
+                database.execSQL("DROP TABLE `SetEntity`")
+                database.execSQL("ALTER TABLE `SetEntity_new` RENAME TO `SetEntity`")
+            }
+        }
+
         return Room.databaseBuilder(appContext, RutinAppDatabase::class.java, "RutinAppDatabase.db")
-            .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
+            .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11)
             .build()
     }
 

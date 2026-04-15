@@ -1,26 +1,29 @@
 package com.mintocode.rutinapp.ui.screens.sheets
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.twotone.Add
-import androidx.compose.material.icons.twotone.Delete
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.twotone.Close
+import androidx.compose.material.icons.twotone.Done
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,23 +36,24 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mintocode.rutinapp.ui.components.TextFieldWithTitle
 import com.mintocode.rutinapp.ui.navigation.LocalSheetNavigator
 import com.mintocode.rutinapp.ui.screenStates.ExercisesState
 import com.mintocode.rutinapp.ui.screens.ExerciseTypeSelectors
-import com.mintocode.rutinapp.ui.theme.rutinAppButtonsColours
 import com.mintocode.rutinapp.viewmodels.ExercisesViewModel
 
 /**
- * Sheet for editing an existing exercise.
+ * Sheet for editing an existing exercise (KP design).
  *
- * Renders the exercise edit form as full sheet content with related exercises management.
- * On save, updates the exercise and closes the sheet.
+ * Renders the exercise edit form with card-based sections, flow chips for
+ * related exercises, and KP-styled action buttons.
  *
  * @param viewModel ExercisesViewModel for exercise editing
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ExerciseEditSheet(viewModel: ExercisesViewModel) {
     val navigator = LocalSheetNavigator.current
@@ -77,40 +81,56 @@ fun ExerciseEditSheet(viewModel: ExercisesViewModel) {
             .fillMaxSize()
             .padding(horizontal = 16.dp)
             .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Text(
             text = "Editar ejercicio",
-            style = MaterialTheme.typography.headlineSmall,
+            style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground
         )
 
-        TextFieldWithTitle(
-            title = "Nombre",
-            onWrite = { name = it },
-            text = name,
-            sendFunction = {
-                viewModel.updateExercise(name, description, targetedBodyPart, context, repsType, weightType)
+        // ── Form section ──
+        Card(
+            shape = MaterialTheme.shapes.medium,
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+            ),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                TextFieldWithTitle(
+                    title = "Nombre",
+                    onWrite = { name = it },
+                    text = name,
+                    sendFunction = {
+                        viewModel.updateExercise(name, description, targetedBodyPart, context, repsType, weightType)
+                    }
+                )
+                TextFieldWithTitle(
+                    title = "Descripción",
+                    onWrite = { description = it },
+                    text = description,
+                    sendFunction = {
+                        viewModel.updateExercise(name, description, targetedBodyPart, context, repsType, weightType)
+                    }
+                )
+                TextFieldWithTitle(
+                    title = "Parte del cuerpo",
+                    onWrite = { targetedBodyPart = it },
+                    text = targetedBodyPart,
+                    sendFunction = {
+                        viewModel.updateExercise(name, description, targetedBodyPart, context, repsType, weightType)
+                    }
+                )
             }
-        )
-        TextFieldWithTitle(
-            title = "Descripción",
-            onWrite = { description = it },
-            text = description,
-            sendFunction = {
-                viewModel.updateExercise(name, description, targetedBodyPart, context, repsType, weightType)
-            }
-        )
-        TextFieldWithTitle(
-            title = "Parte del cuerpo",
-            onWrite = { targetedBodyPart = it },
-            text = targetedBodyPart,
-            sendFunction = {
-                viewModel.updateExercise(name, description, targetedBodyPart, context, repsType, weightType)
-            }
-        )
+        }
 
+        // ── Type selectors ──
         ExerciseTypeSelectors(
             repsType = repsType,
             weightType = weightType,
@@ -118,70 +138,111 @@ fun ExerciseEditSheet(viewModel: ExercisesViewModel) {
             onWeightTypeChange = { weightType = it }
         )
 
-        // Related exercises section
-        Text(
-            text = "Ejercicios relacionados",
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        LazyVerticalGrid(
-            columns = GridCells.Adaptive(100.dp),
-            modifier = Modifier
-                .heightIn(max = 200.dp)
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.medium)
-                .padding(16.dp)
+        // ── Related exercises ──
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            item {
-                IconButton(onClick = { viewModel.clickToAddRelatedExercises(context) }) {
-                    Icon(
-                        imageVector = Icons.TwoTone.Add,
-                        contentDescription = "Añadir relación",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
+            Text(
+                text = "EJERCICIOS RELACIONADOS",
+                fontWeight = FontWeight.Bold,
+                fontSize = 11.sp,
+                letterSpacing = 1.5.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            IconButton(
+                onClick = { viewModel.clickToAddRelatedExercises(context) },
+                modifier = Modifier.size(32.dp),
+                colors = IconButtonDefaults.iconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.TwoTone.Add,
+                    contentDescription = "Añadir relación",
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(16.dp)
+                )
             }
-            items(modifyingState.relatedExercises) { exercise ->
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.padding(horizontal = 8.dp)
+        }
+
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            modifyingState.relatedExercises.forEach { exercise ->
+                Card(
+                    shape = MaterialTheme.shapes.small,
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                    ),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
                 ) {
-                    Text(
-                        text = exercise.name,
-                        Modifier
-                            .fillMaxWidth(0.8f)
-                            .clickable { viewModel.clickToObserve(exercise) },
-                        maxLines = 2,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 13.sp
-                    )
-                    IconButton(onClick = { viewModel.toggleExercisesRelation(exercise) }) {
-                        Icon(
-                            imageVector = Icons.TwoTone.Delete,
-                            contentDescription = "Eliminar relación",
-                            modifier = Modifier.size(18.dp)
+                    Row(
+                        modifier = Modifier.padding(start = 10.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = exercise.name,
+                            modifier = Modifier.clickable { viewModel.clickToObserve(exercise) },
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontSize = 12.sp
                         )
+                        IconButton(
+                            onClick = { viewModel.toggleExercisesRelation(exercise) },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.TwoTone.Close,
+                                contentDescription = "Eliminar relación",
+                                modifier = Modifier.size(14.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }
         }
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        // ── Save button ──
+        Card(
+            onClick = {
+                viewModel.updateExercise(name, description, targetedBodyPart, context, repsType, weightType)
+                navigator.close()
+            },
+            shape = MaterialTheme.shapes.medium,
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer
+            ),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 16.dp)
+                .padding(bottom = 16.dp)
         ) {
-            Button(
-                onClick = {
-                    viewModel.updateExercise(name, description, targetedBodyPart, context, repsType, weightType)
-                    navigator.close()
-                },
-                colors = rutinAppButtonsColours(),
-                modifier = Modifier.weight(1f)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = "Guardar")
+                Icon(
+                    Icons.TwoTone.Done,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = "Guardar",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
             }
         }
     }

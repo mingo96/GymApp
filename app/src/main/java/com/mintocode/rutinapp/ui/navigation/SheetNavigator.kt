@@ -17,6 +17,9 @@ class SheetNavigator {
 
     internal val _stack = mutableStateListOf<SheetDestination>()
 
+    /** Callback fired when a sheet is dismissed (via [close] or [closeAll]). */
+    var onDismiss: ((SheetDestination) -> Unit)? = null
+
     /** Current sheet stack (bottom to top). Empty means only root pager is visible. */
     val stack: List<SheetDestination> get() = _stack
 
@@ -34,16 +37,20 @@ class SheetNavigator {
         _stack.add(destination)
     }
 
-    /** Close the topmost sheet. No-op if stack is empty. */
+    /** Close the topmost sheet, firing [onDismiss]. No-op if stack is empty. */
     fun close() {
         if (_stack.isNotEmpty()) {
-            _stack.removeLast()
+            val dismissed = _stack.removeLast()
+            onDismiss?.invoke(dismissed)
         }
     }
 
-    /** Close all sheets, returning to the root pager. */
+    /** Close all sheets, firing [onDismiss] for each in top-to-bottom order. */
     fun closeAll() {
-        _stack.clear()
+        while (_stack.isNotEmpty()) {
+            val dismissed = _stack.removeLast()
+            onDismiss?.invoke(dismissed)
+        }
     }
 
     /**
@@ -52,7 +59,8 @@ class SheetNavigator {
      */
     fun replace(destination: SheetDestination) {
         if (_stack.isNotEmpty()) {
-            _stack.removeLast()
+            val dismissed = _stack.removeLast()
+            onDismiss?.invoke(dismissed)
         }
         _stack.add(destination)
     }

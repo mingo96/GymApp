@@ -32,7 +32,7 @@ data class SetEntity(
     val workoutDoneId: Int,
     val weight: Double,
     val reps: Int,
-    val date: String,
+    val date: Long,
     var observations: String
 ) {
     fun toModel(): SetModel {
@@ -63,8 +63,8 @@ interface SetDao {
     @Insert
     suspend fun addSet(set: SetEntity): Long
 
-    @Query("DELETE FROM SetEntity WHERE date = :date")
-    suspend fun deleteSet(date: String)
+    @Query("DELETE FROM SetEntity WHERE setId = :id")
+    suspend fun deleteSet(id: Int)
 
     @Update
     suspend fun updateSet(set: SetEntity)

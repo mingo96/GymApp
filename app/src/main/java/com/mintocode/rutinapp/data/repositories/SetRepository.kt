@@ -18,7 +18,7 @@ class SetRepository @Inject constructor(private val setDao: SetDao) {
     }
 
     suspend fun deleteSet(set: SetEntity) {
-        setDao.deleteSet(set.date)
+        setDao.deleteSet(set.setId)
     }
 
     suspend fun updateSet(set: SetEntity) {

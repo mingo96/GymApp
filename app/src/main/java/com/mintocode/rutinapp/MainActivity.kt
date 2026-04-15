@@ -117,7 +117,21 @@ class MainActivity : ComponentActivity() {
      */
     @Composable
     private fun RutinAppContent() {
-        val sheetNavigator = remember { SheetNavigator() }
+        val sheetNavigator = remember {
+            SheetNavigator().apply {
+                onDismiss = { destination ->
+                    when (destination) {
+                        is SheetDestination.ExerciseDetail,
+                        is SheetDestination.ExerciseEdit,
+                        is SheetDestination.ExerciseCreate -> exercisesViewModel.backToObserve()
+                        is SheetDestination.RoutineDetail,
+                        is SheetDestination.RoutineEdit,
+                        is SheetDestination.RoutineCreate -> routinesViewModel.backToObserve()
+                        else -> {}
+                    }
+                }
+            }
+        }
         var isLoaded by remember { mutableStateOf(false) }
 
         // Sync error toast

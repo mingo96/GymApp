@@ -1,6 +1,9 @@
 package com.mintocode.rutinapp.ui.components
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -8,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -30,6 +34,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
@@ -48,46 +53,59 @@ import kotlinx.coroutines.delay
 /**
  * Search text field with trailing search icon button.
  *
- * Used across Exercises, Stats, and Workouts screens for filtering lists.
+ * Uses medium rounded shape (12dp) for KP design consistency.
  *
  * @param value Current search text
  * @param onValueChange Callback when text changes
  * @param onSearch Callback when search action is triggered (keyboard or button)
  * @param modifier Optional modifier
+ * @param placeholder Optional placeholder text shown when field is empty
  */
 @Composable
 fun SearchTextField(
     value: String,
     onValueChange: (String) -> Unit,
     onSearch: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    placeholder: String = "Buscar..."
 ) {
     TextField(
         value = value,
-        textStyle = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold),
+        textStyle = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium),
         onValueChange = onValueChange,
         colors = rutinAppTextFieldColors(),
         modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.small,
+        shape = MaterialTheme.shapes.medium,
+        singleLine = true,
+        placeholder = {
+            Text(
+                text = placeholder,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                fontSize = 14.sp
+            )
+        },
         keyboardOptions = KeyboardOptions(
             capitalization = KeyboardCapitalization.Sentences,
             autoCorrectEnabled = true,
             imeAction = ImeAction.Search
         ),
         keyboardActions = KeyboardActions(onSearch = { onSearch() }),
-        trailingIcon = {
-            IconButton(onClick = { onSearch() }) {
-                Icon(imageVector = Icons.TwoTone.Search, contentDescription = "Buscar")
-            }
+        leadingIcon = {
+            Icon(
+                imageVector = Icons.TwoTone.Search,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
+            )
         }
     )
 }
 
 /**
- * Labeled text input field.
+ * Labeled text input field with KP uppercase label.
  *
- * Shows a title label above a styled TextField. Supports password masking,
- * custom keyboard types, and optional submit action.
+ * Shows a title label (uppercase, tracking-wide) above a styled TextField.
+ * Supports password masking, custom keyboard types, and optional submit action.
  *
  * @param title Label text above the field
  * @param text Current field value
@@ -108,18 +126,22 @@ fun TextFieldWithTitle(
     val focusManager = LocalFocusManager.current
 
     Text(
-        text = title,
-        style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.onSurfaceVariant
+        text = title.uppercase(),
+        style = MaterialTheme.typography.labelSmall,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        letterSpacing = 1.5.sp,
+        modifier = Modifier.padding(bottom = 4.dp)
     )
     TextField(
         value = text,
         enabled = editing,
         onValueChange = onWrite,
         colors = rutinAppTextFieldColors(),
-        textStyle = TextStyle(fontWeight = FontWeight.Bold),
-        shape = MaterialTheme.shapes.small,
+        textStyle = TextStyle(fontWeight = FontWeight.Medium),
+        shape = MaterialTheme.shapes.medium,
         modifier = Modifier.fillMaxWidth(),
+        singleLine = true,
         keyboardOptions = KeyboardOptions(
             imeAction = if (sendFunction == null) ImeAction.Next else ImeAction.Done,
             keyboardType = typeOfKeyBoard,
@@ -201,9 +223,9 @@ fun rememberStaggeredRevealIndex(
 // ============================================================================
 
 /**
- * Par de FilterChips para alternar entre "Mis" y "De otros" recursos.
+ * Par de FilterChips con estilo KP para alternar entre "Mis" y "De otros" recursos.
  *
- * Reutilizado en ExercisesScreen y RoutinesScreen para filtrar por propiedad.
+ * Usa primaryContainer para el chip seleccionado.
  *
  * @param showOthers True si se muestran los de otros usuarios
  * @param onShowMine Callback al seleccionar "Mis"
@@ -219,20 +241,36 @@ fun OwnershipFilterRow(
         FilterChip(
             selected = !showOthers,
             onClick = onShowMine,
-            label = { Text("Mis", fontSize = 13.sp) },
+            label = {
+                Text(
+                    "Mis",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 0.5.sp
+                )
+            },
             colors = FilterChipDefaults.filterChipColors(
-                selectedContainerColor = MaterialTheme.colorScheme.secondary,
-                selectedLabelColor = MaterialTheme.colorScheme.onSecondary
-            )
+                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+            ),
+            border = if (!showOthers) BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)) else null
         )
         FilterChip(
             selected = showOthers,
             onClick = onShowOthers,
-            label = { Text("De otros", fontSize = 13.sp) },
+            label = {
+                Text(
+                    "De otros",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 0.5.sp
+                )
+            },
             colors = FilterChipDefaults.filterChipColors(
-                selectedContainerColor = MaterialTheme.colorScheme.secondary,
-                selectedLabelColor = MaterialTheme.colorScheme.onSecondary
-            )
+                selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
+            ),
+            border = if (showOthers) BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f)) else null
         )
     }
 }
@@ -311,22 +349,39 @@ fun DialogActionRow(
 // ============================================================================
 
 /**
- * Mensaje centrado para listas vacías.
+ * Estado vacío con icono y texto centrados.
  *
  * @param text Texto a mostrar
  * @param modifier Modifier opcional
+ * @param icon Nombre del icono Material (composable) opcional
  */
 @Composable
 fun EmptyStateMessage(text: String, modifier: Modifier = Modifier) {
     Column(
         modifier
             .fillMaxWidth()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .clip(MaterialTheme.shapes.medium)
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.TwoTone.Search,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                modifier = Modifier.size(24.dp)
+            )
+        }
         Text(
             text = text,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodyMedium
         )
     }
 }

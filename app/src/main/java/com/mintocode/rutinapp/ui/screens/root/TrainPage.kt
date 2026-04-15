@@ -24,6 +24,7 @@ import androidx.compose.material.icons.twotone.ChevronRight
 import androidx.compose.material.icons.twotone.FitnessCenter
 import androidx.compose.material.icons.automirrored.twotone.FormatListBulleted
 import androidx.compose.material.icons.twotone.PlayCircle
+import androidx.compose.material.icons.twotone.Stop
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -134,19 +135,30 @@ fun TrainPage(
         Spacer(Modifier.height(28.dp))
 
         // ── Gradient CTA Button ──
+        val isWorkoutActive = workoutState is WorkoutsScreenState.WorkoutStarted
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(20.dp))
                 .background(
                     Brush.horizontalGradient(
-                        listOf(
+                        if (isWorkoutActive) listOf(
+                            MaterialTheme.colorScheme.tertiaryContainer,
+                            MaterialTheme.colorScheme.tertiary
+                        ) else listOf(
                             MaterialTheme.colorScheme.primaryContainer,
                             MaterialTheme.colorScheme.primary
                         )
                     )
                 )
-                .clickable { workoutsViewModel.startFromEmpty() }
+                .clickable {
+                    if (isWorkoutActive) {
+                        val ws = workoutState as WorkoutsScreenState.WorkoutStarted
+                        navigator.open(SheetDestination.ActiveWorkout(ws.workout.id))
+                    } else {
+                        workoutsViewModel.startFromEmpty()
+                    }
+                }
                 .padding(horizontal = 24.dp, vertical = 20.dp)
         ) {
             Row(
@@ -166,14 +178,14 @@ fun TrainPage(
                     )
                     Column {
                         Text(
-                            text = "Entrenamiento Libre",
+                            text = if (isWorkoutActive) "Continuar Entrenamiento" else "Entrenamiento Libre",
                             fontFamily = SpaceGroteskFont,
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp,
                             color = MaterialTheme.colorScheme.onPrimary
                         )
                         Text(
-                            text = "Empieza sin rutina",
+                            text = if (isWorkoutActive) "Tienes un entreno activo" else "Empieza sin rutina",
                             fontSize = 13.sp,
                             color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
                         )
@@ -185,6 +197,39 @@ fun TrainPage(
                     tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
                     modifier = Modifier.size(24.dp)
                 )
+            }
+        }
+
+        // ── End Workout Button (only when active) ──
+        if (isWorkoutActive) {
+            Spacer(Modifier.height(8.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f))
+                    .clickable { workoutsViewModel.finishTraining() }
+                    .padding(horizontal = 20.dp, vertical = 14.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        Icons.TwoTone.Stop,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = "Finalizar Entrenamiento",
+                        fontFamily = SpaceGroteskFont,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
             }
         }
 

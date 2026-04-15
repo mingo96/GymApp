@@ -47,7 +47,7 @@ data class WorkOutWithSets(
 @Dao
 interface WorkOutDao {
 
-    @Query("SELECT * FROM WorkOutEntity ORDER BY date DESC LIMIT 10")
+    @Query("SELECT * FROM WorkOutEntity ORDER BY date DESC")
     fun get10MoreRecent(): Flow<List<WorkOutWithSets>>
 
     @Insert

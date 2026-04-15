@@ -8,13 +8,13 @@ import androidx.compose.ui.graphics.Color
 
 /**
  * TextField colors using the app's Material3 color scheme.
- * Uses surfaceVariant for container and primary for focused indicators.
+ * Uses surfaceContainerHigh for container and primary for focused indicators.
  */
 @Composable
 fun rutinAppTextFieldColors(): TextFieldColors {
     return TextFieldDefaults.colors(
-        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         focusedIndicatorColor = MaterialTheme.colorScheme.primary,
         unfocusedIndicatorColor = Color.Transparent,
         focusedTextColor = MaterialTheme.colorScheme.onSurface,
@@ -22,8 +22,8 @@ fun rutinAppTextFieldColors(): TextFieldColors {
         focusedLabelColor = MaterialTheme.colorScheme.primary,
         unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
         cursorColor = MaterialTheme.colorScheme.primary,
-        disabledTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
-        disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.38f),
+        disabledTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+        disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f),
         disabledIndicatorColor = Color.Transparent
     )
 }
