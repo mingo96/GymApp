@@ -26,8 +26,6 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.view.animation.AccelerateDecelerateInterpolator
-import android.view.animation.AccelerateInterpolator
-import android.view.animation.DecelerateInterpolator
 import android.view.animation.OvershootInterpolator
 import android.widget.FrameLayout
 import android.widget.HorizontalScrollView
@@ -69,7 +67,6 @@ class FloatingWorkoutService : Service() {
         private const val MIN_EXPANDED_HEIGHT = 400
         private const val DEFAULT_EXPANDED_WIDTH = 340
         private const val DEFAULT_EXPANDED_HEIGHT = 520
-        private const val COMPACT_WIDTH_THRESHOLD = 320
 
         // KP color palette
         private const val COLOR_TERTIARY = "#27E0A9"
@@ -521,11 +518,10 @@ class FloatingWorkoutService : Service() {
         updateSetProgress()
         updatePanelTimer()
         updateFooterStats()
-        adaptLayoutToWidth(expandedWidth)
 
-        // Entry animation: scale from 0.92 + fade in with smooth deceleration
-        expandedView?.scaleX = 0.92f
-        expandedView?.scaleY = 0.92f
+        // Entry animation: scale from 0.8 + fade in
+        expandedView?.scaleX = 0.8f
+        expandedView?.scaleY = 0.8f
         expandedView?.alpha = 0f
 
         windowManager.addView(expandedView, params)
@@ -535,8 +531,8 @@ class FloatingWorkoutService : Service() {
             ?.scaleX(1f)
             ?.scaleY(1f)
             ?.alpha(1f)
-            ?.setDuration(280)
-            ?.setInterpolator(DecelerateInterpolator(2f))
+            ?.setDuration(300)
+            ?.setInterpolator(OvershootInterpolator(0.8f))
             ?.start()
 
         // Start timer updates
@@ -572,43 +568,6 @@ class FloatingWorkoutService : Service() {
     }
 
     /**
-     * Adapta el layout del panel según el ancho actual.
-     * Si el ancho es estrecho, apila los steppers verticalmente.
-     *
-     * @param widthDp Ancho actual del panel en dp
-     */
-    private fun adaptLayoutToWidth(widthDp: Int) {
-        val stepperRow = expandedView?.findViewById<LinearLayout>(R.id.stepper_row) ?: return
-        val isCompact = widthDp < COMPACT_WIDTH_THRESHOLD
-
-        stepperRow.orientation = if (isCompact) {
-            LinearLayout.VERTICAL
-        } else {
-            LinearLayout.HORIZONTAL
-        }
-
-        // Ajustar márgenes de los steppers hijos
-        for (i in 0 until stepperRow.childCount) {
-            val child = stepperRow.getChildAt(i)
-            val lp = child.layoutParams as? LinearLayout.LayoutParams ?: continue
-            if (isCompact) {
-                lp.width = LinearLayout.LayoutParams.MATCH_PARENT
-                lp.weight = 0f
-                lp.marginStart = 0
-                lp.marginEnd = 0
-                lp.bottomMargin = dpToPx(8f)
-            } else {
-                lp.width = 0
-                lp.weight = 1f
-                lp.bottomMargin = 0
-                if (i == 0) { lp.marginEnd = dpToPx(8f); lp.marginStart = 0 }
-                else { lp.marginStart = dpToPx(8f); lp.marginEnd = 0 }
-            }
-            child.layoutParams = lp
-        }
-    }
-
-    /**
      * Actualiza el texto de progreso de serie (ej: "Set 3 / 4").
      */
     private fun updateSetProgress() {
@@ -616,7 +575,7 @@ class FloatingWorkoutService : Service() {
         val index = ActiveWorkoutHolder.selectedExerciseIndex
         val sets = ActiveWorkoutHolder.getSetsForExercise(index)
         val currentSet = sets.size + 1
-        view.findViewById<TextView>(R.id.txt_set_progress)?.text = "Serie $currentSet"
+        view.findViewById<TextView>(R.id.txt_set_progress)?.text = "Set $currentSet"
     }
 
     /**
@@ -675,7 +634,6 @@ class FloatingWorkoutService : Service() {
             expandedWidth = (params.width / dp).toInt()
             expandedHeight = (params.height / dp).toInt()
             try { windowManager.updateViewLayout(expandedView, params) } catch (_: Exception) {}
-            adaptLayoutToWidth(expandedWidth)
         }
 
         expandedView?.findViewById<View>(R.id.resize_right)?.setOnTouchListener(
@@ -888,14 +846,13 @@ class FloatingWorkoutService : Service() {
     private fun setupButtons() {
         val view = expandedView ?: return
 
-        // Minimize → collapse to bubble with smooth exit
+        // Minimize → collapse to bubble with exit animation
         view.findViewById<ImageButton>(R.id.btn_minimize)?.setOnClickListener {
             animatePress(it)
             expandedView?.animate()
-                ?.scaleX(0.85f)?.scaleY(0.85f)
+                ?.scaleX(0.3f)?.scaleY(0.3f)
                 ?.alpha(0f)
-                ?.setDuration(200)
-                ?.setInterpolator(AccelerateInterpolator(2f))
+                ?.setDuration(250)
                 ?.withEndAction {
                     removeExpanded()
                     showBubble()
@@ -903,18 +860,15 @@ class FloatingWorkoutService : Service() {
                 ?.start()
         }
 
-        // Close overlay → minimize to bubble, keep service alive for the active workout
+        // Close overlay → stop service entirely
         view.findViewById<ImageButton>(R.id.btn_close)?.setOnClickListener {
             animatePress(it)
             expandedView?.animate()
-                ?.scaleX(0.85f)?.scaleY(0.85f)
+                ?.scaleX(0.3f)?.scaleY(0.3f)
                 ?.alpha(0f)
                 ?.setDuration(200)
-                ?.setInterpolator(AccelerateInterpolator(2f))
                 ?.withEndAction {
-                    removeExpanded()
-                    isExpanded = false
-                    showBubble()
+                    stopSelf()
                 }
                 ?.start()
         }
@@ -925,23 +879,15 @@ class FloatingWorkoutService : Service() {
             sendSet()
         }
 
-        // Fullscreen → animate out then resume app
+        // Fullscreen → resume app
         view.findViewById<ImageButton>(R.id.btn_fullscreen)?.setOnClickListener {
             animatePress(it)
-            expandedView?.animate()
-                ?.scaleX(1.05f)?.scaleY(1.05f)
-                ?.alpha(0f)
-                ?.setDuration(200)
-                ?.setInterpolator(AccelerateInterpolator(1.5f))
-                ?.withEndAction {
-                    val intent = Intent(this, MainActivity::class.java).apply {
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                    }
-                    startActivity(intent)
-                    removeExpanded()
-                    showBubble()
-                }
-                ?.start()
+            val intent = Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            }
+            startActivity(intent)
+            removeExpanded()
+            showBubble()
         }
     }
 
