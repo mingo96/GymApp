@@ -283,14 +283,14 @@ fun ProfilePage(settingsViewModel: SettingsViewModel) {
             KPSettingsItem(
                 icon = Icons.TwoTone.ManageAccounts,
                 label = "Ajustes de cuenta",
-                onClick = { navigator.open(SheetDestination.Settings) }
+                onClick = { navigator.open(SheetDestination.AccountSettings) }
             )
 
             if (!data?.authToken.isNullOrBlank()) {
                 KPSettingsItem(
                     icon = Icons.TwoTone.Lock,
                     label = "Sesión iniciada",
-                    onClick = { navigator.open(SheetDestination.Auth) }
+                    onClick = { navigator.open(SheetDestination.Session) }
                 )
             } else {
                 KPSettingsItem(

@@ -26,6 +26,8 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.AccelerateInterpolator
+import android.view.animation.DecelerateInterpolator
 import android.view.animation.OvershootInterpolator
 import android.widget.FrameLayout
 import android.widget.HorizontalScrollView
@@ -67,6 +69,14 @@ class FloatingWorkoutService : Service() {
         private const val MIN_EXPANDED_HEIGHT = 400
         private const val DEFAULT_EXPANDED_WIDTH = 340
         private const val DEFAULT_EXPANDED_HEIGHT = 520
+        private const val COMPACT_WIDTH_THRESHOLD = 320
+
+        /**
+         * Indica si el servicio flotante está activo actualmente.
+         */
+        @Volatile
+        var isRunning = false
+            private set
 
         // KP color palette
         private const val COLOR_TERTIARY = "#27E0A9"
@@ -164,6 +174,7 @@ class FloatingWorkoutService : Service() {
             stopSelf()
             return
         }
+        isRunning = true
         ProcessLifecycleOwner.get().lifecycle.addObserver(lifecycleObserver)
         if (!isAppInForeground) {
             showBubble()
@@ -171,6 +182,7 @@ class FloatingWorkoutService : Service() {
     }
 
     override fun onDestroy() {
+        isRunning = false
         handler.removeCallbacks(timerRunnable)
         stopBubblePulse()
         removeBubble()
@@ -515,13 +527,14 @@ class FloatingWorkoutService : Service() {
         setupStepperButtons()
         setupExerciseChips()
         setupButtons()
+        adaptLayoutToWidth(expandedWidth)
         updateSetProgress()
         updatePanelTimer()
         updateFooterStats()
 
-        // Entry animation: scale from 0.8 + fade in
-        expandedView?.scaleX = 0.8f
-        expandedView?.scaleY = 0.8f
+        // Entry animation: scale from 0.92 + fade in (Guide 23)
+        expandedView?.scaleX = 0.92f
+        expandedView?.scaleY = 0.92f
         expandedView?.alpha = 0f
 
         windowManager.addView(expandedView, params)
@@ -532,7 +545,7 @@ class FloatingWorkoutService : Service() {
             ?.scaleY(1f)
             ?.alpha(1f)
             ?.setDuration(300)
-            ?.setInterpolator(OvershootInterpolator(0.8f))
+            ?.setInterpolator(DecelerateInterpolator(2f))
             ?.start()
 
         // Start timer updates
@@ -633,6 +646,7 @@ class FloatingWorkoutService : Service() {
             params.height = params.height.coerceIn(minH, maxH)
             expandedWidth = (params.width / dp).toInt()
             expandedHeight = (params.height / dp).toInt()
+            adaptLayoutToWidth(expandedWidth)
             try { windowManager.updateViewLayout(expandedView, params) } catch (_: Exception) {}
         }
 
@@ -783,7 +797,7 @@ class FloatingWorkoutService : Service() {
 
                 if (index == currentIndex) {
                     setBackgroundResource(R.drawable.exercise_chip_active_bg)
-                    setTextColor(Color.parseColor(COLOR_ON_PRIMARY_CONTAINER))
+                    setTextColor(Color.parseColor("#00218D"))
                     typeface = android.graphics.Typeface.DEFAULT_BOLD
                 } else {
                     setBackgroundResource(R.drawable.exercise_chip_bg)
@@ -846,13 +860,14 @@ class FloatingWorkoutService : Service() {
     private fun setupButtons() {
         val view = expandedView ?: return
 
-        // Minimize → collapse to bubble with exit animation
+        // Minimize → collapse to bubble with exit animation (Guide 23)
         view.findViewById<ImageButton>(R.id.btn_minimize)?.setOnClickListener {
             animatePress(it)
             expandedView?.animate()
-                ?.scaleX(0.3f)?.scaleY(0.3f)
+                ?.scaleX(0.85f)?.scaleY(0.85f)
                 ?.alpha(0f)
-                ?.setDuration(250)
+                ?.setDuration(200)
+                ?.setInterpolator(AccelerateInterpolator(2f))
                 ?.withEndAction {
                     removeExpanded()
                     showBubble()
@@ -860,13 +875,14 @@ class FloatingWorkoutService : Service() {
                 ?.start()
         }
 
-        // Close overlay → stop service entirely
+        // Close overlay → stop service entirely (user preference)
         view.findViewById<ImageButton>(R.id.btn_close)?.setOnClickListener {
             animatePress(it)
             expandedView?.animate()
-                ?.scaleX(0.3f)?.scaleY(0.3f)
+                ?.scaleX(0.85f)?.scaleY(0.85f)
                 ?.alpha(0f)
                 ?.setDuration(200)
+                ?.setInterpolator(AccelerateInterpolator(2f))
                 ?.withEndAction {
                     stopSelf()
                 }
@@ -879,15 +895,29 @@ class FloatingWorkoutService : Service() {
             sendSet()
         }
 
-        // Fullscreen → resume app
+        // Fullscreen → resume app with animated exit (Guide 23)
         view.findViewById<ImageButton>(R.id.btn_fullscreen)?.setOnClickListener {
             animatePress(it)
-            val intent = Intent(this, MainActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
-            }
-            startActivity(intent)
-            removeExpanded()
-            showBubble()
+            expandedView?.animate()
+                ?.scaleX(1.05f)?.scaleY(1.05f)
+                ?.setDuration(150)
+                ?.setInterpolator(AccelerateDecelerateInterpolator())
+                ?.withEndAction {
+                    expandedView?.animate()
+                        ?.alpha(0f)
+                        ?.setDuration(200)
+                        ?.setInterpolator(AccelerateInterpolator())
+                        ?.withEndAction {
+                            val intent = Intent(this, MainActivity::class.java).apply {
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                            }
+                            startActivity(intent)
+                            removeExpanded()
+                            showBubble()
+                        }
+                        ?.start()
+                }
+                ?.start()
         }
     }
 
@@ -977,6 +1007,48 @@ class FloatingWorkoutService : Service() {
                 .withEndAction { textView.visibility = View.GONE }
                 .start()
         }, 3000)
+    }
+
+    /**
+     * Adapta la orientación de los steppers según el ancho actual del panel.
+     * Bajo COMPACT_WIDTH_THRESHOLD (320dp), los steppers se apilan verticalmente;
+     * con mayor ancho se colocan en fila horizontal.
+     *
+     * @param widthDp Ancho actual del panel en dp
+     */
+    private fun adaptLayoutToWidth(widthDp: Int) {
+        val stepperRow = expandedView?.findViewById<LinearLayout>(R.id.stepper_row) ?: return
+        val chipsScroll = expandedView?.findViewById<LinearLayout>(R.id.exercise_chips_container)
+            ?.parent as? HorizontalScrollView
+
+        if (widthDp < COMPACT_WIDTH_THRESHOLD) {
+            stepperRow.orientation = LinearLayout.VERTICAL
+            // In vertical mode, steppers take full width instead of 50/50
+            for (i in 0 until stepperRow.childCount) {
+                val child = stepperRow.getChildAt(i)
+                val lp = child.layoutParams as LinearLayout.LayoutParams
+                lp.width = LinearLayout.LayoutParams.MATCH_PARENT
+                lp.weight = 0f
+                lp.marginStart = 0
+                lp.marginEnd = 0
+                if (i < stepperRow.childCount - 1) lp.bottomMargin = dpToPx(8f)
+                child.layoutParams = lp
+            }
+            chipsScroll?.visibility = View.GONE
+        } else {
+            stepperRow.orientation = LinearLayout.HORIZONTAL
+            for (i in 0 until stepperRow.childCount) {
+                val child = stepperRow.getChildAt(i)
+                val lp = child.layoutParams as LinearLayout.LayoutParams
+                lp.width = 0
+                lp.weight = 1f
+                lp.bottomMargin = 0
+                if (i == 0) { lp.marginStart = 0; lp.marginEnd = dpToPx(8f) }
+                else { lp.marginStart = dpToPx(8f); lp.marginEnd = 0 }
+                child.layoutParams = lp
+            }
+            chipsScroll?.visibility = View.VISIBLE
+        }
     }
 
     /**

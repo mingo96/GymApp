@@ -64,14 +64,29 @@ sealed class SheetDestination {
 
     // ── Profile & Settings ──
 
-    /** Full settings sheet. */
+    /** Full settings sheet (legacy). */
     data object Settings : SheetDestination()
+
+    /** Account settings with tabs (Guide 21). */
+    data object AccountSettings : SheetDestination()
+
+    /** Active session info (Guide 22). */
+    data object Session : SheetDestination()
 
     /** App configuration (floating widget, etc.). */
     data object AppConfig : SheetDestination()
 
     /** Authentication (login/register). */
     data object Auth : SheetDestination()
+
+    /** Two-factor authentication setup. */
+    data object TwoFactorSetup : SheetDestination()
+
+    /** Two-factor authentication disable (requires code). */
+    data object TwoFactorDisable : SheetDestination()
+
+    /** Password recovery flow. */
+    data object PasswordRecovery : SheetDestination()
 
     /** Notification list. */
     data object Notifications : SheetDestination()

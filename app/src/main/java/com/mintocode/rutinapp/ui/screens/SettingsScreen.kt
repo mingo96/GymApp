@@ -137,6 +137,10 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel) {
                     onGoogleClick = onGoogleClick
                 )
             }
+
+            is SettingsScreenState.TwoFactorChallenge -> {
+                // Handled in AuthSheet via sheet navigation
+            }
         }
     }
 }

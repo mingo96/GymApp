@@ -75,11 +75,14 @@ data class GoogleAuthRequest(
  * Auth response from login/register/google endpoints.
  *
  * Format: { "data": { "user": {...} }, "access_token": "...", "token_type": "Bearer" }
+ * When 2FA is required: { "two_factor_required": true, "two_factor_token": "..." }
  */
 data class AuthResponse(
     val data: AuthData?,
     @SerializedName("access_token") val accessToken: String?,
-    @SerializedName("token_type") val tokenType: String?
+    @SerializedName("token_type") val tokenType: String?,
+    @SerializedName("two_factor_required") val twoFactorRequired: Boolean? = null,
+    @SerializedName("two_factor_token") val twoFactorToken: String? = null
 )
 
 data class AuthData(
@@ -89,7 +92,93 @@ data class AuthData(
 data class UserDto(
     val id: Long,
     val name: String,
+    val email: String,
+    @SerializedName("two_factor_enabled") val twoFactorEnabled: Boolean? = null,
+    @SerializedName("notify_new_access") val notifyNewAccess: Boolean? = null
+)
+
+// ============================================================================
+// 2FA DTOs
+// ============================================================================
+
+/**
+ * Request to verify 2FA code during login.
+ */
+data class TwoFactorVerifyRequest(
+    @SerializedName("two_factor_token") val twoFactorToken: String,
+    val code: String
+)
+
+/**
+ * Request to confirm or disable 2FA.
+ */
+data class TwoFactorCodeRequest(
+    val code: String
+)
+
+/**
+ * Response from enabling 2FA (secret + otpauth URL).
+ */
+data class TwoFactorEnableResponse(
+    val message: String?,
+    val secret: String?,
+    @SerializedName("otpauth_url") val otpauthUrl: String?
+)
+
+/**
+ * Response from confirming 2FA (includes recovery codes).
+ */
+data class TwoFactorConfirmResponse(
+    val message: String?,
+    @SerializedName("recovery_codes") val recoveryCodes: List<String>?
+)
+
+// ============================================================================
+// Device Session DTOs
+// ============================================================================
+
+/**
+ * Response wrapper for device sessions list.
+ */
+data class DeviceSessionsResponse(
+    val data: DeviceSessionsData?
+)
+
+data class DeviceSessionsData(
+    val sessions: List<DeviceSessionDto>?
+)
+
+/**
+ * A single device session entry.
+ */
+data class DeviceSessionDto(
+    val id: Long,
+    @SerializedName("device_name") val deviceName: String?,
+    @SerializedName("ip_address") val ipAddress: String?,
+    @SerializedName("last_active_at") val lastActiveAt: String?,
+    @SerializedName("is_current") val isCurrent: Boolean?,
+    @SerializedName("created_at") val createdAt: String?
+)
+
+// ============================================================================
+// Password Reset DTOs
+// ============================================================================
+
+/**
+ * Request to send password reset link.
+ */
+data class ForgotPasswordRequest(
     val email: String
+)
+
+/**
+ * Request to reset password with token.
+ */
+data class ResetPasswordRequest(
+    val email: String,
+    val token: String,
+    val password: String,
+    @SerializedName("password_confirmation") val passwordConfirmation: String
 )
 
 // ============================================================================

@@ -57,6 +57,82 @@ interface ApiV2Service {
     @POST("auth/logout")
     suspend fun logout(): MessageResponse
 
+    /**
+     * Refresh the current access token.
+     *
+     * @return New access token (old one is revoked)
+     */
+    @POST("auth/refresh")
+    suspend fun refreshToken(): AuthResponse
+
+    // ========================================================================
+    // Two-Factor Authentication
+    // ========================================================================
+
+    /**
+     * Enable 2FA — generates a TOTP secret.
+     *
+     * @return Secret key and otpauth:// URL for authenticator apps
+     */
+    @POST("two-factor/enable")
+    suspend fun enableTwoFactor(): TwoFactorEnableResponse
+
+    /**
+     * Confirm 2FA setup with a TOTP code from the authenticator app.
+     *
+     * @return Recovery codes (one-time use)
+     */
+    @POST("two-factor/confirm")
+    suspend fun confirmTwoFactor(@Body body: TwoFactorCodeRequest): TwoFactorConfirmResponse
+
+    /**
+     * Disable 2FA. Requires a valid TOTP or recovery code.
+     */
+    @POST("two-factor/disable")
+    suspend fun disableTwoFactor(@Body body: TwoFactorCodeRequest): MessageResponse
+
+    /**
+     * Verify 2FA code during login challenge (public endpoint).
+     *
+     * @return Access token if code is valid
+     */
+    @POST("auth/two-factor/verify")
+    suspend fun verifyTwoFactor(@Body body: TwoFactorVerifyRequest): AuthResponse
+
+    // ========================================================================
+    // Password Reset (public endpoints)
+    // ========================================================================
+
+    /**
+     * Request a password reset link via email.
+     */
+    @POST("auth/password/forgot")
+    suspend fun forgotPassword(@Body body: ForgotPasswordRequest): MessageResponse
+
+    /**
+     * Reset password with the token received via email.
+     *
+     * @return New access token
+     */
+    @POST("auth/password/reset")
+    suspend fun resetPassword(@Body body: ResetPasswordRequest): AuthResponse
+
+    // ========================================================================
+    // Device Sessions
+    // ========================================================================
+
+    /**
+     * List active device sessions for the current user.
+     */
+    @GET("sessions")
+    suspend fun getSessions(): DeviceSessionsResponse
+
+    /**
+     * Revoke a specific device session (logs out that device).
+     */
+    @DELETE("sessions/{id}")
+    suspend fun revokeSession(@Path("id") sessionId: Long): MessageResponse
+
     // ========================================================================
     // Exercises CRUD
     // ========================================================================

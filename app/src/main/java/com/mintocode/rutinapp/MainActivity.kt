@@ -32,6 +32,7 @@ import com.mintocode.rutinapp.ui.screens.root.HomePage
 import com.mintocode.rutinapp.ui.screens.root.ProfilePage
 import com.mintocode.rutinapp.ui.screens.root.RootPager
 import com.mintocode.rutinapp.ui.screens.root.TrainPage
+import com.mintocode.rutinapp.ui.screens.sheets.AccountSettingsSheet
 import com.mintocode.rutinapp.ui.screens.sheets.ActiveWorkoutSheet
 import com.mintocode.rutinapp.ui.screens.sheets.AppConfigSheet
 import com.mintocode.rutinapp.ui.screens.sheets.AuthSheet
@@ -43,14 +44,18 @@ import com.mintocode.rutinapp.ui.screens.sheets.ExerciseListSheet
 import com.mintocode.rutinapp.ui.screens.sheets.ExercisePickerSheet
 import com.mintocode.rutinapp.ui.screens.sheets.ExerciseStatsSheet
 import com.mintocode.rutinapp.ui.screens.sheets.NotificationsSheet
+import com.mintocode.rutinapp.ui.screens.sheets.PasswordRecoverySheet
 import com.mintocode.rutinapp.ui.screens.sheets.PlanningEditSheet
 import com.mintocode.rutinapp.ui.screens.sheets.RoutineCreateSheet
 import com.mintocode.rutinapp.ui.screens.sheets.RoutineDetailSheet
 import com.mintocode.rutinapp.ui.screens.sheets.RoutineEditSheet
 import com.mintocode.rutinapp.ui.screens.sheets.RoutineListSheet
+import com.mintocode.rutinapp.ui.screens.sheets.SessionSheet
 import com.mintocode.rutinapp.ui.screens.sheets.SettingsSheet
 import com.mintocode.rutinapp.ui.screens.sheets.StatsSheet
 import com.mintocode.rutinapp.ui.screens.sheets.TrainerManagementSheet
+import com.mintocode.rutinapp.ui.screens.sheets.TwoFactorDisableSheet
+import com.mintocode.rutinapp.ui.screens.sheets.TwoFactorSetupSheet
 import com.mintocode.rutinapp.ui.screens.sheets.WorkoutHistorySheet
 import com.mintocode.rutinapp.ui.theme.RutinAppTheme
 import com.mintocode.rutinapp.utils.DataStoreManager
@@ -248,12 +253,32 @@ class MainActivity : ComponentActivity() {
                 SettingsSheet(viewModel = settingsViewModel)
             }
 
+            is SheetDestination.AccountSettings -> {
+                AccountSettingsSheet(viewModel = settingsViewModel)
+            }
+
+            is SheetDestination.Session -> {
+                SessionSheet(viewModel = settingsViewModel)
+            }
+
             is SheetDestination.AppConfig -> {
                 AppConfigSheet(viewModel = settingsViewModel)
             }
 
             is SheetDestination.Auth -> {
                 AuthSheet(viewModel = settingsViewModel)
+            }
+
+            is SheetDestination.TwoFactorSetup -> {
+                TwoFactorSetupSheet(viewModel = settingsViewModel)
+            }
+
+            is SheetDestination.TwoFactorDisable -> {
+                TwoFactorDisableSheet(viewModel = settingsViewModel)
+            }
+
+            is SheetDestination.PasswordRecovery -> {
+                PasswordRecoverySheet(viewModel = settingsViewModel)
             }
 
             is SheetDestination.Notifications -> {

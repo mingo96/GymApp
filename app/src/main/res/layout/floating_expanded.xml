@@ -53,7 +53,7 @@
                     android:letterSpacing="0.2"
                     android:text="ENTRENAMIENTO ACTUAL"
                     android:textAllCaps="true"
-                    android:textColor="#C4C5D7"
+                    android:textColor="#8E8FA1"
                     android:textSize="9sp"
                     android:textStyle="bold" />
 
@@ -141,13 +141,18 @@
                 <!-- Set progress -->
                 <TextView
                     android:id="@+id/txt_set_progress"
-                    android:layout_width="match_parent"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
+                    android:background="@drawable/set_badge_bg"
                     android:fontFamily="@font/manrope"
+                    android:paddingStart="10dp"
+                    android:paddingTop="3dp"
+                    android:paddingEnd="10dp"
+                    android:paddingBottom="3dp"
                     android:text="Set 1 / –"
                     android:textColor="#27E0A9"
-                    android:textSize="13sp"
+                    android:textSize="12sp"
                     android:textStyle="bold" />
 
                 <!-- Input grid: Reps + Weight side by side -->
@@ -189,8 +194,8 @@
 
                             <FrameLayout
                                 android:id="@+id/btn_reps_minus"
-                                android:layout_width="32dp"
-                                android:layout_height="32dp"
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
                                 android:background="@drawable/stepper_btn_bg"
                                 android:clickable="true"
                                 android:focusable="true">
@@ -200,7 +205,7 @@
                                     android:layout_height="wrap_content"
                                     android:layout_gravity="center"
                                     android:text="−"
-                                    android:textColor="#E4E1E9"
+                                    android:textColor="#FFB4AB"
                                     android:textSize="18sp" />
 
                             </FrameLayout>
@@ -219,8 +224,8 @@
 
                             <FrameLayout
                                 android:id="@+id/btn_reps_plus"
-                                android:layout_width="32dp"
-                                android:layout_height="32dp"
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
                                 android:background="@drawable/stepper_btn_bg"
                                 android:clickable="true"
                                 android:focusable="true">
@@ -230,7 +235,7 @@
                                     android:layout_height="wrap_content"
                                     android:layout_gravity="center"
                                     android:text="+"
-                                    android:textColor="#E4E1E9"
+                                    android:textColor="#27E0A9"
                                     android:textSize="18sp" />
 
                             </FrameLayout>
@@ -270,8 +275,8 @@
 
                             <FrameLayout
                                 android:id="@+id/btn_weight_minus"
-                                android:layout_width="32dp"
-                                android:layout_height="32dp"
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
                                 android:background="@drawable/stepper_btn_bg"
                                 android:clickable="true"
                                 android:focusable="true">
@@ -281,7 +286,7 @@
                                     android:layout_height="wrap_content"
                                     android:layout_gravity="center"
                                     android:text="−"
-                                    android:textColor="#E4E1E9"
+                                    android:textColor="#FFB4AB"
                                     android:textSize="18sp" />
 
                             </FrameLayout>
@@ -300,8 +305,8 @@
 
                             <FrameLayout
                                 android:id="@+id/btn_weight_plus"
-                                android:layout_width="32dp"
-                                android:layout_height="32dp"
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
                                 android:background="@drawable/stepper_btn_bg"
                                 android:clickable="true"
                                 android:focusable="true">
@@ -311,7 +316,7 @@
                                     android:layout_height="wrap_content"
                                     android:layout_gravity="center"
                                     android:text="+"
-                                    android:textColor="#E4E1E9"
+                                    android:textColor="#27E0A9"
                                     android:textSize="18sp" />
 
                             </FrameLayout>
@@ -380,13 +385,16 @@
             android:id="@+id/stats_footer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"
+            android:layout_marginBottom="12dp"
             android:background="@drawable/panel_footer_bg"
             android:gravity="center"
             android:orientation="horizontal"
-            android:paddingStart="20dp"
-            android:paddingTop="10dp"
-            android:paddingEnd="20dp"
-            android:paddingBottom="10dp">
+            android:paddingStart="16dp"
+            android:paddingTop="12dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="12dp">
 
             <!-- Sets stat -->
             <LinearLayout
@@ -402,7 +410,7 @@
                     android:letterSpacing="-0.03"
                     android:text="SETS"
                     android:textAllCaps="true"
-                    android:textColor="#C4C5D7"
+                    android:textColor="#8E8FA1"
                     android:textSize="8sp"
                     android:textStyle="bold" />
 
@@ -440,7 +448,7 @@
                     android:letterSpacing="-0.03"
                     android:text="VOL"
                     android:textAllCaps="true"
-                    android:textColor="#C4C5D7"
+                    android:textColor="#8E8FA1"
                     android:textSize="8sp"
                     android:textStyle="bold" />
 
@@ -478,7 +486,7 @@
                     android:letterSpacing="-0.03"
                     android:text="TIEMPO"
                     android:textAllCaps="true"
-                    android:textColor="#C4C5D7"
+                    android:textColor="#8E8FA1"
                     android:textSize="8sp"
                     android:textStyle="bold" />
 

@@ -41,7 +41,7 @@
         android:paddingEnd="8dp"
         android:paddingBottom="2dp"
         android:text="0:00"
-        android:textColor="#003827"
+        android:textColor="#27E0A9"
         android:textSize="9sp"
         android:textStyle="bold" />
 

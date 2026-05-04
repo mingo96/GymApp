@@ -16,9 +16,14 @@ import com.mintocode.rutinapp.data.UserDetails
 import com.mintocode.rutinapp.data.UserDetails.Companion.actualValue
 import com.mintocode.rutinapp.data.api.v2.ApiV2Service
 import com.mintocode.rutinapp.data.api.v2.dto.GoogleAuthRequest
+import com.mintocode.rutinapp.data.api.v2.dto.DeviceSessionDto
+import com.mintocode.rutinapp.data.api.v2.dto.ForgotPasswordRequest
 import com.mintocode.rutinapp.data.api.v2.dto.LoginRequest
 import com.mintocode.rutinapp.data.api.v2.dto.RedeemInviteCodeRequest
 import com.mintocode.rutinapp.data.api.v2.dto.RegisterRequest
+import com.mintocode.rutinapp.data.api.v2.dto.ResetPasswordRequest
+import com.mintocode.rutinapp.data.api.v2.dto.TwoFactorCodeRequest
+import com.mintocode.rutinapp.data.api.v2.dto.TwoFactorVerifyRequest
 import com.mintocode.rutinapp.data.models.TrainerRelationModel
 import com.mintocode.rutinapp.data.api.v2.dto.DtoMapper
 import com.mintocode.rutinapp.data.notifications.NotificationHelper
@@ -164,6 +169,18 @@ class SettingsViewModel @Inject constructor(
                     } else launch(Dispatchers.Main) { Toast.makeText(context, "Error registro", Toast.LENGTH_SHORT).show() }
                 } else {
                     val res = apiV2.login(LoginRequest(email = normalizedMail, password = password))
+
+                    // Handle 2FA challenge
+                    if (res.twoFactorRequired == true && !res.twoFactorToken.isNullOrBlank()) {
+                        _uiState.postValue(
+                            SettingsScreenState.TwoFactorChallenge(
+                                twoFactorToken = res.twoFactorToken,
+                                email = normalizedMail
+                            )
+                        )
+                        return@launch
+                    }
+
                     val token = res.accessToken
                     if (!token.isNullOrBlank()) {
                         updateUserDetails(
@@ -313,6 +330,324 @@ class SettingsViewModel @Inject constructor(
     }
 
     private fun registerUserOnServer(authResult: AuthResult) { /* deprecated: backend handles via /auth/google */ }
+
+    // ========================================================================
+    // 2FA
+    // ========================================================================
+
+    /** Observable state for 2FA enablement in the UI. */
+    private val _twoFactorEnabled = MutableLiveData(false)
+    val twoFactorEnabled: LiveData<Boolean> = _twoFactorEnabled
+
+    /** Observable state for notification of new accesses. */
+    private val _notifyNewAccess = MutableLiveData(false)
+    val notifyNewAccess: LiveData<Boolean> = _notifyNewAccess
+
+    /** Observable state for device sessions list. */
+    private val _sessions = MutableLiveData<List<DeviceSessionDto>>(emptyList())
+    val sessions: LiveData<List<DeviceSessionDto>> = _sessions
+
+    /** 2FA enable response (secret + otpauth URL) for setup sheet. */
+    private val _twoFactorSetupSecret = MutableLiveData<String?>(null)
+    val twoFactorSetupSecret: LiveData<String?> = _twoFactorSetupSecret
+
+    private val _twoFactorSetupUrl = MutableLiveData<String?>(null)
+    val twoFactorSetupUrl: LiveData<String?> = _twoFactorSetupUrl
+
+    /** Recovery codes shown once after 2FA confirmation. */
+    private val _recoveryCodes = MutableLiveData<List<String>?>(null)
+    val recoveryCodes: LiveData<List<String>?> = _recoveryCodes
+
+    /**
+     * Verifica un código TOTP durante el flujo de login 2FA.
+     *
+     * @param code Código de 6 dígitos del autenticador
+     * @param context Contexto para Toast
+     */
+    fun verifyTwoFactor(code: String, context: Context) {
+        val state = _uiState.value as? SettingsScreenState.TwoFactorChallenge ?: return
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val res = apiV2.verifyTwoFactor(
+                    TwoFactorVerifyRequest(
+                        twoFactorToken = state.twoFactorToken,
+                        code = code.trim()
+                    )
+                )
+                val token = res.accessToken
+                if (!token.isNullOrBlank()) {
+                    updateUserDetails(
+                        authToken = token,
+                        name = res.data?.user?.name ?: _data.value?.name ?: "",
+                        email = res.data?.user?.email ?: state.email
+                    )
+                    _twoFactorEnabled.postValue(true)
+                    launch(Dispatchers.Main) {
+                        Toast.makeText(context, "Sesión iniciada correctamente", Toast.LENGTH_SHORT).show()
+                    }
+                    _uiState.postValue(SettingsScreenState.UserData)
+                }
+            } catch (e: Exception) {
+                Log.e("Auth", "2FA verify failure", e)
+                val msg = if (e is HttpException && e.code() == 422) "Código 2FA incorrecto"
+                else "Error al verificar 2FA"
+                launch(Dispatchers.Main) { Toast.makeText(context, msg, Toast.LENGTH_SHORT).show() }
+            }
+        }
+    }
+
+    /**
+     * Inicia el proceso de activación de 2FA solicitando un secreto al backend.
+     *
+     * @param context Contexto para Toast
+     */
+    fun enableTwoFactor(context: Context) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val res = apiV2.enableTwoFactor()
+                _twoFactorSetupSecret.postValue(res.secret)
+                _twoFactorSetupUrl.postValue(res.otpauthUrl)
+            } catch (e: Exception) {
+                Log.e("2FA", "Enable failure", e)
+                val msg = if (e is HttpException && e.code() == 409) "2FA ya está activo"
+                else "Error al activar 2FA"
+                launch(Dispatchers.Main) { Toast.makeText(context, msg, Toast.LENGTH_SHORT).show() }
+            }
+        }
+    }
+
+    /**
+     * Confirma la activación de 2FA con un código del autenticador.
+     *
+     * @param code Código TOTP de 6 dígitos
+     * @param context Contexto para Toast
+     */
+    fun confirmTwoFactor(code: String, context: Context) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val res = apiV2.confirmTwoFactor(TwoFactorCodeRequest(code = code.trim()))
+                _recoveryCodes.postValue(res.recoveryCodes)
+                _twoFactorEnabled.postValue(true)
+                launch(Dispatchers.Main) {
+                    Toast.makeText(context, "2FA activado correctamente", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Log.e("2FA", "Confirm failure", e)
+                val msg = if (e is HttpException && e.code() == 422) "Código incorrecto"
+                else "Error al confirmar 2FA"
+                launch(Dispatchers.Main) { Toast.makeText(context, msg, Toast.LENGTH_SHORT).show() }
+            }
+        }
+    }
+
+    /**
+     * Desactiva 2FA con un código TOTP o de recuperación.
+     *
+     * @param code Código TOTP o de recuperación
+     * @param context Contexto para Toast
+     */
+    fun disableTwoFactor(code: String, context: Context) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                apiV2.disableTwoFactor(TwoFactorCodeRequest(code = code.trim()))
+                _twoFactorEnabled.postValue(false)
+                _twoFactorSetupSecret.postValue(null)
+                _twoFactorSetupUrl.postValue(null)
+                _recoveryCodes.postValue(null)
+                launch(Dispatchers.Main) {
+                    Toast.makeText(context, "2FA desactivado", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Log.e("2FA", "Disable failure", e)
+                val msg = if (e is HttpException && e.code() == 422) "Código incorrecto"
+                else "Error al desactivar 2FA"
+                launch(Dispatchers.Main) { Toast.makeText(context, msg, Toast.LENGTH_SHORT).show() }
+            }
+        }
+    }
+
+    /** Limpia el estado temporal de configuración 2FA. */
+    fun clearTwoFactorSetup() {
+        _twoFactorSetupSecret.postValue(null)
+        _twoFactorSetupUrl.postValue(null)
+        _recoveryCodes.postValue(null)
+    }
+
+    // ========================================================================
+    // Device Sessions
+    // ========================================================================
+
+    /**
+     * Carga las sesiones activas desde el backend.
+     */
+    fun loadSessions() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val res = apiV2.getSessions()
+                _sessions.postValue(res.data?.sessions ?: emptyList())
+            } catch (e: Exception) {
+                Log.e("Sessions", "Load failure", e)
+            }
+        }
+    }
+
+    /**
+     * Revoca una sesión de dispositivo remota.
+     *
+     * @param sessionId ID de la sesión a revocar
+     * @param context Contexto para Toast
+     */
+    fun revokeSession(sessionId: Long, context: Context) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                apiV2.revokeSession(sessionId)
+                _sessions.postValue(_sessions.value?.filter { it.id != sessionId })
+                launch(Dispatchers.Main) {
+                    Toast.makeText(context, "Sesión revocada", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Log.e("Sessions", "Revoke failure", e)
+                val msg = if (e is HttpException && e.code() == 409) "No puedes revocar tu sesión actual"
+                else "Error al revocar sesión"
+                launch(Dispatchers.Main) { Toast.makeText(context, msg, Toast.LENGTH_SHORT).show() }
+            }
+        }
+    }
+
+    // ========================================================================
+    // Token Refresh
+    // ========================================================================
+
+    /**
+     * Regenera el token de acceso actual.
+     *
+     * @param context Contexto para Toast
+     */
+    fun refreshToken(context: Context) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val res = apiV2.refreshToken()
+                val newToken = res.accessToken
+                if (!newToken.isNullOrBlank()) {
+                    updateUserDetails(authToken = newToken)
+                    launch(Dispatchers.Main) {
+                        Toast.makeText(context, "Token regenerado", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("Auth", "Refresh failure", e)
+                launch(Dispatchers.Main) {
+                    Toast.makeText(context, "Error al regenerar token", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    // ========================================================================
+    // Notify New Access
+    // ========================================================================
+
+    /**
+     * Sincroniza el estado de 2FA y notificaciones desde /me.
+     */
+    fun loadSecuritySettings() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val res = apiV2.me()
+                _twoFactorEnabled.postValue(res.data?.twoFactorEnabled ?: false)
+                _notifyNewAccess.postValue(res.data?.notifyNewAccess ?: false)
+            } catch (e: Exception) {
+                Log.e("Settings", "Load security settings failure", e)
+            }
+        }
+    }
+
+    /**
+     * Alterna la notificación de nuevos accesos en el backend.
+     *
+     * @param enabled true para activar, false para desactivar
+     * @param context Contexto para Toast
+     */
+    fun setNotifyNewAccess(enabled: Boolean, context: Context) {
+        _notifyNewAccess.postValue(enabled)
+        // Backend toggling would require a dedicated endpoint.
+        // For now, we update the local state; a future PUT /user/settings endpoint
+        // should persist this.
+    }
+
+    // ========================================================================
+    // Password Recovery
+    // ========================================================================
+
+    /**
+     * Envía un enlace de recuperación de contraseña al email.
+     *
+     * @param email Email del usuario
+     * @param context Contexto para Toast
+     * @param onSuccess Callback tras envío exitoso
+     */
+    fun sendPasswordResetLink(email: String, context: Context, onSuccess: () -> Unit = {}) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                apiV2.forgotPassword(ForgotPasswordRequest(email = email.trim()))
+                launch(Dispatchers.Main) {
+                    Toast.makeText(
+                        context,
+                        "Si la cuenta existe, recibirás un email",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    onSuccess()
+                }
+            } catch (e: Exception) {
+                Log.e("Auth", "Password reset request failure", e)
+                launch(Dispatchers.Main) {
+                    Toast.makeText(context, "Error al enviar email", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    /**
+     * Restablece la contraseña con el token recibido por email.
+     *
+     * @param email Email del usuario
+     * @param token Token recibido por email
+     * @param password Nueva contraseña
+     * @param context Contexto para Toast
+     */
+    fun resetPassword(email: String, token: String, password: String, context: Context) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val res = apiV2.resetPassword(
+                    ResetPasswordRequest(
+                        email = email.trim(),
+                        token = token.trim(),
+                        password = password,
+                        passwordConfirmation = password
+                    )
+                )
+                val newToken = res.accessToken
+                if (!newToken.isNullOrBlank()) {
+                    updateUserDetails(
+                        authToken = newToken,
+                        email = email.trim(),
+                        name = res.data?.user?.name ?: _data.value?.name ?: ""
+                    )
+                    launch(Dispatchers.Main) {
+                        Toast.makeText(context, "Contraseña actualizada", Toast.LENGTH_SHORT).show()
+                    }
+                    _uiState.postValue(SettingsScreenState.UserData)
+                }
+            } catch (e: Exception) {
+                Log.e("Auth", "Password reset failure", e)
+                val msg = when {
+                    e is HttpException && e.code() == 422 -> "Token inválido o contraseña débil"
+                    else -> "Error al restablecer contraseña"
+                }
+                launch(Dispatchers.Main) { Toast.makeText(context, msg, Toast.LENGTH_SHORT).show() }
+            }
+        }
+    }
 
     /** Instancia del helper de notificaciones, inicializada bajo demanda. */
     private var notificationHelper: NotificationHelper? = null
